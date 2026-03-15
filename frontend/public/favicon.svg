@@ -1,0 +1,31 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer circle - white -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#F0FFF4" stroke-width="2" opacity="0.9"/>
+  
+  <!-- Middle circle - green -->
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#00D966" stroke-width="2" opacity="0.8"/>
+  
+  <!-- Inner circle - white -->
+  <circle cx="100" cy="100" r="50" fill="none" stroke="#F0FFF4" stroke-width="2" opacity="0.8"/>
+  
+  <!-- Center circle (head) - green -->
+  <circle cx="100" cy="100" r="20" fill="#00D966" opacity="1"/>
+  
+  <!-- Top satellite dot - white -->
+  <circle cx="100" cy="40" r="6" fill="#F0FFF4" opacity="0.8"/>
+  
+  <!-- Right satellite dot - green -->
+  <circle cx="150" cy="100" r="6" fill="#00D966" opacity="0.9"/>
+  
+  <!-- Bottom satellite dot - white -->
+  <circle cx="100" cy="160" r="6" fill="#F0FFF4" opacity="0.8"/>
+  
+  <!-- Left satellite dot - green -->
+  <circle cx="50" cy="100" r="6" fill="#00D966" opacity="0.9"/>
+  
+  <!-- Connecting lines - alternating colors -->
+  <line x1="100" y1="60" x2="100" y2="40" stroke="#F0FFF4" stroke-width="1.5" opacity="0.6"/>
+  <line x1="130" y1="100" x2="150" y2="100" stroke="#00D966" stroke-width="1.5" opacity="0.6"/>
+  <line x1="100" y1="140" x2="100" y2="160" stroke="#F0FFF4" stroke-width="1.5" opacity="0.6"/>
+  <line x1="70" y1="100" x2="50" y2="100" stroke="#00D966" stroke-width="1.5" opacity="0.6"/>
+</svg>
