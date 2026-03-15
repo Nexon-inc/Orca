@@ -28,3 +28,14 @@ export function filterOutput(output: string): {
 export function detectRoleplayInjection(input: string): boolean {
   return ROLEPLAY_INJECTION_PATTERNS.some(p => p.test(input))
 }
+
+export function filterAgentOutput(output: string): string {
+  const { safe, reason } = filterOutput(output)
+  if (!safe) {
+    if (reason === 'harmful_content_detected') {
+      return '[REDACTED: Potential safety violation detected by ORCA CyberGuard]'
+    }
+    return '[FILTERED]'
+  }
+  return output
+}

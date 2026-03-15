@@ -22,3 +22,11 @@ export function enforceInputLimit(
 export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4) // ~4 chars per token
 }
+
+export async function checkTokenGuard(orgId: string, contentLen: number): Promise<{ allowed: boolean; reason?: string }> {
+  // In a real app, you'd check the org's plan in Supabase
+  // For now, we'll use a conservative default or mock the check
+  const plan = 'pro' // Defaulting to pro for now to avoid blocking users
+  const { allowed, error } = enforceInputLimit(' '.repeat(contentLen), plan)
+  return { allowed, reason: error }
+}

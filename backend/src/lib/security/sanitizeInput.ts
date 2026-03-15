@@ -28,7 +28,7 @@ export function detectPromptInjection(input: string): {
   return { clean: true, flagged: false }
 }
 
-export function sanitizeBrief(input: string): string {
+export function sanitizeInput(input: string): string {
   // Strip HTML tags
   let clean = input.replace(/<[^>]*>/g, '')
   // Strip null bytes
