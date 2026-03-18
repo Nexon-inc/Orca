@@ -5,24 +5,11 @@ import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import { getAgentById } from '@/lib/agents';
 
-const initialReviews = [
-  { id: 'ACT-001', agentId: 'shield', action: 'Hotfix PR #47 Deployment', detail: 'Critical vuln found in auth bypass. No Tech Head assigned → CEO bypass required.', priority: 'High', status: 'Pending', type: 'RED' },
-  { id: 'ACT-002', agentId: 'rex', action: 'Enterprise Outreach List (47 Leads)', detail: 'Profiles matching CEO persona. James K. (Sales Head) approved → Final CEO sign-off.', priority: 'High', status: 'Pending', type: 'YELLOW' },
-  { id: 'ACT-003', agentId: 'amara', action: 'Marketing Weekly Report', detail: 'Overview of Tasks (12), Leads (3), and Posts (8) for the current sprint Cycle.', priority: 'Medium', status: 'Pending', type: 'WHITE' },
-  { id: 'ACT-004', agentId: 'scout', action: 'Source 6 Senior Engineers', detail: 'Vera (Hiring Agent) found candidates. No Hiring Head assigned → CEO review.', priority: 'Medium', status: 'Pending', type: 'WHITE' },
-];
+const initialReviews: any[] = [];
 
-const deptReports = [
-  { dept: 'Marketing', head: 'Amara M.', tasks: 12, leads: 3, items: 8, status: 'NEW' },
-  { dept: 'Sales', head: 'James K.', tasks: 42, leads: 3, items: 0, status: 'NEW' },
-  { dept: 'Tech', head: 'None', status: 'ESCALATED', color: 'text-red-500' },
-];
+const deptReports: any[] = [];
 
-const coordLog = [
-  { from: 'Aria', to: 'Rex', type: 'HANDOFF', time: '2m', status: 'Approved by Amara M.' },
-  { from: 'Shield', to: 'CEO', type: 'ALERT', time: '8m', status: 'CEO PENDING', active: true },
-  { from: 'Clara', to: 'Harbor', type: 'TRIGGER', time: '15m', status: 'AUTO-APPROVED' },
-];
+const coordLog: any[] = [];
 
 export default function ReviewPage() {
   const [reviews, setReviews] = useState(initialReviews);
@@ -74,9 +61,9 @@ export default function ReviewPage() {
 
             {[
               { label: 'Pending Approvals', val: reviews.length, color: reviews.length > 0 ? 'text-warn' : 'text-white' },
-              { label: 'Coord Events Today', val: '31', color: 'text-white' },
-              { label: 'Dept Reports', val: '2 of 9', color: 'text-white' },
-              { label: 'Team Online', val: '3', color: 'text-white' },
+              { label: 'Coord Events Today', val: '0', color: 'text-white' },
+              { label: 'Dept Reports', val: '0 of 9', color: 'text-white' },
+              { label: 'Team Online', val: '0', color: 'text-white' },
             ].map((stat, i) => (
               <div key={i} className="p-6 rounded-2xl border border-white/5 bg-surface/50 backdrop-blur-sm group hover:border-green/20 transition-all">
                 <p className="text-[10px] text-white/40 font-[900] uppercase tracking-widest mb-2 group-hover:text-green transition-colors">{stat.label}</p>

@@ -5,9 +5,9 @@ import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
 
 const memberStats = [
-  { label: 'DEPT TASKS', val: '24', trend: '↑ 4%', desc: 'Marketing' },
-  { label: 'PENDING APPROVALS', val: '3', trend: 'CRITICAL', desc: 'Aria → Rex' },
-  { label: 'MEMBER RANK', val: 'Head', trend: 'VERIFIED', desc: 'Nexonic Industries' },
+  { label: 'DEPT TASKS', val: '0', trend: '—', desc: 'Synchronizing' },
+  { label: 'PENDING APPROVALS', val: '0', trend: 'STABLE', desc: 'No signals' },
+  { label: 'MEMBER RANK', val: '—', trend: 'VERIFIED', desc: '—' },
 ];
 
 export default function MemberDashboard() {
@@ -33,9 +33,9 @@ export default function MemberDashboard() {
         <header className="h-16 border-b border-white/5 bg-bg/80 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-between shrink-0 font-syne">
           <div className="flex items-center gap-4">
              <h2 className="font-black text-white text-[18px] uppercase tracking-tight">Member Dashboard</h2>
-             <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-400 font-black uppercase tracking-widest">
-                Marketing Head
-             </span>
+              <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/20 font-black uppercase tracking-widest uppercase">
+                 Detecting Rank...
+              </span>
           </div>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 text-white/40 text-[11px] font-black uppercase tracking-widest">
@@ -65,14 +65,10 @@ export default function MemberDashboard() {
            {activeTab === 'Overview' && (
               <>
                 {/* Pending Banner */}
-                <div className="member-anim opacity-0 p-4 rounded-xl bg-green/5 border border-dashed border-green/20 flex items-center justify-between group cursor-pointer hover:bg-green/10 transition-all">
-                   <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-green animate-pulse" />
-                      <p className="text-[11px] text-white/60 font-black uppercase tracking-widest">
-                         [SIGNAL] Your Aria → Rex request is waiting on approval from Amara M.
-                      </p>
-                   </div>
-                   <span className="text-[10px] text-green font-black uppercase tracking-widest group-hover:underline">View in Chat →</span>
+                <div className="member-anim opacity-0 p-4 rounded-xl border border-dashed border-white/5 bg-white/[0.01] flex items-center justify-center">
+                   <p className="text-[10px] text-white/10 font-black uppercase tracking-[0.2em]">
+                      No active coordination signals detected
+                   </p>
                 </div>
 
                 {/* Scoped Stats */}
@@ -92,24 +88,11 @@ export default function MemberDashboard() {
                 {/* Department Log */}
                 <div className="member-anim opacity-0 space-y-6">
                    <h3 className="font-syne font-[800] text-white/20 text-[11px] uppercase tracking-widest">Department Activity Log</h3>
-                   <div className="space-y-3">
-                      {[
-                        { icon: '📣', agent: 'Aria', action: 'Social Brief Created', time: '12m ago' },
-                        { icon: '💰', agent: 'Rex', action: 'Lead Handoff Received', time: '1h ago' },
-                        { icon: '📣', agent: 'NV', action: 'Creative Render Complete', time: '3h ago' },
-                      ].map((item, i) => (
-                        <div key={i} className="p-4 rounded-xl border border-white/5 bg-surface/30 flex items-center justify-between group hover:border-white/10 transition-all">
-                           <div className="flex items-center gap-4">
-                              <span className="text-xl grayscale group-hover:grayscale-0 transition-all">{item.icon}</span>
-                              <div>
-                                 <p className="font-syne text-[13px] font-black text-white uppercase tracking-tight leading-none mb-1">{item.agent}</p>
-                                 <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">{item.action}</p>
-                              </div>
-                           </div>
-                           <span className="text-[9px] text-white/10 font-black uppercase">{item.time}</span>
-                        </div>
-                      ))}
-                   </div>
+                    <div className="space-y-4">
+                       <div className="py-12 text-center border border-dashed border-white/5 rounded-3xl bg-white/[0.01]">
+                          <p className="font-dm-mono text-[10px] text-white/10 font-black uppercase tracking-[0.2em]">Department log is empty</p>
+                       </div>
+                    </div>
                 </div>
               </>
            )}

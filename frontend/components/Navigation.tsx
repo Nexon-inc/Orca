@@ -1,17 +1,45 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  
+  const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 60);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    // Check session
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.refresh();
+    router.push('/auth/login');
+  };
 
   return (
     <nav 
@@ -25,7 +53,7 @@ export default function Navigation() {
 
         {/* Center: Links */}
         <div className="hidden md:flex items-center gap-8">
-          {['Features', 'Departments', 'Pricing', 'About', 'Nexonic'].map((link) => (
+          {['Features', 'Departments', 'Pricing', 'About'].map((link) => (
             <a 
               key={link}
               href={`/${link.toLowerCase()}`} 
@@ -37,14 +65,25 @@ export default function Navigation() {
         </div>
 
         {/* Right: CTA */}
-        <button 
-          onClick={() => window.location.href = '/auth/signup'}
-          className="btn-primary text-[12px] sm:text-[13px] px-5 py-2.5 rounded-lg"
-        >
-          Join Early Access →
-        </button>
+        {user ? (
+          <div className="flex items-center gap-4">
+             <a href="/dashboard" className="text-[12px] text-white/60 hover:text-white font-bold uppercase tracking-widest hidden sm:block">Dashboard</a>
+             <button 
+               onClick={handleSignOut}
+               className="px-5 py-2.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black uppercase text-white hover:bg-white/10 transition-all"
+             >
+               Sign Out
+             </button>
+          </div>
+        ) : (
+          <button 
+            onClick={() => window.location.href = '/auth/signup'}
+            className="btn-primary text-[12px] sm:text-[13px] px-5 py-2.5 rounded-lg"
+          >
+            Join Early Access →
+          </button>
+        )}
       </div>
     </nav>
   );
 }
-

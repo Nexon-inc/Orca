@@ -122,4 +122,35 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Global Select Styling for Dark Mode visibility */
+  select {
+    color-scheme: dark !important;
+  }
+  
+  select option {
+    background-color: #030a06 !important;
+    color: white !important;
+  }
+}
+
+/* Bulletproof Autofill Override (Highest Specificity) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+input:autofill,
+input:-internal-autofill-selected {
+  -webkit-box-shadow: 0 0 0 1000px #030a06 inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+  transition: background-color 604800s ease-in-out 0s !important;
+}
+
+/* Ensure no browser-level overlays hide our icons */
+.relative input {
+  z-index: 10;
+}
+.relative button {
+  z-index: 50;
 }

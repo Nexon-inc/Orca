@@ -28,8 +28,13 @@ const departments = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  const [isDeptsOpen, setIsDeptsOpen] = useState(true);
+  const [isDeptsOpen, setIsDeptsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     animate('.side-item', {
@@ -53,7 +58,7 @@ export default function DashboardSidebar() {
       <div className={`p-5 px-6 border-b border-white/5 flex items-center shrink-0 ${isCollapsed ? 'flex-col gap-6 justify-center' : 'justify-between'}`}>
         <div 
           className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" 
-          onClick={() => window.location.href = '/'}
+          onClick={() => window.location.href = '/dashboard'}
         >
           <div className="w-9 h-9 rounded-xl bg-green/10 border border-green/20 flex items-center justify-center relative shadow-[0_0_20px_rgba(0,255,135,0.1)]">
              <img src="/orca-logo.svg" alt="logo" className="w-5 h-5" />
@@ -84,7 +89,7 @@ export default function DashboardSidebar() {
         >
           <span className={`text-[16px] ${pathname === '/dashboard' ? 'text-green' : 'text-white/40 group-hover:text-white transition-colors'}`}>⬡</span>
           {!isCollapsed && (
-            <span className={`font-dm-mono text-[13px] font-bold uppercase tracking-widest ${pathname === '/dashboard' ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Overview</span>
+            <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${pathname === '/dashboard' ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Overview</span>
           )}
         </a>
 
@@ -97,15 +102,15 @@ export default function DashboardSidebar() {
             <div className="flex items-center gap-3">
               <span className="text-[16px]">📂</span>
               {!isCollapsed && (
-                <span className={`font-dm-mono text-[13px] font-bold uppercase tracking-widest ${pathname.includes('/dept/') ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Departments</span>
+                <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${pathname.includes('/dept/') ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Departments</span>
               )}
             </div>
-            {!isCollapsed && (
+            {mounted && !isCollapsed && (
               <span className={`text-[10px] transition-transform duration-300 ${isDeptsOpen ? 'rotate-180' : ''}`}>▼</span>
             )}
           </button>
 
-          {!isCollapsed && isDeptsOpen && (
+          {mounted && !isCollapsed && isDeptsOpen && (
             <div className="pl-5 flex flex-col gap-1 overflow-hidden animate-in slide-in-from-top-2 duration-300 border-l border-white/5 ml-2 mt-1 mb-1">
               {departments.map((dept) => (
                 <a
@@ -114,39 +119,39 @@ export default function DashboardSidebar() {
                   className={`flex items-center gap-3 px-4 py-2 rounded-xl text-[12px] transition-all duration-200 group ${pathname.includes(`/dept/${dept.id}`) ? 'text-green bg-green/5' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
                 >
                   <span className="grayscale group-hover:grayscale-0 transition-opacity opacity-50 group-hover:opacity-100 text-[14px]">{dept.emoji}</span>
-                  <span className={`font-dm-mono truncate font-bold uppercase tracking-tighter ${pathname.includes(`/dept/${dept.id}`) ? 'text-green opacity-100' : 'text-white/40 group-hover:text-white group-hover:opacity-100 transition-colors'}`}>{dept.name}</span>
+                  <span className={`font-syne truncate font-[800] uppercase tracking-tight text-[11px] ${pathname.includes(`/dept/${dept.id}`) ? 'text-green opacity-100' : 'text-white/40 group-hover:text-white group-hover:opacity-100 transition-colors'}`}>{dept.name}</span>
                 </a>
               ))}
             </div>
           )}
         </div>
 
-        {/* Remaining Menu Items */}
         {menuItems.slice(1).map((item) => (
-          <a
-            key={item.id}
-            href={item.path}
-            className={`side-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${pathname === item.path ? 'bg-green/10 border border-green/10 text-green shadow-[0_4px_12px_rgba(0,255,135,0.05)]' : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
-          >
-            <span className={`text-[16px] ${pathname === item.path ? 'text-green' : 'text-white/40 group-hover:text-white transition-colors'}`}>{item.icon}</span>
-            {!isCollapsed && (
-              <span className={`font-dm-mono text-[13px] font-bold uppercase tracking-widest ${pathname === item.path ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>{item.name}</span>
-            )}
-          </a>
+          <div key={item.id} className="relative group/nav">
+            <a
+              href={item.path}
+              className={`side-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${pathname === item.path ? 'bg-green/10 border border-green/10 text-green shadow-[0_4px_12px_rgba(0,255,135,0.05)]' : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
+            >
+              <span className={`text-[16px] ${pathname === item.path ? 'text-green' : 'text-white/40 group-hover:text-white transition-colors'}`}>{item.icon}</span>
+              {!isCollapsed && (
+                <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${pathname === item.path ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>{item.name}</span>
+              )}
+            </a>
+          </div>
         ))}
       </nav>
 
-      {/* Profile Section */}
-      <div className={`p-4 border-t border-white/5 bg-white/[0.02] mt-auto shrink-0 flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-        <div className="w-9 h-9 min-w-[36px] rounded-xl bg-green/20 border border-green/30 flex items-center justify-center text-green font-black text-[14px] shadow-[0_0_15px_rgba(0,255,135,0.1)] uppercase">
-          KF
-        </div>
-        {!isCollapsed && (
-          <div className="flex flex-col min-w-0 text-left">
-            <span className="text-[14px] text-white font-syne font-[800] truncate leading-tight uppercase">Kale Francis</span>
-            <span className="text-[9px] text-green font-[900] uppercase tracking-widest opacity-60">Pro Account</span>
-          </div>
-        )}
+      <div className="mt-auto p-4 border-t border-white/5">
+        <button 
+          onClick={() => window.location.href = '/'}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white/20 hover:text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 group/logout ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
+          title="Terminate Session"
+        >
+          <span className="text-[16px] group-hover/logout:scale-110 transition-transform">⏻</span>
+          {!isCollapsed && (
+            <span className="font-syne text-[12px] font-[800] uppercase tracking-widest">Logout</span>
+          )}
+        </button>
       </div>
     </aside>
   );

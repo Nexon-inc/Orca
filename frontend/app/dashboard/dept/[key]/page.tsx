@@ -94,23 +94,10 @@ export default function DeptWorkspacePage() {
            <div className="flex-1 flex flex-col border-r border-white/5 overflow-hidden">
               <div key={selectedAgent?.id} className="flex-1 p-8 overflow-y-auto space-y-10 messenger-thread no-scrollbar">
                  {/* Incoming Coordination */}
-                 <div className="max-w-2xl workspace-anim">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-[14px]">{selectedAgent?.icon}</span>
-                      <span className="font-dm-mono text-[10px] text-green font-black uppercase tracking-widest">{selectedAgent?.name}</span>
-                      <span className="text-white/10">·</span>
-                     <span className="font-dm-mono text-[9px] text-white/40 font-black uppercase tracking-widest leading-none">Ready for Deployment</span>
-                    </div>
-                    <div className="p-6 rounded-[2rem] rounded-tl-none bg-surface/50 border border-white/5 text-[13px] font-dm-mono leading-relaxed text-white/80 shadow-sm">
-                       CEO, I've initialized the latest {deptKey} datasets. My current focus is {selectedAgent?.role.toLowerCase()}. How shall we proceed?
-                    </div>
-                 </div>
-                 
-                 <div className="max-w-2xl ml-auto text-right workspace-anim">
-                    <div className="font-dm-mono text-[10px] text-white/20 font-black uppercase tracking-widest mb-2">CEO Audit · Foundational Access</div>
-                    <div className="p-6 rounded-[2rem] rounded-tr-none bg-green-dim border border-green/20 text-[13px] font-dm-mono leading-relaxed text-white inline-block shadow-[0_4px_25px_rgba(0,255,135,0.05)]">
-                       Initiate strategic synchronization of all department sub-protocols. Priority: Maximum Alpha.
-                    </div>
+                 {/* Coordination status will appear here after deployment */}
+                 <div className="py-24 text-center border border-dashed border-white/5 rounded-[3rem] bg-white/[0.01] workspace-anim">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-xl mx-auto mb-6 opacity-20">💬</div>
+                    <p className="font-dm-mono text-[11px] text-white/10 font-black uppercase tracking-[0.3em]">Initialize mission parameters to begin coordination</p>
                  </div>
 
                  {/* Coordination Status Display */}

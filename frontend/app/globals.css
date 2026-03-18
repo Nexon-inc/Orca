@@ -114,7 +114,16 @@
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-green: var(--green);
+  --color-green-mid: var(--green-mid);
+  --color-green-dim: var(--green-dim);
+  --color-green-border: var(--green-border);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-blue: var(--blue);
+  --color-text-muted: var(--text-muted);
 }
 
 @layer base {
@@ -476,4 +485,25 @@
   .toggle-custom:active {
     transform: scale(0.95);
   }
+}
+
+/* Bulletproof Autofill Override (Highest Specificity) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+input:autofill,
+input:-internal-autofill-selected {
+  -webkit-box-shadow: 0 0 0 1000px #030a06 inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+  transition: background-color 604800s ease-in-out 0s !important;
+}
+
+/* Ensure no browser-level overlays hide our icons */
+.relative input {
+  z-index: 10;
+}
+.relative button {
+  z-index: 50;
 }
