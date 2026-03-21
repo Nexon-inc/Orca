@@ -197,13 +197,13 @@ export default function HeroSection() {
           </span>
         </div>
 
-        <h1 ref={headlineRef} className="mb-8 font-syne font-[800] tracking-tight leading-[1.1] text-white">
-          <div className="line opacity-0 text-[42px] sm:text-[64px] lg:text-[72px]">Your competitors have teams.</div>
-          <div className="line opacity-0 text-[42px] sm:text-[64px] lg:text-[72px] text-green">You have ORCA.</div>
+        <h1 ref={headlineRef} className="mb-6 font-syne font-[800] tracking-tight leading-[1.1] text-white">
+          <div className="line opacity-0 text-[36px] sm:text-[52px] lg:text-[60px]">Your competitors have teams.</div>
+          <div className="line opacity-0 text-[36px] sm:text-[52px] lg:text-[60px] text-green">You have ORCA.</div>
         </h1>
 
-        <div ref={subheadRef} className="mb-12 opacity-0">
-          <p className="max-w-xl mx-auto font-dm-mono text-[15px] sm:text-[17px] text-text-muted leading-relaxed uppercase tracking-tighter">
+        <div ref={subheadRef} className="mb-10 opacity-0">
+          <p className="max-w-xl mx-auto font-dm-mono text-[13px] text-text-muted leading-relaxed uppercase tracking-[0.2em] opacity-80">
             9 AI departments. 45 coordinated agents. <br />
             One dashboard. Built to run a company — not assist one.
           </p>
@@ -213,13 +213,13 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
               onClick={() => window.location.href = '/auth/signup'}
-              className="btn-primary w-full sm:w-auto px-10 py-4 text-[15px] rounded-xl"
+              className="btn-primary w-full sm:w-auto px-8 py-3.5 text-[14px] font-syne font-bold uppercase tracking-widest rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               Join Early Access →
             </button>
             <button 
               onClick={() => document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="btn-secondary w-full sm:w-auto px-10 py-4 text-[15px] rounded-xl border-white/10 hover:border-white/30"
+              className="w-full sm:w-auto px-8 py-3.5 text-[14px] font-syne font-bold uppercase tracking-widest rounded-xl bg-white/[0.03] border border-white/5 text-white/80 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               See how it works ↓
             </button>
@@ -236,7 +236,7 @@ export default function HeroSection() {
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5.5 4.1L15.4 14L10.3 14.5L7.8 18.8L5.5 4.1Z" fill="white" stroke="black" strokeWidth="1.5"/></svg>
           </div>
 
-          <div className="relative mx-auto max-w-6xl rounded-[2rem] border border-white/10 bg-[#030a06] shadow-[0_0_120px_rgba(0,255,135,0.08)] rotate-x-[4deg] transition-all duration-1000 hover:rotate-x-0 group overflow-hidden scale-[0.8] sm:scale-100">
+          <div className="relative mx-auto max-w-6xl rounded-2xl border border-white/5 bg-[#050a07]/90 backdrop-blur-md shadow-[0_0_120px_rgba(0,255,135,0.05)] rotate-x-[4deg] transition-all duration-1000 hover:rotate-x-0 group overflow-hidden scale-[0.8] sm:scale-100">
              <div className="flex h-[550px] text-left font-dm-mono">
                 {/* Sidebar */}
                 <aside className="w-[180px] border-r border-white/5 bg-surface/80 flex flex-col hidden md:flex">
@@ -340,15 +340,15 @@ export default function HeroSection() {
 
           {/* Floating Badges */}
           <div className="absolute -left-12 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-4 animate-[float_4s_infinite_ease-in-out]">
-             <div className="p-3 bg-[#030a06]/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green/20 flex items-center justify-center text-green">💼</div>
-                <div className="text-left text-[14px] text-white font-syne font-bold">+$12,400 <span className="block text-[9px] text-text-muted font-bold uppercase">Revenue Impact</span></div>
+             <div className="p-3 bg-surface/80 backdrop-blur-md border border-white/5 rounded-xl shadow-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green/10 border border-green/20 flex items-center justify-center text-green">💼</div>
+                <div className="text-left text-[14px] text-white font-syne font-bold">+$12,400 <span className="block text-[9px] text-text-muted opacity-70 uppercase tracking-widest mt-0.5">Revenue Impact</span></div>
              </div>
           </div>
           <div className="absolute -right-12 bottom-20 hidden xl:flex flex-col gap-4 animate-[float_5s_infinite_ease-in-out_1s]">
-             <div className="p-3 bg-[#030a06]/80 backdrop-blur-md border border-green/30 rounded-2xl shadow-xl flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green flex items-center justify-center text-bg">🤖</div>
-                <div className="text-left text-[14px] text-white font-syne font-bold">Synchronized <span className="block text-[9px] text-green font-bold uppercase">45 Agents Live</span></div>
+             <div className="p-3 bg-surface/80 backdrop-blur-md border border-green/20 rounded-xl shadow-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green flex items-center justify-center text-bg text-[12px]">🤖</div>
+                <div className="text-left text-[14px] text-white font-syne font-bold">Synchronized <span className="block text-[9px] text-green/80 uppercase tracking-widest mt-0.5">45 Agents Live</span></div>
              </div>
           </div>
         </div>

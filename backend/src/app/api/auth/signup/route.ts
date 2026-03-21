@@ -1,43 +1,46 @@
 'use server'
-import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server'
+import { createServiceSupabaseClient } from '@/lib/supabase/server'
 import { sendVerificationEmail } from '@/lib/email/gmail'
 import { NextResponse } from 'next/server'
+
+const MASTER_ADMIN_EMAIL = 'nexonicindustries@gmail.com'
 
 export async function POST(request: Request) {
   const { email, password, full_name, org_name } = await request.json()
 
-  if (!email || !password || !full_name || !org_name) {
+  if (!email || !password || !full_name) {
     return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
   }
 
-  const supabase = await createServerSupabaseClient()
+  const orgName = org_name || `${full_name}'s Company`
 
-  // 1. Create auth user with a redirect URL for email confirmation
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // Use the admin client exclusively — admin.createUser() does NOT auto-send
+  // Supabase's default verification email, preventing the double-email bug.
+  const adminSupabase = createServiceSupabaseClient()
+
+  // 1. Create auth user — email_confirm: false so we handle the email ourselves
+  const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { full_name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding`,
-    },
+    email_confirm: false,
+    user_metadata: { full_name },
   })
+
   if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
 
-  const userId = authData.user!.id
+  const userId = authData.user.id
 
   // 2. Create profile
-  await supabase.from('profiles').insert({ id: userId, email, full_name })
+  await adminSupabase.from('profiles').insert({ id: userId, email, full_name })
 
   // 3. Create organisation — grant instant enterprise to master admin
-  const MASTER_ADMIN_EMAIL = 'nexonicindustries@gmail.com'
   const isAdmin = email.toLowerCase().trim() === MASTER_ADMIN_EMAIL
-  const { data: org, error: orgError } = await supabase
+  const { data: org, error: orgError } = await adminSupabase
     .from('organizations')
     .insert({
-      name: org_name,
+      name: orgName,
       owner_id: userId,
       plan: isAdmin ? 'enterprise' : 'free',
-      // Admin gets a plan that expires in the year 2124 — effectively never
       plan_expires_at: isAdmin ? new Date('2124-01-01T00:00:00Z').toISOString() : null,
     })
     .select()
@@ -45,39 +48,37 @@ export async function POST(request: Request) {
 
   if (orgError) return NextResponse.json({ error: orgError.message }, { status: 400 })
 
-  // 4. Add as owner member
-  await supabase.from('org_members').insert({ org_id: org.id, user_id: userId, role: 'owner' })
+  // 4. Add as owner member + seed company identity
+  await adminSupabase.from('org_members').insert({ org_id: org.id, user_id: userId, role: 'owner' })
+  await adminSupabase.from('company_identity').insert({ org_id: org.id })
 
-  // 5. Create default company identity record
-  await supabase.from('company_identity').insert({ org_id: org.id })
-
-  // 6. Seed all 9 departments and 45 agents
+  // 5. Seed all 9 departments and 45 agents
   try {
-    const { seedNewOrg } = await import('@/lib/seed/seedOrg');
-    await seedNewOrg(org.id);
+    const { seedNewOrg } = await import('@/lib/seed/seedOrg')
+    await seedNewOrg(org.id)
   } catch (err) {
-    console.error('[Signup] Seeding failed:', err);
-    // Non-fatal, signup continues
+    console.error('[Signup] Seeding failed (non-fatal):', err)
   }
 
-  // 6. Optionally: generate admin link for branded email (works with Supabase admin API)
+  // 6. Generate ONE verification link pointing back through our auth callback
+  //    The ?next=/onboarding param tells /auth/callback to redirect there after verification
   try {
-    const adminSupabase = createServiceSupabaseClient()
     const { data: linkData } = await adminSupabase.auth.admin.generateLink({
       type: 'signup',
       email,
       password,
-      options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding` },
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/onboarding`,
+      },
     })
 
     if (linkData?.properties?.action_link) {
+      // Sends exactly: 1 verification email + 1 welcome email via Gmail SMTP
       await sendVerificationEmail(email, full_name, linkData.properties.action_link)
     }
   } catch (e) {
-    // Non-fatal — Supabase will still send its default verification email
-    console.error('[Signup] Custom verification email failed, falling back to Supabase default:', e)
+    console.error('[Signup] Email sending failed (non-fatal):', e)
   }
 
-  return NextResponse.json({ user: authData.user, org })
+  return NextResponse.json({ success: true })
 }
-
