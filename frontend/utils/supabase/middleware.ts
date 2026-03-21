@@ -48,8 +48,27 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Refresh the session
-  await supabase.auth.getUser()
+  // Refresh the session and get user
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
+  const isProtectedRoute = 
+    request.nextUrl.pathname.startsWith('/dashboard') || 
+    request.nextUrl.pathname.startsWith('/onboarding')
+
+  // If user is NOT logged in and tries to access a protected route
+  if (!user && isProtectedRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth'
+    return NextResponse.redirect(url)
+  }
+
+  // If user IS logged in and tries to access the login page
+  if (user && isAuthRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }

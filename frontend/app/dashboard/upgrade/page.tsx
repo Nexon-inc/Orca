@@ -73,7 +73,7 @@ export default function UpgradePage() {
 
   return (
     <div className="h-screen bg-bg flex text-text-body font-syne overflow-hidden">
-      <DashboardSidebar />
+      <DashboardSidebar active="upgrade" />
 
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b border-white/5 bg-bg/80 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-between shrink-0">

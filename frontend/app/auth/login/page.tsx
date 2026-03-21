@@ -72,6 +72,7 @@ export default function LoginPage() {
       <Navigation />
       
       <section className="flex-1 flex flex-col items-center justify-center px-4 pt-32 pb-24 relative">
+        {/* Background Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none opacity-5 text-green">
           <div className="w-full h-full bg-current filter blur-[150px] rounded-full" />
         </div>
@@ -101,7 +102,7 @@ export default function LoginPage() {
                 />
               </div>
 
-               <div className="space-y-2">
+              <div className="space-y-2">
                   <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Password</label>
                 <div className="relative group/pass">
                   <input 

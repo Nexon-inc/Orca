@@ -43,23 +43,9 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const allowedFields = [
-    'company_name', 'industry', 'stage', 'mission', 'brand_voice',
-    'icp', 'geography', 'competitors', 'brand_colors', 'logo_url',
-    'knowledge_base_url', 'crm_connected',
-  ]
-
-  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
-  for (const field of allowedFields) {
-    if (field in body) updates[field] = body[field]
-  }
-
-  const { error } = await supabase
+  await supabase
     .from('company_identity')
-    .update(updates)
-    .eq('org_id', member.org_id)
+    .upsert({ org_id: member.org_id, ...body }, { onConflict: 'org_id' })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ saved: true })
 }

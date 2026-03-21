@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { animate } from 'animejs';
+import { matchTemplate } from '@/lib/templates/matchTemplate';
 
 const steps = [
-  { id: 0, name: 'Welcome', detail: 'It will only take 5 minutes to set up your company.' },
-  { id: 1, name: 'Company Profile', detail: 'Tell us about your mission and industry.' },
-  { id: 2, name: 'Setup', detail: 'Select a department or a pre-built company template.' },
-  { id: 3, name: 'Safety & Rules', detail: 'Set how your agents should work.' },
-  { id: 4, name: 'Summary', detail: 'Review your configuration and launch your dashboard.' },
+  { id: 0, name: 'Deployment Brief', detail: 'It will only take 5 minutes to fill out info about your company.' },
+  { id: 1, name: 'Company Profile', detail: 'Define your mission, industry, and target audience.' },
+  { id: 2, name: 'Org Architecture', detail: 'Select a department or a pre-built company template.' },
+  { id: 3, name: 'Protocol Alpha', detail: 'Set the governance and execution boundaries for your agents.' },
+  { id: 4, name: 'Final Sync', detail: 'Review your configuration and launch your dashboard.' },
 ];
 
 const INDUSTRIES = [
@@ -48,6 +49,7 @@ export default function OnboardingPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof TEMPLATES[0] | null>(null);
   const [operatingMode, setOperatingMode] = useState('Approve First');
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
+  const [suggestedTemplateSlug, setSuggestedTemplateSlug] = useState<string | null>(null);
   
   const router = useRouter();
 
@@ -60,10 +62,53 @@ export default function OnboardingPage() {
     });
   }, [currentStep, isTemplateGalleryOpen]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Save current step data to backend before advancing
+    const stepPayloads: Record<number, any> = {
+      1: { // Step 1: Company Profile
+        company_name: companyInfo.name,
+        mission: companyInfo.mission,
+        industry: companyInfo.industry,
+        icp: companyInfo.targetICP,
+      },
+      2: { // Step 2: Org Architecture
+        template_slug: selectedTemplate?.slug || null,
+        selected_departments: selectedDept ? [selectedDept] : null,
+      },
+      3: { // Step 3: Protocol — operating mode
+        agent_mode: operatingMode === 'Autopilot' ? 'autopilot' :
+                   operatingMode === 'Suggest Only' ? 'suggest_only' : 'approve_first',
+      },
+    };
+
+    if (stepPayloads[currentStep]) {
+      try {
+        await fetch('/api/onboarding/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ step: currentStep, data: stepPayloads[currentStep] }),
+        });
+      } catch (err) {
+        console.error('Failed to save onboarding step:', err);
+        // Continue anyway — don't block the user
+      }
+    }
+
+    if (currentStep === 1) {
+      // Going into Step 2: run matching logic
+      setSuggestedTemplateSlug(matchTemplate(companyInfo));
+    }
+
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Step 5 — complete
+      await fetch('/api/onboarding/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 5, data: {} }),
+      }).catch(() => {});
+
       animate('.main-box', {
         scale: 0.95,
         opacity: 0,
@@ -95,13 +140,15 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text-body font-dm-mono flex flex-col items-center justify-center p-6 lg:p-12 overflow-hidden">
+      {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none opacity-5 text-green">
         <div className="w-full h-full bg-current filter blur-[150px] rounded-full" />
       </div>
 
       <div className="relative z-10 max-w-4xl w-full main-box">
+        {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="font-syne text-[11px] font-bold text-green uppercase tracking-[0.3em] mb-4">Nexonic Setup Guide</h2>
+          <h2 className="font-syne text-[11px] font-bold text-green uppercase tracking-[0.3em] mb-4">ORCA Deployment Protocol Alpha</h2>
           <div className="h-1 bg-white/5 rounded-full overflow-hidden w-64 mx-auto">
             <div 
               className="h-full bg-green transition-all duration-700 ease-out shadow-[0_0_15px_rgba(0,255,135,0.6)]" 
@@ -110,14 +157,15 @@ export default function OnboardingPage() {
           </div>
         </div>
 
+        {/* Content Box */}
         <div className="onboarding-anim bg-surface/50 border border-white/5 rounded-[3.5rem] p-8 sm:p-16 flex flex-col backdrop-blur-xl relative overflow-hidden group min-h-[600px]">
            <div className="absolute top-0 right-0 p-12 text-[15rem] font-syne font-black opacity-[0.02] pointer-events-none group-hover:opacity-[0.04] transition-opacity">
               0{currentStep}
            </div>
 
            <div className="flex-1 relative z-10 flex flex-col h-full">
-               <span className="inline-block px-3 py-1 rounded-full bg-green/10 border border-green/20 text-green font-dm-mono text-[9px] uppercase tracking-widest mb-6">
-                Step 0{currentStep}
+              <span className="inline-block px-3 py-1 rounded-full bg-green/10 border border-green/20 text-green font-dm-mono text-[9px] uppercase tracking-widest mb-6">
+                Execution Tier 0{currentStep}
               </span>
               
               <h1 className="font-syne text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight leading-none uppercase">
@@ -128,11 +176,12 @@ export default function OnboardingPage() {
                  {steps[currentStep].detail}
               </p>
 
+              {/* Step UI Content */}
               <div className="flex-1 mb-10">
                 {currentStep === 0 && (
                   <div className="space-y-8 py-4">
                     <p className="text-white text-lg font-syne font-bold border-l-2 border-green pl-4">
-                      Let's get your company set up.
+                      Initiating secure configuration sequence. 
                     </p>
                     <div className="space-y-4">
                       <h4 className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-4">Onboarding Sequence:</h4>
@@ -182,16 +231,16 @@ export default function OnboardingPage() {
                     </div>
                     <div className="space-y-2">
                        <label className="text-[9px] text-white/40 font-black uppercase tracking-widest">Industry</label>
-                        <select 
-                          className="w-full bg-bg border border-white/10 rounded-xl p-4 text-white focus:border-green/50 outline-none cursor-pointer"
-                          style={{ colorScheme: 'dark' }}
-                          value={companyInfo.industry}
-                          onChange={(e) => setCompanyInfo({...companyInfo, industry: e.target.value})}
-                        >
-                          {INDUSTRIES.map(ind => (
-                            <option key={ind} value={ind} className="bg-[#0c140e] text-white py-2">{ind}</option>
-                          ))}
-                        </select>
+                       <select 
+                      className="w-full bg-bg border border-white/10 rounded-xl p-4 text-white focus:border-green/50 outline-none cursor-pointer"
+                      style={{ colorScheme: 'dark' }}
+                      value={companyInfo.industry}
+                      onChange={(e) => setCompanyInfo({...companyInfo, industry: e.target.value})}
+                    >
+                      {INDUSTRIES.map(ind => (
+                        <option key={ind} value={ind} className="bg-[#0c140e] text-white py-2">{ind}</option>
+                      ))}
+                    </select>
                     </div>
                     <div className="space-y-2">
                        <label className="text-[9px] text-white/40 font-black uppercase tracking-widest">Target Customer (ICP)</label>
@@ -209,7 +258,43 @@ export default function OnboardingPage() {
                 {currentStep === 2 && (
                   <div className="space-y-8 pb-8">
                     {!isTemplateGalleryOpen ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                      <div className="flex flex-col gap-10">
+                        {suggestedTemplateSlug && !selectedTemplate && !selectedDept ? (
+                          // Match Found Banner
+                          <div className="p-8 rounded-[2rem] bg-surface/50 border border-green/30 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-green/5 opacity-50 pointer-events-none" />
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none">
+                              <span className="text-8xl">🏪</span>
+                            </div>
+                            <div className="relative z-10">
+                              <div className="flex items-center gap-3 mb-4">
+                                <span className="text-xl">🏪</span>
+                                <h4 className="text-[14px] text-white font-black uppercase tracking-widest text-syne">We found a template for you</h4>
+                              </div>
+                              <p className="text-[12px] text-white/70 font-dm-mono leading-relaxed max-w-xl mb-8">
+                                The <strong className="text-white">{TEMPLATES.find(t => t.slug === suggestedTemplateSlug)?.name}</strong> template matches your configuration. 
+                                It activates {TEMPLATES.find(t => t.slug === suggestedTemplateSlug)?.depts} departments and {TEMPLATES.find(t => t.slug === suggestedTemplateSlug)?.agents} agents with recommended operating modes and Day 1 briefs ready to send.
+                              </p>
+                              <div className="flex flex-col sm:flex-row items-center gap-4">
+                                <button 
+                                  onClick={() => selectTemplate(TEMPLATES.find(t => t.slug === suggestedTemplateSlug)!)}
+                                  className="w-full sm:w-auto px-8 py-4 rounded-xl btn-primary text-[11px] font-black uppercase tracking-widest"
+                                >
+                                  Use {TEMPLATES.find(t => t.slug === suggestedTemplateSlug)?.name} Template →
+                                </button>
+                                <button 
+                                  onClick={() => setSuggestedTemplateSlug(null)}
+                                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 text-[11px] font-black uppercase tracking-widest transition-all"
+                                >
+                                  Build Manually
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // Standard Grid when no match or user bypassed matching
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        {/* Department Selection */}
                         <div className="space-y-4">
                           <h4 className="text-[10px] text-white/40 font-black uppercase tracking-widest">Choose 1 Department</h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -229,6 +314,7 @@ export default function OnboardingPage() {
                           </div>
                         </div>
 
+                        {/* Template Selection */}
                         <div className="space-y-4">
                           <h4 className="text-[10px] text-white/40 font-black uppercase tracking-widest">OR Choose 1 Template</h4>
                           {selectedTemplate ? (
@@ -257,6 +343,8 @@ export default function OnboardingPage() {
                             </button>
                           )}
                         </div>
+                      </div>
+                       )}
                       </div>
                     ) : (
                       <div className="space-y-6">
@@ -333,24 +421,24 @@ export default function OnboardingPage() {
 
                     <div className="bg-bg border border-white/5 rounded-[3rem] p-10 space-y-8 relative overflow-hidden">
                       <div className="absolute top-0 right-0 p-8 opacity-5 text-green text-8xl">⚡</div>
-                       <h4 className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em] border-b border-white/5 pb-6">Final Summary</h4>
+                      <h4 className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em] border-b border-white/5 pb-6">Final Deployment Manifest</h4>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                         <div className="space-y-6">
-                           <div>
-                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-2">Company Name</span>
+                          <div>
+                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-2">Primary Entity</span>
                             <p className="text-white font-syne font-bold text-[18px] uppercase tracking-tight">{companyInfo.name || 'Nexonic Corp'}</p>
                             <p className="text-[11px] text-green font-black uppercase tracking-wider mt-1">{companyInfo.industry}</p>
                           </div>
-                           <div>
-                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-2">Your Mission</span>
+                          <div>
+                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-2">Strategic Mandate</span>
                             <p className="text-[12px] text-white/60 leading-relaxed italic border-l-2 border-green/30 pl-4">"{companyInfo.mission || 'To coordinate the future...'}"</p>
                           </div>
                         </div>
 
                         <div className="space-y-6">
                           <div>
-                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-2">Structure</span>
+                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-2">Core Architecture</span>
                             {selectionType === 'template' ? (
                               <div className="flex items-center gap-3">
                                 <span className="text-3xl">{selectedTemplate?.icon}</span>
@@ -371,8 +459,8 @@ export default function OnboardingPage() {
                               </div>
                             )}
                           </div>
-                           <div>
-                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-1">How your agents work</span>
+                          <div>
+                            <span className="text-[10px] text-white/30 font-black uppercase tracking-widest block mb-1">Execution Guardrails</span>
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green/10 border border-green/20 text-green font-black text-[11px] uppercase tracking-widest mt-2 ring-4 ring-green/5">
                               <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
                               {operatingMode}
@@ -385,22 +473,33 @@ export default function OnboardingPage() {
                 )}
               </div>
 
+              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center gap-6 mt-auto pt-8 border-t border-white/5 relative">
-                 {currentStep === 0 && (
-                   <button 
-                     onClick={handleSkipToDashboard}
-                     className="order-2 sm:order-1 sm:mr-auto text-[11px] text-text-muted hover:text-white transition-all uppercase tracking-[0.3em] font-black hover:translate-x-1 py-4"
-                   >
-                     Skip to Dashboard
-                   </button>
-                 )}
+                 <div className="flex items-center gap-4 mr-auto">
+                    {currentStep > 0 && (
+                      <button 
+                        onClick={() => setCurrentStep(currentStep - 1)}
+                        className="text-[11px] text-text-muted hover:text-white transition-all uppercase tracking-[0.3em] font-black py-4 px-2"
+                      >
+                        ← Back
+                      </button>
+                    )}
+                    {currentStep === 0 && (
+                      <button 
+                        onClick={handleSkipToDashboard}
+                        className="text-[11px] text-text-muted hover:text-white transition-all uppercase tracking-[0.3em] font-black hover:translate-x-1 py-4"
+                      >
+                        Skip to Dashboard
+                      </button>
+                    )}
+                 </div>
                  
                  <button 
                    onClick={handleNext}
                    disabled={currentStep === 2 && !selectedDept && !selectedTemplate}
-                   className={`order-1 sm:order-2 px-16 py-6 text-[13px] font-black rounded-2xl uppercase tracking-[0.2em] transition-all duration-300 relative group/btn ${currentStep === 2 && !selectedDept && !selectedTemplate ? 'opacity-20 cursor-not-allowed bg-white/5 text-white/40' : 'btn-primary hover:scale-[1.05] hover:shadow-[0_20px_50px_rgba(0,255,135,0.4)] active:scale-[0.98]'}`}
+                   className={`px-16 py-6 text-[13px] font-black rounded-2xl uppercase tracking-[0.2em] transition-all duration-300 relative group/btn ${currentStep === 2 && !selectedDept && !selectedTemplate ? 'opacity-20 cursor-not-allowed bg-white/5 text-white/40' : 'btn-primary hover:scale-[1.05] hover:shadow-[0_20px_50px_rgba(0,255,135,0.4)] active:scale-[0.98]'}`}
                  >
-                    <span className="relative z-10">{currentStep === 4 ? 'Launch Dashboard' : 'Continue'}</span>
+                    <span className="relative z-10">{currentStep === 4 ? 'Launch Workforce' : 'Continue Sequence'}</span>
                     <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 rounded-full scale-x-0 group-hover/btn:scale-x-75 transition-transform duration-500" />
                  </button>
               </div>

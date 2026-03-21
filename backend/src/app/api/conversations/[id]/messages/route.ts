@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { buildAgentSystemPrompt } from '@/lib/ai/prompt'
-import { gemini, groq } from '@/lib/ai/client'
+import { getGemini, getGroq } from '@/lib/ai/client'
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
 import { inngest } from '@/lib/inngest/client'
 import { sanitizeInput } from '@/lib/security/sanitizeInput'
@@ -35,8 +35,8 @@ export async function POST(
   if (!conversation) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const orgId = conversation.org_id
 
-  // 1b. Security: Rate Limit (50 messages per 10 min)
-  const { allowed: rlAllowed } = await checkRateLimit(user.id, `msg_${conversationId}`, { limit: 50, windowMs: 600000 })
+  // 1b. Security: Rate Limit (using agent_briefs bucket)
+  const { allowed: rlAllowed } = await checkRateLimit(user.id, 'agent_briefs')
   if (!rlAllowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
 
   // 1c. Security: Token/Size Guard
@@ -98,7 +98,7 @@ export async function POST(
 
   // 9. Call AI
   const isComplexTask = content.length > 100
-  const ai = isComplexTask ? gemini : groq
+  const ai = isComplexTask ? getGemini() : getGroq()
 
   // Thinking Steps simulation
   const thinkingSteps = [

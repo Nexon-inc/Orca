@@ -16,6 +16,36 @@ const tabs = [
 
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');
+  const [profile, setProfile] = useState({ full_name: '', email: '' });
+  const [identity, setIdentity] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    // Fetch user org + profile
+    fetch('/api/org')
+      .then(r => r.json())
+      .then(d => {
+        if (d.profile) setProfile({ full_name: d.profile.full_name || '', email: d.profile.email || '' });
+      });
+
+    // Fetch company identity
+    fetch('/api/company')
+      .then(r => r.json())
+      .then(d => { if (d.identity) setIdentity(d.identity); });
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await fetch('/api/company', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(identity),
+    });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
 
   useEffect(() => {
     animate('.acc-tab-anim', {

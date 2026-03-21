@@ -39,6 +39,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Only owners can upgrade the plan.' }, { status: 403 })
   }
 
+  // Master admin bypass — this account has permanent enterprise access
+  const userEmail = (member as any).profiles?.email || user.email
+  if (userEmail?.toLowerCase().trim() === 'nexonicindustries@gmail.com') {
+    return NextResponse.json(
+      { error: 'Your account already has permanent Enterprise access. No payment required.' },
+      { status: 200 }
+    )
+  }
+
   const orgId = (member as any).org_id
   const { data: org } = await supabase.from('organizations').select('checkout_locked_at, checkout_locked_by').eq('id', orgId).single()
 

@@ -28,10 +28,18 @@ export async function POST(request: Request) {
   // 2. Create profile
   await supabase.from('profiles').insert({ id: userId, email, full_name })
 
-  // 3. Create organisation
+  // 3. Create organisation — grant instant enterprise to master admin
+  const MASTER_ADMIN_EMAIL = 'nexonicindustries@gmail.com'
+  const isAdmin = email.toLowerCase().trim() === MASTER_ADMIN_EMAIL
   const { data: org, error: orgError } = await supabase
     .from('organizations')
-    .insert({ name: org_name, owner_id: userId, plan: 'free' })
+    .insert({
+      name: org_name,
+      owner_id: userId,
+      plan: isAdmin ? 'enterprise' : 'free',
+      // Admin gets a plan that expires in the year 2124 — effectively never
+      plan_expires_at: isAdmin ? new Date('2124-01-01T00:00:00Z').toISOString() : null,
+    })
     .select()
     .single()
 
@@ -42,6 +50,15 @@ export async function POST(request: Request) {
 
   // 5. Create default company identity record
   await supabase.from('company_identity').insert({ org_id: org.id })
+
+  // 6. Seed all 9 departments and 45 agents
+  try {
+    const { seedNewOrg } = await import('@/lib/seed/seedOrg');
+    await seedNewOrg(org.id);
+  } catch (err) {
+    console.error('[Signup] Seeding failed:', err);
+    // Non-fatal, signup continues
+  }
 
   // 6. Optionally: generate admin link for branded email (works with Supabase admin API)
   try {

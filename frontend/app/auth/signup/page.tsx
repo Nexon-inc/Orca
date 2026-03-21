@@ -100,6 +100,7 @@ export default function SignupPage() {
       toast.error(error.message);
     } else {
       toast.success("Verification email sent! Check your inbox.");
+      // Redirect to a "check your email" state or page if needed
     }
   };
 
@@ -108,6 +109,7 @@ export default function SignupPage() {
       <Navigation />
       
       <section className="flex-1 flex flex-col items-center justify-center px-4 pt-40 pb-24 relative">
+        {/* Background Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none opacity-5 text-green">
           <div className="w-full h-full bg-current filter blur-[150px] rounded-full" />
         </div>
@@ -128,7 +130,7 @@ export default function SignupPage() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                  <div className="space-y-2">
-                    <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Username</label>
+                  <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Username</label>
                   <input 
                     type="text" 
                     placeholder="nexus_one"
@@ -137,9 +139,9 @@ export default function SignupPage() {
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
                     required
                   />
-                 </div>
+                </div>
                  <div className="space-y-2">
-                     <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Full Name</label>
+                  <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Full Name</label>
                   <input 
                     type="text" 
                     placeholder="Authorized Entity"
@@ -148,12 +150,12 @@ export default function SignupPage() {
                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                     required
                   />
-                 </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Verification Email</label>
+                <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Verification Email</label>
                 <input 
                   type="email" 
                   placeholder="entity@orca.ai"
@@ -162,17 +164,18 @@ export default function SignupPage() {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   required
                 />
-                </div>
+              </div>
                 <div className="space-y-2">
                   <label className="font-dm-mono text-[9px] text-white/30 uppercase tracking-[0.2em] ml-1">Country</label>
-                <select 
-                  className="w-full bg-[#030a06] border border-white/5 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-green/50 transition-all font-bold appearance-none cursor-pointer"
-                  value={formData.country}
-                  onChange={(e) => setFormData({...formData, country: e.target.value})}
-                  required
-                >
+                  <select 
+                    className="w-full bg-[#030a06] border border-white/5 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-green/50 transition-all font-bold appearance-none cursor-pointer"
+                    style={{ colorScheme: 'dark' }}
+                    value={formData.country}
+                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                    required
+                  >
                     {COUNTRIES.map(c => (
-                      <option key={c} value={c} className="bg-[#030a06] text-white py-4">{c}</option>
+                       <option key={c} value={c} className="bg-[#030a06] text-white py-4">{c}</option>
                     ))}
                   </select>
                 </div>
@@ -237,7 +240,7 @@ export default function SignupPage() {
                 </div>
               </div>
 
-               <div className="flex items-start gap-4 pt-4 group">
+              <div className="flex items-start gap-4 pt-4 group">
                 <input 
                   type="checkbox" 
                   className="mt-1 w-5 h-5 accent-green rounded-lg cursor-pointer" 
@@ -259,7 +262,7 @@ export default function SignupPage() {
                 {loading ? 'Processing' : 'Create Account →'}
               </button>
 
-               <div className="pt-8 border-t border-white/5 text-center">
+              <div className="pt-8 border-t border-white/5 text-center">
                 <p className="text-[12px] text-white/40 font-bold uppercase tracking-widest">
                   Already have an account? <a href="/auth/login" className="text-green hover:text-green/70 transition-colors underline underline-offset-8 decoration-green/20">Log In</a>
                 </p>
