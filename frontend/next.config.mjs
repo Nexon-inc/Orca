@@ -6,6 +6,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  serverExternalPackages: [
+    '@remotion/renderer',
+    '@remotion/bundler'
+  ],
 }
 
 export default nextConfig
