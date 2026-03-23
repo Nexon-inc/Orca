@@ -104,31 +104,45 @@ export default function OrcaHubPage() {
                 </div>
               </div>
             ))
-          ) : filtered.length > 0 ? filtered.map(template => (
+          ) : filtered.length > 0 ? filtered.map(template => {
+            
+            // Extract dept/agent counts if available from the backend or fallback to static mappings
+            const depts = template.tags?.includes('depts:') ? template.tags.find((t:string) => t.startsWith('depts:'))?.split(':')[1] : (template.name.includes('SaaS') ? '4' : template.name.includes('Content') ? '4' : template.name.includes('E-commerce') ? '4' : template.name.includes('Recruiting') ? '4' : template.name.includes('Dev') ? '4' : '3');
+            const agentsCount = template.tags?.includes('agents:') ? template.tags.find((t:string) => t.startsWith('agents:'))?.split(':')[1] : (template.name.includes('SaaS') ? '16' : template.name.includes('Content') ? '18' : template.name.includes('E-commerce') ? '19' : template.name.includes('Recruiting') ? '17' : template.name.includes('Dev') ? '19' : '15');
+
+            return (
             <div key={template.slug} className="group relative bg-surface border border-white/5 rounded-3xl overflow-hidden hover:border-green/20 transition-all duration-500">
               <div className="h-48 bg-bg flex items-center justify-center text-6xl opacity-30 group-hover:opacity-50 transition-opacity">
-                {DEPT_ICONS[template.category] || '📦'}
+                {DEPT_ICONS[template.category] || (template.name.includes('SaaS') ? '🚀' : template.name.includes('Content') ? '📣' : template.name.includes('E-commerce') ? '🛒' : template.name.includes('Recruiting') ? '💼' : template.name.includes('Dev') ? '🛠️' : '🔍')}
               </div>
 
               <div className="p-8">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="px-2 py-1 rounded bg-green/10 border border-green/20 text-green text-[9px] font-syne font-[800] uppercase tracking-widest">
-                    {template.category.replace(/_/g, ' ')}
-                  </span>
+                  <div className="flex flex-col gap-2">
+                    <span className="px-2 py-1 rounded bg-green/10 border border-green/20 text-green w-fit text-[9px] font-syne font-[800] uppercase tracking-widest">
+                      {template.category.replace(/_/g, ' ')}
+                    </span>
+                  </div>
                   <span className={`px-2 py-1 rounded text-[9px] font-syne font-[800] uppercase tracking-widest ${template.is_accessible ? 'bg-white/5 text-white/20' : 'bg-amber-500/10 text-amber-500/60 border border-amber-500/20'}`}>
-                    {template.plan_required}
+                     {template.is_accessible ? template.plan_required : `🔒 Requires ${template.plan_required.toUpperCase()}`}
                   </span>
                 </div>
 
-                <h3 className="font-syne text-xl font-[800] text-white mb-2 group-hover:text-green transition-colors uppercase tracking-tight">
-                  {template.name}
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                   <h3 className="font-syne text-xl font-[800] text-white group-hover:text-green transition-colors uppercase tracking-tight">
+                     {template.name}
+                   </h3>
+                </div>
+                
+                <div className="font-syne text-[10px] text-white/30 uppercase tracking-widest font-[800] mb-4">
+                  {depts} departments · {agentsCount} agents
+                </div>
 
                 <p className="font-syne text-[13px] text-white/40 mb-6 leading-relaxed uppercase tracking-tight">
                   {template.description}
                 </p>
 
-                <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                <div className="flex items-center justify-between pt-6 border-t border-white/5 mb-6">
                   <div className="font-syne text-[10px] text-white/20 uppercase font-[800] tracking-widest">
                     {template.installs || 0} installs
                   </div>
@@ -137,27 +151,35 @@ export default function OrcaHubPage() {
                   )}
                 </div>
 
-                <button
-                  onClick={() => !template.is_installed && template.is_accessible && handleInstall(template.slug)}
-                  disabled={!!installing || template.is_installed || !template.is_accessible}
-                  className={`mt-8 w-full py-4 rounded-xl font-syne font-[800] text-[11px] uppercase tracking-widest transition-all ${
-                    template.is_installed
-                      ? 'bg-green/10 text-green cursor-default border border-green/20'
-                      : !template.is_accessible
-                      ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                      : installing === template.slug
-                      ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                      : 'bg-white/5 text-white hover:bg-green hover:text-bg shadow-sm'
-                  }`}
-                >
-                  {template.is_installed ? 'Installed' : !template.is_accessible ? `Upgrade to ${template.plan_required}` : installing === template.slug ? 'Installing...' : 'Install'}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    className="flex-1 py-4 rounded-xl border border-white/10 font-syne font-[800] text-[11px] uppercase tracking-widest transition-all bg-transparent text-white hover:bg-white/10"
+                  >
+                    Preview →
+                  </button>
+                  <button
+                    onClick={() => !template.is_installed && template.is_accessible && handleInstall(template.slug)}
+                    disabled={!!installing || template.is_installed || !template.is_accessible}
+                    className={`flex-1 py-4 rounded-xl font-syne font-[800] text-[11px] uppercase tracking-widest transition-all ${
+                      template.is_installed
+                        ? 'bg-green/10 text-green cursor-default border border-green/20'
+                        : !template.is_accessible
+                        ? 'bg-white/5 text-white/20 cursor-not-allowed border border-transparent'
+                        : installing === template.slug
+                        ? 'bg-white/5 text-white/30 cursor-not-allowed border border-transparent'
+                        : 'bg-white/5 text-white hover:bg-green hover:text-bg shadow-sm border border-transparent'
+                    }`}
+                  >
+                    {installing === template.slug ? 'Installing...' : template.is_installed ? '✓ Installed' : 'Install →'}
+                  </button>
+                </div>
               </div>
             </div>
-          )) : (
-            <div className="col-span-full py-20 text-center border border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-2xl mx-auto mb-6 opacity-40">📦</div>
-              <p className="font-syne text-[11px] text-white/20 font-[800] uppercase tracking-[0.2em]">No templates found</p>
+          )}) : (
+            <div className="col-span-full py-20 text-center font-syne border border-white/5 rounded-3xl bg-surface">
+              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-xl mx-auto mb-6 opacity-50">🔍</div>
+              <h3 className="text-white font-[800] text-lg uppercase tracking-widest mb-2">No templates found</h3>
+              <p className="text-white/40 text-[11px] uppercase tracking-widest font-[800]">Try adjusting your filters or search term.</p>
             </div>
           )}
         </div>

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { animate, stagger } from 'animejs';
+import { useRole } from '@/hooks/useRole';
+import { createClientSupabaseClient } from '@/lib/supabase/client';
 
 const menuItems = [
   { id: 'overview', name: 'Overview', icon: '⬡', path: '/dashboard' },
@@ -14,27 +16,35 @@ const menuItems = [
   { id: 'account', name: 'Account', icon: '⚙️', path: '/dashboard/account' },
 ];
 
-const departments = [
-  { id: 'marketing', name: 'Marketing', emoji: '📣' },
-  { id: 'sales', name: 'Sales & Revenue', emoji: '💰' },
-  { id: 'customer', name: 'Customer Success', emoji: '🤝' },
-  { id: 'tech', name: 'Tech & Security', emoji: '🛡️' },
-  { id: 'people', name: 'People & Hiring', emoji: '🧠' },
-  { id: 'ops', name: 'Operations', emoji: '📋' },
-  { id: 'finance', name: 'Finance & Legal', emoji: '📊' },
-  { id: 'intelligence', name: 'Intelligence', emoji: '🔍' },
-  { id: 'community', name: 'Community & Growth', emoji: '🌐' },
-];
+interface SidebarProps {
+  active?: string;
+}
 
-export default function DashboardSidebar() {
+export default function DashboardSidebar({ active }: SidebarProps) {
   const pathname = usePathname();
-  const [isDeptsOpen, setIsDeptsOpen] = useState(false);
+  const { plan, orgId } = useRole();
+  const currentActive = active || (pathname === '/dashboard' ? 'overview' : pathname.split('/').pop());
+
+  const [isDeptsOpen, setIsDeptsOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [dbDepts, setDbDepts] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (orgId) {
+      const fetchDepts = async () => {
+        const supabase = createClientSupabaseClient();
+        const { data } = await supabase
+          .from('departments')
+          .select('*')
+          .eq('org_id', orgId)
+          .order('name', { ascending: true });
+        if (data) setDbDepts(data);
+      };
+      fetchDepts();
+    }
+  }, [orgId]);
 
   useEffect(() => {
     animate('.side-item', {
@@ -44,11 +54,14 @@ export default function DashboardSidebar() {
       duration: 600,
       ease: 'outExpo'
     });
-  }, [isCollapsed]);
+  }, [isCollapsed, dbDepts]);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
+
+  const visibleDepts = dbDepts.filter(d => !d.agents_paused || plan === 'enterprise');
+
 
   return (
     <aside 
@@ -85,11 +98,11 @@ export default function DashboardSidebar() {
         {/* Overview Item */}
         <a
           href="/dashboard"
-          className={`side-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${pathname === '/dashboard' ? 'bg-green/10 border border-green/10 text-green shadow-[0_4px_12px_rgba(0,255,135,0.05)]' : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
+          className={`side-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${currentActive === 'overview' ? 'bg-green/10 border border-green/10 text-green shadow-[0_4px_12px_rgba(0,255,135,0.05)]' : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
         >
-          <span className={`text-[16px] ${pathname === '/dashboard' ? 'text-green' : 'text-white/40 group-hover:text-white transition-colors'}`}>⬡</span>
+          <span className={`text-[16px] ${currentActive === 'overview' ? 'text-green' : 'text-white/40 group-hover:text-white transition-colors'}`}>⬡</span>
           {!isCollapsed && (
-            <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${pathname === '/dashboard' ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Overview</span>
+            <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${currentActive === 'overview' ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Overview</span>
           )}
         </a>
 
@@ -97,12 +110,12 @@ export default function DashboardSidebar() {
         <div className={`side-item flex flex-col gap-1 mt-1 ${isCollapsed ? 'items-center' : 'w-full'}`}>
           <button
             onClick={() => !isCollapsed && setIsDeptsOpen(!isDeptsOpen)}
-            className={`flex items-center justify-between w-full rounded-xl transition-all duration-200 group ${pathname.includes('/dept/') ? 'text-green' : 'text-white/40 hover:text-white hover:bg-white/5'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'px-4 py-2.5'}`}
+            className={`flex items-center justify-between w-full rounded-xl transition-all duration-200 group ${currentActive === 'departments' || pathname.includes('/dept/') ? 'text-green' : 'text-white/40 hover:text-white hover:bg-white/5'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'px-4 py-2.5'}`}
           >
             <div className="flex items-center gap-3">
               <span className="text-[16px]">📂</span>
               {!isCollapsed && (
-                <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${pathname.includes('/dept/') ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Departments</span>
+                <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${currentActive === 'departments' || pathname.includes('/dept/') ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Departments</span>
               )}
             </div>
             {mounted && !isCollapsed && (
@@ -112,16 +125,26 @@ export default function DashboardSidebar() {
 
           {mounted && !isCollapsed && isDeptsOpen && (
             <div className="pl-5 flex flex-col gap-1 overflow-hidden animate-in slide-in-from-top-2 duration-300 border-l border-white/5 ml-2 mt-1 mb-1">
-              {departments.map((dept) => (
-                <a
-                  key={dept.id}
-                  href={`/dashboard/dept/${dept.id}`}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-xl text-[12px] transition-all duration-200 group ${pathname.includes(`/dept/${dept.id}`) ? 'text-green bg-green/5' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
-                >
-                  <span className="grayscale group-hover:grayscale-0 transition-opacity opacity-50 group-hover:opacity-100 text-[14px]">{dept.emoji}</span>
-                  <span className={`font-syne truncate font-[800] uppercase tracking-tight text-[11px] ${pathname.includes(`/dept/${dept.id}`) ? 'text-green opacity-100' : 'text-white/40 group-hover:text-white group-hover:opacity-100 transition-colors'}`}>{dept.name}</span>
-                </a>
-              ))}
+              {visibleDepts.map((dept) => {
+                const isActive = currentActive === dept.key || pathname.includes(`/dept/${dept.key}`);
+                const isPaused = dept.agents_paused;
+
+                return (
+                  <a
+                    key={dept.id}
+                    href={isPaused ? '/dashboard/upgrade' : `/dashboard/dept/${dept.key}`}
+                    className={`flex items-center justify-between px-4 py-2 rounded-xl text-[12px] transition-all duration-200 group ${isActive ? 'text-green bg-green/5' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`grayscale group-hover:grayscale-0 transition-opacity ${isActive ? 'opacity-100 grayscale-0' : 'opacity-50 group-hover:opacity-100'} text-[14px]`}>{dept.icon || '🏢'}</span>
+                      <span className={`font-syne truncate font-[800] uppercase tracking-tight text-[11px] ${isActive ? 'text-green opacity-100' : 'text-white/40 group-hover:text-white group-hover:opacity-100 transition-colors'}`}>{dept.name}</span>
+                    </div>
+                    {isPaused && (
+                      <span className="text-[10px] opacity-40">🔒</span>
+                    )}
+                  </a>
+                );
+              })}
             </div>
           )}
         </div>
@@ -130,11 +153,11 @@ export default function DashboardSidebar() {
           <div key={item.id} className="relative group/nav">
             <a
               href={item.path}
-              className={`side-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${pathname === item.path ? 'bg-green/10 border border-green/10 text-green shadow-[0_4px_12px_rgba(0,255,135,0.05)]' : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
+              className={`side-item flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${currentActive === item.id ? 'bg-green/10 border border-green/10 text-green shadow-[0_4px_12px_rgba(0,255,135,0.05)]' : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
             >
-              <span className={`text-[16px] ${pathname === item.path ? 'text-green' : 'text-white/40 group-hover:text-white transition-colors'}`}>{item.icon}</span>
+              <span className={`text-[16px] ${currentActive === item.id ? 'text-green' : 'text-white/40 group-hover:text-white transition-colors'}`}>{item.icon}</span>
               {!isCollapsed && (
-                <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${pathname === item.path ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>{item.name}</span>
+                <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${currentActive === item.id ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>{item.name}</span>
               )}
             </a>
           </div>

@@ -51,6 +51,23 @@ export async function updateSession(request: NextRequest) {
   // Refresh the session and get user
   const { data: { user } } = await supabase.auth.getUser()
 
+  // 1. Session Revocation Check (Phase 9)
+  if (user) {
+    const { data: revoked } = await supabase
+      .from('revoked_users')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (revoked) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/login'
+      url.searchParams.set('error', 'revoked')
+      return NextResponse.redirect(url)
+    }
+  }
+
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isProtectedRoute = 
     request.nextUrl.pathname.startsWith('/dashboard') || 
@@ -59,7 +76,7 @@ export async function updateSession(request: NextRequest) {
   // If user is NOT logged in and tries to access a protected route
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth'
+    url.pathname = '/auth/login'
     return NextResponse.redirect(url)
   }
 

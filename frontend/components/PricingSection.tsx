@@ -52,24 +52,38 @@ export default function PricingSection() {
       monthlyPrice: 99,
       annualPrice: 83,
       features: [
-        '✓ ORCA-powered AI (Gemini + Groq)',
-        '✓ OrcaHub templates (free tier)',
-        '✓ Connect your own Gemini or Groq key',
+        'Pick any 2 departments',
+        '10 specialized agents',
+        'Unlimited tasks',
+        '3 team members + 1 Department Head',
+        'CyberGuard security scanner',
+        'ORCA-powered AI (Gemini + Groq)',
+        'Connect your own Gemini or Groq key',
+        'OrcaHub free templates',
+        '30-day audit log',
         'Email support'
       ],
       cta: 'Start Free Trial'
     },
     {
       name: 'PRO',
-      tagline: 'Your entire company, running on autopilot.',
+      tagline: 'Your entire operation, running on autopilot.',
       monthlyPrice: 199,
       annualPrice: 166,
       features: [
-        '✓ Bring your own LLM (OpenAI, Anthropic, Mistral, Gemini, Groq)',
-        '✓ Per-department and per-agent model assignment',
-        '✓ Full OrcaHub marketplace',
-        '✓ All 45 specialized agents',
-        '✓ Full Nexonic Ecosystem access',
+        'Pick any 6 departments',
+        '30 specialized agents',
+        'Unlimited tasks',
+        '8 team members + 2 Department Heads',
+        'Full Nexonic Ecosystem (CyberGuard, Render.AI, Intuition)',
+        'Bring your own LLM (OpenAI, Anthropic, Mistral, Gemini, Groq)',
+        'Per-department and per-agent model assignment',
+        'Full OrcaHub marketplace',
+        'Video generation for marketing agents',
+        'Code generation for tech agents',
+        'Web intelligence (500 pages/mo)',
+        '3-hop agent coordination chains',
+        '6-month audit log',
         'Priority support'
       ],
       cta: 'Start Free Trial',
@@ -77,19 +91,49 @@ export default function PricingSection() {
     },
     {
       name: 'ENTERPRISE',
-      tagline: 'Built for teams that operate at scale.',
+      tagline: 'Built for teams that operate at full scale.',
       monthlyPrice: 399,
       annualPrice: 332,
       features: [
-        '✓ Ollama self-hosted model support',
-        '✓ Publish templates to OrcaHub community',
-        '✓ Custom model fine-tuning (coming soon)',
-        '✓ Unlimited team members',
-        '24/7 concierge support'
+        'All 9 departments',
+        'All 45 specialized agents',
+        'Unlimited tasks',
+        'Unlimited team members + Department Heads',
+        'Full Nexonic Ecosystem + The Summit + Island of Relevancy',
+        'All LLMs including Ollama self-hosted',
+        'Per-department and per-agent model assignment',
+        'Full OrcaHub marketplace + publish your own templates',
+        'Unlimited video generation',
+        'Unlimited code generation + private repo access',
+        'Web intelligence (5,000 pages/mo)',
+        '5-hop coordination chains + custom triggers',
+        'Full API access for custom integrations',
+        'Custom agent training',
+        'Dedicated infrastructure',
+        '12-month audit log + CSV export',
+        '99.9% uptime SLA',
+        '24/7 concierge support + dedicated onboarding call'
       ],
       cta: 'Start Free Trial'
     }
   ];
+
+  const handleCheckout = async (plan: string) => {
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: plan.toLowerCase(),
+          billing_cycle: billingCycle
+        })
+      });
+      const data = await res.json();
+      if (data.authorization_url) window.location.href = data.authorization_url;
+    } catch (err) {
+      console.error('Checkout error:', err);
+    }
+  };
 
   return (
     <section ref={sectionRef} id="pricing-section" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-bg overflow-hidden">
@@ -156,9 +200,14 @@ export default function PricingSection() {
                   </span>
                 </div>
                 {billingCycle === 'annual' && (
-                   <p className="mt-2 text-[10px] font-dm-mono text-green font-black uppercase tracking-widest">
-                      Billed as ${plan.annualPrice * 12}/yr — Saves ${ (plan.monthlyPrice - plan.annualPrice) * 12 }
-                   </p>
+                   <div className="mt-2 flex flex-col">
+                      <p className="text-[10px] font-dm-mono text-green font-black uppercase tracking-widest">
+                        Billed as ${plan.name === 'STARTER' ? '996' : plan.name === 'PRO' ? '1,992' : '3,984'}/yr
+                      </p>
+                      <p className="text-[10px] font-dm-mono text-white/40 font-black uppercase tracking-widest">
+                        Saves ${plan.name === 'STARTER' ? '216' : plan.name === 'PRO' ? '432' : '864'}
+                      </p>
+                   </div>
                 )}
               </div>
 
@@ -174,9 +223,10 @@ export default function PricingSection() {
 
               {/* CTA */}
               <button 
+                onClick={() => handleCheckout(plan.name)}
                 className={`w-full py-5 px-6 rounded-2xl font-syne font-[800] text-[15px] transition-all duration-300 uppercase tracking-widest ${
                   plan.highlighted 
-                    ? 'btn-primary' 
+                    ? 'btn-primary shadow-[0_4px_20px_rgba(0,255,135,0.2)]' 
                     : 'bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95'
                 }`}
               >

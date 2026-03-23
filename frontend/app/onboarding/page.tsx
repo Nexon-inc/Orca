@@ -6,11 +6,12 @@ import { animate } from 'animejs';
 import { matchTemplate } from '@/lib/templates/matchTemplate';
 
 const steps = [
-  { id: 0, name: 'Deployment Brief', detail: 'It will only take 5 minutes to fill out info about your company.' },
-  { id: 1, name: 'Company Profile', detail: 'Define your mission, industry, and target audience.' },
-  { id: 2, name: 'Org Architecture', detail: 'Select a department or a pre-built company template.' },
-  { id: 3, name: 'Protocol Alpha', detail: 'Set the governance and execution boundaries for your agents.' },
-  { id: 4, name: 'Final Sync', detail: 'Review your configuration and launch your dashboard.' },
+  { id: 0, name: 'Plan Selection', detail: 'Start with the right plan for where you are.' },
+  { id: 1, name: 'Deployment Brief', detail: 'It will only take 5 minutes to fill out info about your company.' },
+  { id: 2, name: 'Company Profile', detail: 'Define your mission, industry, and target audience.' },
+  { id: 3, name: 'Org Architecture', detail: 'Select a department or a pre-built company template.' },
+  { id: 4, name: 'Protocol Alpha', detail: 'Set the governance and execution boundaries for your agents.' },
+  { id: 5, name: 'Final Sync', detail: 'Review your configuration and launch your dashboard.' },
 ];
 
 const INDUSTRIES = [
@@ -32,24 +33,25 @@ const TEMPLATES = [
 const DEPARTMENTS = [
   { id: 'marketing', name: 'Marketing', icon: '📣', desc: 'Content, social, SEO, and brand voice.' },
   { id: 'sales', name: 'Sales & Revenue', icon: '💰', desc: 'Lead prospecting and CRM management.' },
-  { id: 'customer', name: 'Customer Success', icon: '🤝', desc: 'Onboarding, retention, and support.' },
+  { id: 'cs', name: 'Customer Success', icon: '🤝', desc: 'Onboarding, retention, and support.' },
   { id: 'tech', name: 'Tech & Security', icon: '🛡️', desc: 'Code reviews, deployments, and security.' },
-  { id: 'people', name: 'People & Hiring', icon: '🧠', desc: 'Sourcing, screening, and offer coordination.' },
+  { id: 'hiring', name: 'People & Hiring', icon: '🧠', desc: 'Sourcing, screening, and offer coordination.' },
   { id: 'ops', name: 'Operations', icon: '📋', desc: 'Project management and inbox automation.' },
   { id: 'finance', name: 'Finance & Legal', icon: '📊', desc: 'Invoicing, contracts, and budgeting.' },
-  { id: 'intelligence', name: 'Intelligence', icon: '🔍', desc: 'Market research and competitor tracking.' },
+  { id: 'intel', name: 'Intelligence', icon: '🔍', desc: 'Market research and competitor tracking.' },
   { id: 'community', name: 'Community', icon: '🌐', desc: 'Growth experiments and partnerships.' }
 ];
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [companyInfo, setCompanyInfo] = useState({ name: '', website: '', mission: '', industry: 'SaaS / Software', targetICP: '' });
+  const [companyInfo, setCompanyInfo] = useState({ name: '', website: '', mission: '', industry: 'SaaS / Software', icp: '' });
   const [selectionType, setSelectionType] = useState<'department' | 'template' | null>(null);
-  const [selectedDept, setSelectedDept] = useState<string | null>(null);
+  const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<typeof TEMPLATES[0] | null>(null);
   const [operatingMode, setOperatingMode] = useState('Approve First');
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
   const [suggestedTemplateSlug, setSuggestedTemplateSlug] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   
   const router = useRouter();
 
@@ -65,17 +67,18 @@ export default function OnboardingPage() {
   const handleNext = async () => {
     // Save current step data to backend before advancing
     const stepPayloads: Record<number, any> = {
-      1: { // Step 1: Company Profile
+      0: { selected_plan: selectedPlan || 'starter' },
+      2: { // Step 2: Company Profile
         company_name: companyInfo.name,
         mission: companyInfo.mission,
         industry: companyInfo.industry,
-        icp: companyInfo.targetICP,
+        icp: companyInfo.icp,
       },
-      2: { // Step 2: Org Architecture
+      3: { // Step 3: Org Architecture
         template_slug: selectedTemplate?.slug || null,
-        selected_departments: selectedDept ? [selectedDept] : null,
+        selected_departments: selectedDepts.length > 0 ? selectedDepts : null,
       },
-      3: { // Step 3: Protocol — operating mode
+      4: { // Step 4: Protocol — operating mode
         agent_mode: operatingMode === 'Autopilot' ? 'autopilot' :
                    operatingMode === 'Suggest Only' ? 'suggest_only' : 'approve_first',
       },
@@ -94,19 +97,19 @@ export default function OnboardingPage() {
       }
     }
 
-    if (currentStep === 1) {
-      // Going into Step 2: run matching logic
+    if (currentStep === 2) {
+      // Going into Step 3: run matching logic
       setSuggestedTemplateSlug(matchTemplate(companyInfo));
     }
 
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
       // Step 5 — complete
       await fetch('/api/onboarding/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step: 5, data: {} }),
+        body: JSON.stringify({ step: 6, data: {} }), // final completion signal
       }).catch(() => {});
 
       animate('.main-box', {
@@ -126,15 +129,22 @@ export default function OnboardingPage() {
   };
 
   const selectDept = (dept: string) => {
+    const limit = selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 6 : 9;
+    
     setSelectionType('department');
-    setSelectedDept(dept);
-    setSelectedTemplate(null); // XOR Logic
+    setSelectedTemplate(null);
+
+    if (selectedDepts.includes(dept)) {
+      setSelectedDepts(selectedDepts.filter(d => d !== dept));
+    } else if (selectedDepts.length < limit) {
+      setSelectedDepts([...selectedDepts, dept]);
+    }
   };
 
   const selectTemplate = (template: typeof TEMPLATES[0]) => {
     setSelectionType('template');
     setSelectedTemplate(template);
-    setSelectedDept(null); // XOR Logic
+    setSelectedDepts([]); // XOR Logic
     setIsTemplateGalleryOpen(false);
   };
 
@@ -180,6 +190,44 @@ export default function OnboardingPage() {
               {/* Step UI Content */}
               <div className="flex-1 mb-10">
                 {currentStep === 0 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in zoom-in duration-500">
+                      {['Starter', 'Pro', 'Enterprise'].map(plan => (
+                        <div 
+                          key={plan}
+                          onClick={() => setSelectedPlan(plan.toLowerCase())}
+                          className={`p-6 rounded-2xl border cursor-pointer transition-all flex flex-col ${selectedPlan === plan.toLowerCase() ? 'bg-green/10 border-green shadow-[0_0_20px_rgba(0,255,135,0.15)] scale-[1.02]' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
+                        >
+                          <h4 className="font-syne text-[18px] font-bold text-white mb-1 uppercase tracking-tight">
+                            {plan} {plan === 'Pro' && <span className="text-[12px] opacity-80">⭐</span>}
+                          </h4>
+                          <span className="font-dm-mono text-[10px] text-green uppercase tracking-widest font-bold mb-4 block">
+                            ${plan === 'Starter' ? '99' : plan === 'Pro' ? '199' : '399'} / mo
+                          </span>
+                          
+                          <ul className="space-y-3 mb-8 flex-1">
+                            {plan === 'Starter' && (
+                              <><li className="font-dm-mono text-[11px] text-white/50">✓ 2 departments</li><li className="font-dm-mono text-[11px] text-white/50">✓ 10 specialized agents</li><li className="font-dm-mono text-[11px] text-white/50">✓ 3 team members</li><li className="font-dm-mono text-[11px] text-white/50">✓ CyberGuard security scanner</li></>
+                            )}
+                            {plan === 'Pro' && (
+                              <><li className="font-dm-mono text-[11px] text-white">✓ 6 departments</li><li className="font-dm-mono text-[11px] text-white/80">✓ 30 specialized agents</li><li className="font-dm-mono text-[11px] text-white/50">✓ 8 team members</li><li className="font-dm-mono text-[11px] text-white/50">✓ Video & Code generation</li><li className="font-dm-mono text-[11px] text-white/50">✓ BYOLLM + Web Intel</li></>
+                            )}
+                            {plan === 'Enterprise' && (
+                              <><li className="font-dm-mono text-[11px] text-white text-white/80">✓ All 9 departments</li><li className="font-dm-mono text-[11px] text-white/50">✓ All 45 agents</li><li className="font-dm-mono text-[11px] text-white/50">✓ Unlimited members</li><li className="font-dm-mono text-[11px] text-white/50">✓ 24/7 concierge support</li></>
+                            )}
+                          </ul>
+                          
+                          <div className={`w-full py-3 rounded-xl border text-center font-syne text-[11px] uppercase tracking-widest font-bold transition-all ${selectedPlan === plan.toLowerCase() ? 'bg-green text-bg border-transparent' : 'bg-transparent text-white border-white/10'}`}>
+                            Choose {plan}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-center font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em] mt-8 opacity-80">You can change your plan anytime from Account → Billing. All plans start with a 14-day free trial.</p>
+                  </div>
+                )}
+
+                {currentStep === 1 && (
                   <div className="space-y-8 py-2">
                     <p className="font-dm-mono text-[13px] text-white/80 leading-relaxed border-l-2 border-green/50 pl-4 bg-green/5 py-3 pr-4 rounded-r-xl">
                       Initiating secure configuration sequence to deploy your automated workforce.
@@ -187,7 +235,7 @@ export default function OnboardingPage() {
                     <div className="space-y-4">
                       <h4 className="font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em] mb-4">Onboarding Sequence</h4>
                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {steps.slice(1).map((s, idx) => (
+                        {steps.slice(2).map((s, idx) => (
                           <li key={s.id} className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/5">
                             <span className="w-5 h-5 rounded bg-green/10 text-green flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
                             <span className="font-syne text-[14px] text-white/80 font-bold">{s.name}</span>
@@ -198,7 +246,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {currentStep === 1 && (
+                {currentStep === 2 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
                        <label className="block font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">Company Name</label>
@@ -249,18 +297,18 @@ export default function OnboardingPage() {
                          type="text" 
                          placeholder="B2B Founders, Early Adopters" 
                          className="w-full bg-surface border border-white/5 rounded-xl px-4 py-3 font-dm-mono text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:bg-white/[0.03] transition-all" 
-                         value={companyInfo.targetICP}
-                         onChange={(e) => setCompanyInfo({...companyInfo, targetICP: e.target.value})}
+                         value={companyInfo.icp}
+                         onChange={(e) => setCompanyInfo({...companyInfo, icp: e.target.value})}
                        />
                     </div>
                   </div>
                 )}
 
-                {currentStep === 2 && (
+                {currentStep === 3 && (
                   <div className="space-y-8 pb-4">
                     {!isTemplateGalleryOpen ? (
                       <div className="flex flex-col gap-8">
-                        {suggestedTemplateSlug && !selectedTemplate && !selectedDept ? (
+                        {suggestedTemplateSlug && !selectedTemplate && selectedDepts.length === 0 ? (
                           // Match Found Banner
                           <div className="p-8 rounded-2xl bg-surface/50 border border-green/20 relative overflow-hidden group backdrop-blur-sm">
                             <div className="absolute inset-0 bg-green/5 opacity-50 pointer-events-none" />
@@ -287,7 +335,7 @@ export default function OnboardingPage() {
                                   onClick={() => setSuggestedTemplateSlug(null)}
                                   className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/[0.03] border border-white/5 text-white/60 hover:text-white hover:bg-white/10 font-syne text-[13px] font-bold uppercase tracking-widest transition-all"
                                 >
-                                  Build Manually
+                                  Deploy Custom {selectedPlan === 'starter' ? '(2 Depts)' : selectedPlan === 'pro' ? '(6 Depts)' : '(All Depts)'}
                                 </button>
                               </div>
                             </div>
@@ -297,21 +345,37 @@ export default function OnboardingPage() {
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Department Selection */}
                             <div className="space-y-4">
-                              <h4 className="font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">Choose 1 Department</h4>
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">
+                                  Choose {selectedPlan === 'starter' ? 'up to 2' : selectedPlan === 'pro' ? 'up to 6' : 'departments'}
+                                </h4>
+                                <span className="text-[10px] font-bold text-green uppercase tracking-widest">
+                                  {selectedDepts.length} / {selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 6 : 9} Selected
+                                </span>
+                              </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {DEPARTMENTS.map(d => (
-                                  <button 
-                                    key={d.id}
-                                    onClick={() => selectDept(d.name)}
-                                    className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all group ${selectedDept === d.name ? 'bg-green/10 border-green/30 shadow-[0_5px_15px_rgba(0,255,135,0.1)]' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
-                                  >
-                                    <span className={`text-xl ${selectedDept === d.name ? 'grayscale-0' : 'grayscale group-hover:grayscale-0 transition-all'}`}>{d.icon}</span>
-                                    <div>
-                                      <h5 className={`font-syne text-[13px] font-bold mb-1 ${selectedDept === d.name ? 'text-green' : 'text-white group-hover:text-green transition-colors'}`}>{d.name}</h5>
-                                      <p className="font-dm-mono text-[10px] text-text-muted leading-tight line-clamp-2">{d.desc}</p>
-                                    </div>
-                                  </button>
-                                ))}
+                                {DEPARTMENTS.map(d => {
+                                  const isSelected = selectedDepts.includes(d.name);
+                                  const isLocked = !isSelected && selectedDepts.length >= (selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 6 : 9);
+                                  
+                                  return (
+                                    <button 
+                                      key={d.id}
+                                      disabled={isLocked}
+                                      onClick={() => selectDept(d.id)}
+                                      className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all group relative ${isSelected ? 'bg-green/10 border-green/30 shadow-[0_5px_15px_rgba(0,255,135,0.1)]' : isLocked ? 'opacity-40 grayscale cursor-not-allowed' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
+                                    >
+                                      <span className={`text-xl ${isSelected ? 'grayscale-0' : 'grayscale group-hover:grayscale-0 transition-all'}`}>{d.icon}</span>
+                                      <div>
+                                        <h5 className={`font-syne text-[13px] font-bold mb-1 ${isSelected ? 'text-green' : 'text-white group-hover:text-green transition-colors'}`}>{d.name}</h5>
+                                        <p className="font-dm-mono text-[10px] text-text-muted leading-tight line-clamp-2">{d.desc}</p>
+                                      </div>
+                                      {isLocked && (
+                                        <div className="absolute top-2 right-2 text-[10px]">🔒</div>
+                                      )}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
 
@@ -385,7 +449,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {currentStep === 3 && (
+                {currentStep === 4 && (
                   <div className="flex flex-col gap-4 py-2">
                     {[
                       { id: 'Autopilot', name: 'Autopilot', desc: 'Execute & Report', brief: 'In this mode, your agents are empowered to take actions immediately based on their objectives. You will receive a summary of completed tasks. Best for low-risk workflows.' },
@@ -414,7 +478,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {currentStep === 4 && (
+                {currentStep === 5 && (
                   <div className="space-y-8 py-2">
                     <div className="text-center">
                       <h3 className="font-syne font-bold text-green text-[22px] mb-2 uppercase tracking-wide animate-pulse">Configuration Complete</h3>
@@ -450,14 +514,16 @@ export default function OnboardingPage() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 w-fit">
-                                <span className="text-2xl grayscale">
-                                   {DEPARTMENTS.find(d => d.name === selectedDept)?.icon || '🏢'}
-                                </span>
-                                <div>
-                                  <span className="font-syne text-[14px] text-white font-bold block mb-0.5">{selectedDept || 'Marketing'} Unit</span>
-                                  <span className="font-dm-mono text-[10px] text-text-muted uppercase tracking-[0.1em] block">Single Department</span>
-                                </div>
+                             <div className="flex flex-wrap gap-2">
+                                {selectedDepts.map(dName => {
+                                  const dept = DEPARTMENTS.find(d => d.name === dName);
+                                  return (
+                                    <div key={dName} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5">
+                                      <span className="text-sm grayscale">{dept?.icon}</span>
+                                      <span className="font-syne text-[12px] text-white font-bold">{dName}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -486,22 +552,17 @@ export default function OnboardingPage() {
                         ← Back
                       </button>
                     )}
-                    {currentStep === 0 && (
-                      <button 
-                        onClick={handleSkipToDashboard}
-                        className="font-syne text-[13px] font-bold text-text-muted hover:text-white transition-all px-2 py-2 hover:translate-x-1"
-                      >
-                        Skip
-                      </button>
-                    )}
                  </div>
                  
                  <button 
                    onClick={handleNext}
-                   disabled={currentStep === 2 && !selectedDept && !selectedTemplate}
-                   className={`w-full sm:w-auto px-8 py-3.5 font-syne text-[14px] font-bold rounded-xl transition-all duration-300 ${currentStep === 2 && !selectedDept && !selectedTemplate ? 'opacity-30 cursor-not-allowed bg-white/5 text-white/40' : 'btn-primary hover:scale-[1.02] active:scale-[0.98]'}`}
+                   disabled={
+                     (currentStep === 0 && !selectedPlan) ||
+                     (currentStep === 3 && selectedDepts.length === 0 && !selectedTemplate)
+                   }
+                   className={`w-full sm:w-auto px-8 py-3.5 font-syne text-[14px] font-bold rounded-xl transition-all duration-300 ${((currentStep === 0 && !selectedPlan) || (currentStep === 3 && selectedDepts.length === 0 && !selectedTemplate)) ? 'opacity-30 cursor-not-allowed bg-white/5 text-white/40' : 'btn-primary hover:scale-[1.02] active:scale-[0.98]'}`}
                  >
-                    {currentStep === 4 ? 'Launch Workforce →' : 'Continue →'}
+                    {currentStep === 5 ? 'Engage Protocol →' : 'Continue →'}
                  </button>
               </div>
            </div>
