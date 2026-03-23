@@ -67,19 +67,22 @@ export async function POST(request: Request) {
       type: 'signup',
       email,
       password,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/onboarding`,
-      },
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')}/auth/callback?next=/onboarding`,
+        },
     })
 
-    if (linkData?.properties?.action_link) {
+    if (linkData?.properties?.hashed_token) {
       const { sendWelcomeEmail, sendVerificationEmail } = await import('@/lib/email/gmail')
+      
+      // Build the DIRECT link to our app — bypasses the Supabase internal verify page
+      const directLink = `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=signup&next=/onboarding`
       
       // Send Welcome Email FIRST
       await sendWelcomeEmail(email, full_name)
       
       // Send Verification Link SECOND
-      await sendVerificationEmail(email, full_name, linkData.properties.action_link)
+      await sendVerificationEmail(email, full_name, directLink)
     }
   } catch (e) {
     console.error('[Signup] Email sending failed (non-fatal):', e)

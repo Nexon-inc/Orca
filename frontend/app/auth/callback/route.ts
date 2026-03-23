@@ -11,19 +11,25 @@ export async function GET(request: Request) {
 
   const supabase = await createClient()
 
+  console.log('[Auth Callback] Search Params:', { code, tokenHash, type, next })
+
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      console.log('[Auth Callback] Exchange Success')
       return safeRedirect(request, origin, next)
     }
+    console.error('[Auth Callback] Exchange Error:', error)
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash: tokenHash,
     })
     if (!error) {
+      console.log('[Auth Callback] Verify OTP Success')
       return safeRedirect(request, origin, next)
     }
+    console.error('[Auth Callback] Verify OTP Error:', error)
   } else {
     // Fallback: If no code/token, check if we already have a session 
     // (This happens if Supabase verified the link before redirecting here)
