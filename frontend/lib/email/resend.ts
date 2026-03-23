@@ -1,6 +1,8 @@
 import { Resend } from 'resend'
 
-export const resend = new Resend(process.env.RESEND_API_KEY!)
+export const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY)
+  : { emails: { send: async () => ({ data: null, error: null }) } } as any
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!
 
