@@ -7,7 +7,7 @@ const products = [
   {
     name: 'Bring Your Own LLM',
     subtitle: 'Your Models. Your Control.',
-    description: 'Run any agent on any LLM. Connect your own OpenAI, Anthropic, Claude, Mistral, or Groq keys.',
+    description: 'Run any agent on any LLM. Connect your own OpenAI, Anthropic, Claude, Mistral, or other external keys.',
     plan: 'Pro+',
     icon: '⚡'
   },
@@ -49,8 +49,8 @@ const products = [
 ];
 
 const providers = [
-  { name: 'Google Gemini', label: 'Default', plan: 'All plans' },
-  { name: 'Groq', label: 'Default', plan: 'All plans' },
+  { name: 'ORCA-powered AI', label: 'Default', plan: 'All plans' },
+  { name: 'ORCA-powered AI (Turbo)', label: 'Default', plan: 'All plans' },
   { name: 'OpenAI GPT-4o', label: 'Bring your own key', plan: 'Pro+' },
   { name: 'Anthropic Claude', label: 'Bring your own key', plan: 'Pro+' },
   { name: 'Mistral AI', label: 'EU data residency', plan: 'Pro+' },
@@ -149,7 +149,7 @@ export default function EcosystemSection() {
           </div>
           
           <p className="mt-12 text-center font-dm-mono text-[13px] text-text-muted max-w-2xl mx-auto leading-relaxed">
-            By default, ORCA powers all 45 agents using its own Gemini and Groq keys — zero setup. On Pro and Enterprise, connect your own API keys and assign different models to different departments or individual agents.
+            By default, ORCA powers all 45 agents using its own ORCA-powered AI — zero setup. On Pro and Enterprise, connect your own API keys and assign different models to different departments or individual agents.
           </p>
         </div>
       </div>

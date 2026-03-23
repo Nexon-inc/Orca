@@ -15,7 +15,7 @@ const plans = [
       '3 Departments unlocked',
       '15 specialized agents',
       'Unlimited tasks',
-      '3 team members',
+      '3 team members + 1 Dept Head',
       'Essential security',
       'Email support'
     ],
@@ -28,12 +28,12 @@ const plans = [
     monthlyPrice: 199,
     annualPrice: 166,
     features: [
-      'All 9 Departments',
+      'All 9 Departments (Full Access)',
       'All 45 specialized agents',
       'Unlimited tasks',
-      '10 team members',
-      'Full feature access',
-      'Automatic or Manual modes',
+      '10 team members + 2 Dept Heads',
+      'Full Nexonic Ecosystem',
+      'BYOLLM + Web Intelligence',
       'Priority support'
     ],
     cta: 'Current Plan',
@@ -49,9 +49,9 @@ const plans = [
     features: [
       'Everything in Pro',
       'Custom agent training',
-      'Unlimited team members',
+      'Unlimited members & heads',
       'Full API Access',
-      'Dedicated servers',
+      'Self-hosted Ollama support',
       '24/7 concierge support'
     ],
     cta: 'Contact Sales'

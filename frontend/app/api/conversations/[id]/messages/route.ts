@@ -96,9 +96,9 @@ export async function POST(
     new HumanMessage(content),
   ]
 
-  // 9. Call AI
-  const isComplexTask = content.length > 100
-  const ai = isComplexTask ? getGemini() : getGroq()
+  // 9. Call AI (Gemini 1.5 Pro is primary; Groq is secondary for fast responses)
+  const useHighSpeed = content.length < 50 // Only use Groq for extremely short queries
+  const ai = useHighSpeed ? getGroq() : getGemini()
 
   // Thinking Steps simulation
   const thinkingSteps = [

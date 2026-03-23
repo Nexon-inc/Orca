@@ -73,7 +73,12 @@ export async function POST(request: Request) {
     })
 
     if (linkData?.properties?.action_link) {
-      // Sends exactly: 1 verification email + 1 welcome email via Gmail SMTP
+      const { sendWelcomeEmail, sendVerificationEmail } = await import('@/lib/email/gmail')
+      
+      // Send Welcome Email FIRST
+      await sendWelcomeEmail(email, full_name)
+      
+      // Send Verification Link SECOND
       await sendVerificationEmail(email, full_name, linkData.properties.action_link)
     }
   } catch (e) {

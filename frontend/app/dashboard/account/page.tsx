@@ -306,8 +306,8 @@ export default function AccountPage() {
                            <div className="space-y-4">
                               <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">AI Provider</label>
                               <select className="w-full bg-surface border border-white/10 rounded-xl p-4 text-white font-syne focus:border-green/50 outline-none transition-all">
-                                 <option>Google Gemini (Default)</option>
-                                 <option>Groq</option>
+                                 <option>ORCA-powered AI (Default)</option>
+                                 <option>ORCA-powered AI (Turbo)</option>
                                  <option>OpenAI</option>
                                  <option>Anthropic</option>
                                  <option>DeepSeek</option>
@@ -347,7 +347,7 @@ export default function AccountPage() {
                              <div key={dept} className="flex items-center justify-between p-6 rounded-2xl border border-white/5 bg-surface/30 group">
                                 <div>
                                    <p className="text-white font-[800] text-sm uppercase tracking-tight mb-1">{dept} Override</p>
-                                   <p className="text-[10px] text-white/20 uppercase tracking-widest font-[800]">Using Default (Gemini)</p>
+                                   <p className="text-[10px] text-white/20 uppercase tracking-widest font-[800]">Using Default (ORCA-powered AI)</p>
                                 </div>
                                 <button className="text-[9px] font-[800] text-green uppercase tracking-widest px-4 py-2 border border-green/20 bg-green/5 rounded-lg hover:bg-green hover:text-bg transition-all">Edit</button>
                              </div>

@@ -18,11 +18,11 @@ export interface LLMProvider {
 export const LLM_PROVIDERS: LLMProvider[] = [
   {
     key: 'gemini',
-    name: 'Google Gemini',
+    name: 'ORCA-powered AI',
     models: [
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', contextWindow: 1000000, bestFor: 'Complex tasks, long context' },
-      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', contextWindow: 1000000, bestFor: 'Fast, cost-effective' },
-      { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', contextWindow: 1000000, bestFor: 'Speed + cost balance' },
+      { id: 'gemini-1.5-pro', name: 'ORCA 1.5 Pro', contextWindow: 1000000, bestFor: 'Complex tasks, long context' },
+      { id: 'gemini-2.0-flash', name: 'ORCA 2.0 Flash', contextWindow: 1000000, bestFor: 'Fast, cost-effective' },
+      { id: 'gemini-1.5-flash', name: 'ORCA 1.5 Flash', contextWindow: 1000000, bestFor: 'Speed + cost balance' },
     ],
     apiKeyEnv: 'GEMINI_API_KEY',
     baseUrl: 'https://generativelanguage.googleapis.com',
@@ -31,7 +31,7 @@ export const LLM_PROVIDERS: LLMProvider[] = [
   },
   {
     key: 'groq',
-    name: 'Groq',
+    name: 'ORCA-powered AI (Turbo)',
     models: [
       { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B', contextWindow: 128000, bestFor: 'Fast execution, low latency' },
       { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B', contextWindow: 128000, bestFor: 'Ultra fast, simple tasks' },

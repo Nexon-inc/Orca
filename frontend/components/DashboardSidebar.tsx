@@ -60,7 +60,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
     setIsCollapsed(!isCollapsed);
   };
 
-  const visibleDepts = dbDepts.filter(d => !d.agents_paused || plan === 'enterprise');
+  const visibleDepts = dbDepts; // Show all seeded departments
 
 
   return (
