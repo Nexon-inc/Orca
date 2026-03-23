@@ -24,6 +24,13 @@ export async function GET(request: Request) {
     if (!error) {
       return safeRedirect(request, origin, next)
     }
+  } else {
+    // Fallback: If no code/token, check if we already have a session 
+    // (This happens if Supabase verified the link before redirecting here)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      return safeRedirect(request, origin, next)
+    }
   }
 
   // return the user to an error page with instructions
