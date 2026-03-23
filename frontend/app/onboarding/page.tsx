@@ -126,7 +126,9 @@ export default function OnboardingPage() {
   const handleSkipToDashboard = () => {
     router.push('/dashboard');
   };
-
+  const toggleDept = (dept: string) => {
+    setSelectionType('department');
+    setSelectedTemplate(null);
     if (selectedDepts.includes(dept)) {
       setSelectedDepts(selectedDepts.filter(d => d !== dept));
     } else {
@@ -312,7 +314,7 @@ export default function OnboardingPage() {
                                     <button 
                                       key={d.id}
                                       disabled={isLocked}
-                                      onClick={() => selectDept(d.id)}
+                                      onClick={() => toggleDept(d.name)}
                                       className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all group relative ${isSelected ? 'bg-green/10 border-green/30 shadow-[0_5px_15px_rgba(0,255,135,0.1)]' : isLocked ? 'opacity-40 grayscale cursor-not-allowed' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
                                     >
                                       <span className={`text-xl ${isSelected ? 'grayscale-0' : 'grayscale group-hover:grayscale-0 transition-all'}`}>{d.icon}</span>
