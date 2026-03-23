@@ -19,16 +19,8 @@ export async function POST(request: Request) {
   if (!member) return NextResponse.json({ error: 'No organization found' }, { status: 404 })
   const orgId = member.org_id
 
-  // Step 0 — plan selection
-  if (step === 0) {
-    await supabase
-      .from('organizations')
-      .update({ plan: data.selected_plan || 'starter' })
-      .eq('id', orgId)
-  }
-
-  // Step 2 — company identity fields (shifted from 1)
-  if (step === 2) {
+  // Step 1 — company identity fields
+  if (step === 1) {
     await supabase.from('company_identity').upsert({
       org_id: orgId,
       company_name: data.company_name,
@@ -48,9 +40,8 @@ export async function POST(request: Request) {
       .eq('id', orgId)
   }
 
-  // Step 3 — department activation + agent mode (shifted from 2)
-  if (step === 3) {
-    // If template was chosen, departments are already seeded
+  // Step 2 — department activation
+  if (step === 2) {
     // If manual, activate selected departments
     if (data.selected_departments && !data.template_slug) {
       // First, pause all departments for this org to reset
@@ -70,8 +61,8 @@ export async function POST(request: Request) {
     }
   }
 
-  // Step 4 — operating mode (shifted from 3)
-  if (step === 4) {
+  // Step 3 — operating mode
+  if (step === 3) {
     await supabase
       .from('departments')
       .update({ agent_mode: data.agent_mode })
@@ -79,7 +70,7 @@ export async function POST(request: Request) {
       .eq('agents_paused', false)
   }
 
-  // Step 6 — mark onboarding complete (shifted from 5)
+  // Step 6 — mark onboarding complete (signal from final sync)
   if (step === 6) {
     await supabase
       .from('organizations')

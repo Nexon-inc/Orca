@@ -6,12 +6,11 @@ import { animate } from 'animejs';
 import { matchTemplate } from '@/lib/templates/matchTemplate';
 
 const steps = [
-  { id: 0, name: 'Plan Selection', detail: 'Start with the right plan for where you are.' },
-  { id: 1, name: 'Deployment Brief', detail: 'It will only take 5 minutes to fill out info about your company.' },
-  { id: 2, name: 'Company Profile', detail: 'Define your mission, industry, and target audience.' },
-  { id: 3, name: 'Org Architecture', detail: 'Select a department or a pre-built company template.' },
-  { id: 4, name: 'Protocol Alpha', detail: 'Set the governance and execution boundaries for your agents.' },
-  { id: 5, name: 'Final Sync', detail: 'Review your configuration and launch your dashboard.' },
+  { id: 0, name: 'Deployment Brief', detail: 'It will only take 5 minutes to fill out info about your company.' },
+  { id: 1, name: 'Company Profile', detail: 'Define your mission, industry, and target audience.' },
+  { id: 2, name: 'Org Architecture', detail: 'Select a department or a pre-built company template.' },
+  { id: 3, name: 'Protocol Alpha', detail: 'Set the governance and execution boundaries for your agents.' },
+  { id: 4, name: 'Final Sync', detail: 'Review your configuration and launch your dashboard.' },
 ];
 
 const INDUSTRIES = [
@@ -97,15 +96,15 @@ export default function OnboardingPage() {
       }
     }
 
-    if (currentStep === 2) {
-      // Going into Step 3: run matching logic
+    if (currentStep === 1) {
+      // Going into Step 2: run matching logic
       setSuggestedTemplateSlug(matchTemplate(companyInfo));
     }
 
-    if (currentStep < 5) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Step 5 — complete
+      // Step 4 — complete (Final Sync)
       await fetch('/api/onboarding/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -128,15 +127,9 @@ export default function OnboardingPage() {
     router.push('/dashboard');
   };
 
-  const selectDept = (dept: string) => {
-    const limit = selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 6 : 9;
-    
-    setSelectionType('department');
-    setSelectedTemplate(null);
-
     if (selectedDepts.includes(dept)) {
       setSelectedDepts(selectedDepts.filter(d => d !== dept));
-    } else if (selectedDepts.length < limit) {
+    } else {
       setSelectedDepts([...selectedDepts, dept]);
     }
   };
@@ -190,44 +183,6 @@ export default function OnboardingPage() {
               {/* Step UI Content */}
               <div className="flex-1 mb-10">
                 {currentStep === 0 && (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in zoom-in duration-500">
-                      {['Starter', 'Pro', 'Enterprise'].map(plan => (
-                        <div 
-                          key={plan}
-                          onClick={() => setSelectedPlan(plan.toLowerCase())}
-                          className={`p-6 rounded-2xl border cursor-pointer transition-all flex flex-col ${selectedPlan === plan.toLowerCase() ? 'bg-green/10 border-green shadow-[0_0_20px_rgba(0,255,135,0.15)] scale-[1.02]' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
-                        >
-                          <h4 className="font-syne text-[18px] font-bold text-white mb-1 uppercase tracking-tight">
-                            {plan} {plan === 'Pro' && <span className="text-[12px] opacity-80">⭐</span>}
-                          </h4>
-                          <span className="font-dm-mono text-[10px] text-green uppercase tracking-widest font-bold mb-4 block">
-                            ${plan === 'Starter' ? '99' : plan === 'Pro' ? '199' : '399'} / mo
-                          </span>
-                          
-                          <ul className="space-y-3 mb-8 flex-1">
-                            {plan === 'Starter' && (
-                              <><li className="font-dm-mono text-[11px] text-white/50">✓ 2 departments</li><li className="font-dm-mono text-[11px] text-white/50">✓ 10 specialized agents</li><li className="font-dm-mono text-[11px] text-white/50">✓ 3 team members</li><li className="font-dm-mono text-[11px] text-white/50">✓ CyberGuard security scanner</li></>
-                            )}
-                            {plan === 'Pro' && (
-                              <><li className="font-dm-mono text-[11px] text-white">✓ 6 departments</li><li className="font-dm-mono text-[11px] text-white/80">✓ 30 specialized agents</li><li className="font-dm-mono text-[11px] text-white/50">✓ 8 team members</li><li className="font-dm-mono text-[11px] text-white/50">✓ Video & Code generation</li><li className="font-dm-mono text-[11px] text-white/50">✓ BYOLLM + Web Intel</li></>
-                            )}
-                            {plan === 'Enterprise' && (
-                              <><li className="font-dm-mono text-[11px] text-white text-white/80">✓ All 9 departments</li><li className="font-dm-mono text-[11px] text-white/50">✓ All 45 agents</li><li className="font-dm-mono text-[11px] text-white/50">✓ Unlimited members</li><li className="font-dm-mono text-[11px] text-white/50">✓ 24/7 concierge support</li></>
-                            )}
-                          </ul>
-                          
-                          <div className={`w-full py-3 rounded-xl border text-center font-syne text-[11px] uppercase tracking-widest font-bold transition-all ${selectedPlan === plan.toLowerCase() ? 'bg-green text-bg border-transparent' : 'bg-transparent text-white border-white/10'}`}>
-                            Choose {plan}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-center font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em] mt-8 opacity-80">You can change your plan anytime from Account → Billing. All plans start with a 14-day free trial.</p>
-                  </div>
-                )}
-
-                {currentStep === 1 && (
                   <div className="space-y-8 py-2">
                     <p className="font-dm-mono text-[13px] text-white/80 leading-relaxed border-l-2 border-green/50 pl-4 bg-green/5 py-3 pr-4 rounded-r-xl">
                       Initiating secure configuration sequence to deploy your automated workforce.
@@ -235,7 +190,7 @@ export default function OnboardingPage() {
                     <div className="space-y-4">
                       <h4 className="font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em] mb-4">Onboarding Sequence</h4>
                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {steps.slice(2).map((s, idx) => (
+                        {steps.slice(1).map((s, idx) => (
                           <li key={s.id} className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/5">
                             <span className="w-5 h-5 rounded bg-green/10 text-green flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
                             <span className="font-syne text-[14px] text-white/80 font-bold">{s.name}</span>
@@ -246,7 +201,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {currentStep === 2 && (
+                {currentStep === 1 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
                        <label className="block font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">Company Name</label>
@@ -304,7 +259,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {currentStep === 3 && (
+                {currentStep === 2 && (
                   <div className="space-y-8 pb-4">
                     {!isTemplateGalleryOpen ? (
                       <div className="flex flex-col gap-8">
@@ -335,7 +290,7 @@ export default function OnboardingPage() {
                                   onClick={() => setSuggestedTemplateSlug(null)}
                                   className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/[0.03] border border-white/5 text-white/60 hover:text-white hover:bg-white/10 font-syne text-[13px] font-bold uppercase tracking-widest transition-all"
                                 >
-                                  Deploy Custom {selectedPlan === 'starter' ? '(2 Depts)' : selectedPlan === 'pro' ? '(6 Depts)' : '(All Depts)'}
+                                  Deploy Custom Departments
                                 </button>
                               </div>
                             </div>
@@ -346,17 +301,12 @@ export default function OnboardingPage() {
                             {/* Department Selection */}
                             <div className="space-y-4">
                               <div className="flex items-center justify-between">
-                                <h4 className="font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">
-                                  Choose {selectedPlan === 'starter' ? 'up to 2' : selectedPlan === 'pro' ? 'up to 6' : 'departments'}
-                                </h4>
-                                <span className="text-[10px] font-bold text-green uppercase tracking-widest">
-                                  {selectedDepts.length} / {selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 6 : 9} Selected
-                                </span>
+                                  {selectedDepts.length} / 9 Selected
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {DEPARTMENTS.map(d => {
                                   const isSelected = selectedDepts.includes(d.name);
-                                  const isLocked = !isSelected && selectedDepts.length >= (selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 6 : 9);
+                                  const isLocked = false;
                                   
                                   return (
                                     <button 
@@ -449,7 +399,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {currentStep === 4 && (
+                {currentStep === 3 && (
                   <div className="flex flex-col gap-4 py-2">
                     {[
                       { id: 'Autopilot', name: 'Autopilot', desc: 'Execute & Report', brief: 'In this mode, your agents are empowered to take actions immediately based on their objectives. You will receive a summary of completed tasks. Best for low-risk workflows.' },
@@ -478,7 +428,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {currentStep === 5 && (
+                {currentStep === 4 && (
                   <div className="space-y-8 py-2">
                     <div className="text-center">
                       <h3 className="font-syne font-bold text-green text-[22px] mb-2 uppercase tracking-wide animate-pulse">Configuration Complete</h3>
@@ -557,12 +507,11 @@ export default function OnboardingPage() {
                  <button 
                    onClick={handleNext}
                    disabled={
-                     (currentStep === 0 && !selectedPlan) ||
-                     (currentStep === 3 && selectedDepts.length === 0 && !selectedTemplate)
+                     (currentStep === 2 && selectedDepts.length === 0 && !selectedTemplate)
                    }
-                   className={`w-full sm:w-auto px-8 py-3.5 font-syne text-[14px] font-bold rounded-xl transition-all duration-300 ${((currentStep === 0 && !selectedPlan) || (currentStep === 3 && selectedDepts.length === 0 && !selectedTemplate)) ? 'opacity-30 cursor-not-allowed bg-white/5 text-white/40' : 'btn-primary hover:scale-[1.02] active:scale-[0.98]'}`}
+                   className={`w-full sm:w-auto px-8 py-3.5 font-syne text-[14px] font-bold rounded-xl transition-all duration-300 ${((currentStep === 2 && selectedDepts.length === 0 && !selectedTemplate)) ? 'opacity-30 cursor-not-allowed bg-white/5 text-white/40' : 'btn-primary hover:scale-[1.02] active:scale-[0.98]'}`}
                  >
-                    {currentStep === 5 ? 'Engage Protocol →' : 'Continue →'}
+                    {currentStep === 4 ? 'Engage Protocol →' : 'Continue →'}
                  </button>
               </div>
            </div>

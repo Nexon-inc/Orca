@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
+import PricingModal from '@/components/PricingModal';
 import { useStatsRefresh } from '@/hooks/useStatsRefresh';
 import { useRealtimeCoordination } from '@/hooks/useRealtimeCoordination';
 import { useRealtimeActivity } from '@/hooks/useRealtimeActivity';
@@ -13,6 +14,8 @@ export default function DashboardPage() {
   const [coordEvents, setCoordEvents] = useState<any[]>([]);
   const [liveActivity, setLiveActivity] = useState<any[]>([]);
   const [pendingBriefsCount, setPendingBriefsCount] = useState(0);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   
   // Custom hooks for real-time updates
   const { stats, loading: statsLoading } = useStatsRefresh(org?.id);
@@ -30,7 +33,18 @@ export default function DashboardPage() {
     // 1. Fetch Org
     fetch('/api/org')
       .then(res => res.json())
-      .then(data => setOrg(data.org || data));
+      .then(data => {
+        const orgData = data.org || data;
+        setOrg(orgData);
+        // Show pricing modal if no plan or free plan
+        if (orgData.plan === 'none' || orgData.plan === 'free') {
+          setShowPricingModal(true);
+        } else if (orgData.plan_expires_at && new Date() > new Date(orgData.plan_expires_at)) {
+          // Trial expired
+          setShowPricingModal(true);
+          setIsLocked(true);
+        }
+      });
 
     // 2. Initial fetch for departments
     fetch('/api/departments')
@@ -236,6 +250,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      <PricingModal 
+        isOpen={showPricingModal} 
+        onClose={() => !isLocked && setShowPricingModal(false)} 
+        isLocked={isLocked}
+        currentPlan={org?.plan}
+      />
     </div>
   );
 }
