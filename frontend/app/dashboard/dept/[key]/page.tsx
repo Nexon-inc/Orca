@@ -213,15 +213,23 @@ export default function DeptWorkspacePage() {
      <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
        <DashboardSidebar />
        <main className="flex-1 flex flex-col min-w-0 h-full relative">
-         {/* Department Navigation Header */}
-         <header className="p-6 border-b border-white/5 bg-surface/30 workspace-anim shrink-0">
-           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+         {/* Department Navigation Header (Compacted) */}
+         <header className="px-6 py-4 border-b border-white/5 bg-surface/30 workspace-anim shrink-0">
+           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-nowrap">
              {dbDepts.map(dept => {
                const isActive = dept.key === deptKey;
                return (
-                 <a key={dept.id} href={`/dashboard/dept/${dept.key}`} className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-300 whitespace-nowrap ${isActive ? 'bg-green/10 border-green/20 text-green shadow-[0_4px_15px_rgba(0,255,135,0.15)]' : 'bg-transparent border-transparent text-white/30 hover:text-white hover:bg-white/5'}`}>
-                   <span className={`text-xl ${isActive ? 'opacity-100' : 'opacity-40'}`}>{dept.icon || '🏢'}</span>
-                   <span className="text-[10px] font-black uppercase tracking-widest">{dept.name}</span>
+                 <a 
+                   key={dept.id} 
+                   href={`/dashboard/dept/${dept.key}`} 
+                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-300 whitespace-nowrap ${
+                     isActive 
+                     ? 'bg-green/20 border-green/40 text-green shadow-[0_0_20px_rgba(0,255,135,0.2)] scale-105 ring-1 ring-green/30' 
+                     : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/20'
+                   }`}
+                 >
+                   <span className="text-lg filter drop-shadow-sm">{dept.icon || '🏢'}</span>
+                   <span className="text-[9px] font-black uppercase tracking-wider">{dept.name}</span>
                  </a>
                );
              })}
@@ -231,7 +239,7 @@ export default function DeptWorkspacePage() {
          {/* Messenger Content */}
          <div className="flex-1 flex flex-col overflow-hidden">
            {/* Briefing Input (TOP) */}
-           <div className="px-8 py-8 border-b border-white/5 bg-surface/10 workspace-anim shrink-0">
+           <div className="px-8 py-6 border-b border-white/5 bg-surface/10 workspace-anim shrink-0">
              <div className="max-w-4xl mx-auto space-y-4">
                {attachments.length > 0 && (
                  <div className="flex gap-2 flex-wrap mb-1 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -244,7 +252,7 @@ export default function DeptWorkspacePage() {
                )}
                <div className="relative group">
                  <div className="absolute left-3 bottom-3 flex items-center gap-2">
-                   <button onClick={() => setShowAttachMenu(!showAttachMenu)} className="w-12 h-12 rounded-2xl bg-white/5 text-white/20 hover:text-white hover:bg-white/10 flex items-center justify-center text-2xl transition-all shadow-xl active:scale-95">+</button>
+                   <button onClick={() => setShowAttachMenu(!showAttachMenu)} className="w-11 h-11 rounded-2xl bg-white/10 border border-white/20 text-white/40 hover:text-white hover:bg-green hover:text-bg hover:border-green flex items-center justify-center text-2xl font-light transition-all shadow-xl active:scale-95">+</button>
                    {showAttachMenu && (
                      <div className="absolute bottom-14 left-0 w-64 bg-surface rounded-2xl border border-white/10 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-bottom-2">
                         {ATTACH_SUGGESTIONS[deptKey?.toLowerCase()]?.map(sug => (<button key={sug} onClick={() => { setDeptInputText(sug); setShowAttachMenu(false); }} className="w-full text-left px-3 py-2 text-[11px] text-white/40 hover:text-white hover:bg-white/5 rounded-lg truncate">{sug}</button>))}
@@ -254,21 +262,15 @@ export default function DeptWorkspacePage() {
                      </div>
                    )}
                  </div>
-                 <textarea value={deptInputText} onChange={(e) => setDeptInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }} placeholder={selectedAgent ? `Command ${selectedAgent.name}...` : `Brief your ${deptKey} team...`} className="w-full bg-bg/40 border border-white/5 focus:border-green/20 rounded-[2.5rem] p-7 pl-16 pr-16 text-[14px] text-white placeholder:text-white/10 resize-none outline-none shadow-inner transition-all min-h-[120px] leading-relaxed" />
-                 <button onClick={handleDeptSend} disabled={isRouting} className="absolute right-3 bottom-3 w-12 h-12 rounded-2xl bg-green text-bg flex items-center justify-center text-xl font-bold shadow-[0_4px_25px_rgba(0,255,135,0.4)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50">{isRouting ? '...' : '↑'}</button>
+                 <textarea value={deptInputText} onChange={(e) => setDeptInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }} placeholder={selectedAgent ? `Command ${selectedAgent.name}...` : `Brief your ${deptKey} team...`} className="w-full bg-bg/40 border border-white/20 focus:border-green/50 rounded-[2.5rem] p-7 pl-16 pr-16 text-[14px] text-white placeholder:text-white/10 resize-none outline-none shadow-inner transition-all min-h-[120px] leading-relaxed" />
+                 <button onClick={handleDeptSend} disabled={isRouting} className="absolute right-3 bottom-3 w-11 h-11 rounded-2xl bg-green text-bg flex items-center justify-center text-xl font-bold shadow-[0_0_25px_rgba(0,255,135,0.4)] hover:scale-110 active:scale-95 transition-all disabled:opacity-50">{isRouting ? '...' : '↑'}</button>
                </div>
              </div>
            </div>
 
            {/* Conversation Thread */}
-           <div className="flex-1 overflow-y-auto p-8 space-y-12 no-scrollbar pb-40">
-             {messages.length === 0 ? (
-               <div className="py-24 text-center border border-dashed border-white/5 rounded-[4rem] bg-white/[0.01] flex flex-col items-center opacity-40">
-                 <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-3xl mb-6 opacity-20">💬</div>
-                 <p className="text-[10px] font-black uppercase tracking-[0.5em]">Ready for Command Input</p>
-               </div>
-             ) : (
-               messages.map((msg, i) => (
+           <div className="flex-1 overflow-y-auto p-8 space-y-12 no-scrollbar pb-32">
+             {messages.length > 0 && messages.map((msg, i) => (
                  <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} workspace-anim animate-in fade-in slide-in-from-bottom-4 duration-500`}>
                    {msg.role === 'agent' && (
                      <div className="flex items-center gap-3 mb-3 ml-4">
@@ -280,8 +282,7 @@ export default function DeptWorkspacePage() {
                       <p className="text-[14px] text-white/90 leading-relaxed italic whitespace-pre-wrap">{msg.content}</p>
                    </div>
                  </div>
-               ))
-             )}
+             ))}
              {isTyping && (
                <div className="flex items-center gap-3 opacity-30 ml-8">
                  <div className="w-2 h-2 rounded-full bg-green animate-bounce" />
@@ -292,19 +293,19 @@ export default function DeptWorkspacePage() {
              <div ref={threadEndRef} />
            </div>
 
-           {/* Team Personnel (FOOTER) */}
-           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-bg via-bg/95 to-transparent pointer-events-none">
-             <div className="max-w-4xl mx-auto flex flex-col items-center gap-5 pointer-events-auto">
-               <div className="flex items-center gap-5 w-full opacity-10">
-                 <div className="h-px flex-1 bg-white" />
-                 <span className="text-[9px] font-black uppercase tracking-[0.8em] text-white">Personnel</span>
-                 <div className="h-px flex-1 bg-white" />
+           {/* Team Personnel (Ultra Compact FOOTER) */}
+           <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-bg via-bg/95 to-transparent pointer-events-none">
+             <div className="max-w-4xl mx-auto flex flex-col items-center gap-3 pointer-events-auto">
+               <div className="flex items-center gap-3 w-full opacity-10">
+                 <div className="h-px flex-1 bg-white/40" />
+                 <span className="text-[8px] font-black uppercase tracking-[0.5em] text-white">Personnel</span>
+                 <div className="h-px flex-1 bg-white/40" />
                </div>
-               <div className="flex gap-4 p-3 bg-surface/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 shadow-3xl">
-                 {isLoadingAgents ? [1,2,3].map(i => <div key={i} className="w-16 h-16 bg-white/5 rounded-[1.5rem] animate-pulse" />) : dbAgents.map(agent => (
-                   <button key={agent.id} onClick={() => setSelectedAgent(agent)} title={agent.role} className={`group relative flex items-center justify-center w-16 h-16 rounded-[1.75rem] border transition-all duration-500 hover:scale-110 active:scale-90 ${selectedAgent?.id === agent.id ? 'bg-green/10 border-green/40 shadow-[0_0_30px_rgba(0,255,135,0.2)] ring-1 ring-green/30' : 'bg-white/5 border-transparent grayscale hover:grayscale-0 hover:border-white/10 hover:bg-white/10'}`}>
-                     <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-active:scale-95">{agent.icon}</span>
-                     <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-bg border border-white/10 text-[10px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all shadow-3xl translate-y-2 group-hover:translate-y-0 pointer-events-none z-50 whitespace-nowrap">
+               <div className="flex gap-2.5 p-2 bg-surface/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-3xl">
+                 {isLoadingAgents ? [1,2,3].map(i => <div key={i} className="w-11 h-11 bg-white/5 rounded-xl animate-pulse" />) : dbAgents.map(agent => (
+                   <button key={agent.id} onClick={() => setSelectedAgent(agent)} title={agent.role} className={`group relative flex items-center justify-center w-11 h-11 rounded-xl border transition-all duration-500 hover:scale-110 active:scale-95 ${selectedAgent?.id === agent.id ? 'bg-green/20 border-green/40 shadow-[0_0_20px_rgba(0,255,135,0.3)] ring-1 ring-green/20' : 'bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10'}`}>
+                     <span className="text-xl transition-transform duration-500 group-hover:scale-110 group-active:scale-95">{agent.icon}</span>
+                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-xl bg-bg border border-white/10 text-[8px] font-bold uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all shadow-3xl translate-y-2 group-hover:translate-y-0 pointer-events-none z-50 whitespace-nowrap">
                        {agent.name}
                      </div>
                    </button>
