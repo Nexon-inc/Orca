@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
 
@@ -17,9 +18,23 @@ const tabs = [
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState({ full_name: '', email: '' });
-  const [identity, setIdentity] = useState<any>({});
+  const [identity, setIdentity] = useState<any>({
+    company_name: '',
+    industry: 'AI & Robotics',
+    mission: '',
+    brand_voice: 'Founder / Professional',
+    location: '',
+  });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   useEffect(() => {
     // Fetch user org + profile
@@ -68,7 +83,12 @@ export default function AccountPage() {
               <span className="text-[10px] text-green font-[800] uppercase tracking-widest">Admin Access</span>
             </div>
           </div>
-          <button className="text-[11px] text-white/40 hover:text-red-500 transition-colors uppercase tracking-[0.2em] font-[800]">Logout</button>
+          <button 
+            onClick={handleLogout}
+            className="text-[11px] text-white/40 hover:text-red-500 transition-colors uppercase tracking-[0.2em] font-[800]"
+          >
+            Logout
+          </button>
         </header>
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -104,8 +124,8 @@ export default function AccountPage() {
                           👤
                        </div>
                        <div>
-                          <h3 className="font-syne text-2xl font-[800] text-white mb-2 uppercase tracking-tight">Your Account</h3>
-                          <p className="text-[11px] text-white/20 font-[800] uppercase tracking-widest leading-none">Profile & Company Info</p>
+                          <h3 className="font-syne text-2xl font-[800] text-white mb-2 uppercase tracking-tight">{profile.full_name || 'Your Account'}</h3>
+                          <p className="text-[11px] text-white/20 font-[800] uppercase tracking-widest leading-none">{profile.email || 'Profile & Company Info'}</p>
                        </div>
                     </div>
                     
@@ -115,11 +135,22 @@ export default function AccountPage() {
                        <div className="grid md:grid-cols-2 gap-8">
                           <div className="space-y-4">
                              <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">Full Name</label>
-                             <input type="text" placeholder="Enter your full name" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-syne placeholder:text-white/10 focus:border-green/50 outline-none transition-all" />
+                             <input
+                               type="text"
+                               placeholder="Enter your full name"
+                               value={profile.full_name}
+                               onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-syne placeholder:text-white/10 focus:border-green/50 outline-none transition-all"
+                             />
                           </div>
                           <div className="space-y-4">
                              <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">Email Address</label>
-                             <input type="email" placeholder="Verification pending..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white/20 font-syne cursor-not-allowed placeholder:text-white/5" disabled />
+                             <input
+                               type="email"
+                               value={profile.email}
+                               disabled
+                               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white/20 font-syne cursor-not-allowed"
+                             />
                           </div>
                        </div>
                     </div>
@@ -130,13 +161,23 @@ export default function AccountPage() {
                        <div className="grid md:grid-cols-2 gap-8">
                           <div className="space-y-4">
                              <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">Company Name</label>
-                             <input type="text" placeholder="Enter your company name" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-syne placeholder:text-white/10 focus:border-green/50 outline-none transition-all" />
+                             <input
+                               type="text"
+                               placeholder="Enter your company name"
+                               value={identity.company_name || ''}
+                               onChange={(e) => setIdentity({ ...identity, company_name: e.target.value })}
+                               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-syne placeholder:text-white/10 focus:border-green/50 outline-none transition-all"
+                             />
                           </div>
                           <div className="space-y-4">
                              <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">Industry</label>
-                             <select className="w-full bg-surface border border-white/10 rounded-xl p-4 text-white/40 font-syne focus:border-green/50 outline-none transition-all">
-                                <option>Select Industry...</option>
-                                <option>AI & Robotics</option>
+                             <select
+                               value={identity.industry || ''}
+                               onChange={(e) => setIdentity({ ...identity, industry: e.target.value })}
+                               className="w-full bg-surface border border-white/10 rounded-xl p-4 text-white font-syne focus:border-green/50 outline-none transition-all"
+                             >
+                                <option value="">Select Industry...</option>
+                                <option>AI &amp; Robotics</option>
                                 <option>E-commerce</option>
                                 <option>Fintech</option>
                                 <option>Software / SaaS</option>
@@ -145,7 +186,13 @@ export default function AccountPage() {
                        </div>
                        <div className="space-y-4">
                           <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">Company Mission</label>
-                          <textarea rows={4} className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-white font-syne placeholder:text-white/10 focus:border-green/30 outline-none transition-all resize-none" placeholder="Describe what your company does..." />
+                          <textarea
+                            rows={4}
+                            value={identity.mission || ''}
+                            onChange={(e) => setIdentity({ ...identity, mission: e.target.value })}
+                            placeholder="Describe what your company does..."
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-white font-syne placeholder:text-white/10 focus:border-green/30 outline-none transition-all resize-none"
+                          />
                        </div>
                     </div>
 
@@ -155,8 +202,12 @@ export default function AccountPage() {
                        <div className="grid md:grid-cols-2 gap-8">
                           <div className="space-y-4">
                              <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">Brand Voice</label>
-                             <select className="w-full bg-surface border border-white/10 rounded-xl p-4 text-white/40 font-syne focus:border-green/50 outline-none transition-all">
-                                <option>Select Brand Voice...</option>
+                             <select
+                               value={identity.brand_voice || ''}
+                               onChange={(e) => setIdentity({ ...identity, brand_voice: e.target.value })}
+                               className="w-full bg-surface border border-white/10 rounded-xl p-4 text-white font-syne focus:border-green/50 outline-none transition-all"
+                             >
+                                <option value="">Select Brand Voice...</option>
                                 <option>Founder / Professional</option>
                                 <option>Technical / Dense</option>
                                 <option>Friendly / Approachable</option>
@@ -165,7 +216,13 @@ export default function AccountPage() {
                           </div>
                           <div className="space-y-4">
                              <label className="text-[9px] font-[800] text-white/40 uppercase tracking-[0.3em]">Location</label>
-                             <input type="text" placeholder="Global / Remote (Default)" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-syne placeholder:text-white/10" />
+                             <input
+                               type="text"
+                               placeholder="Global / Remote (Default)"
+                               value={identity.geography || ''}
+                               onChange={(e) => setIdentity({ ...identity, geography: e.target.value })}
+                               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-syne placeholder:text-white/10 focus:border-green/50 outline-none transition-all"
+                             />
                           </div>
                        </div>
                        <div className="p-6 rounded-2xl border border-white/5 bg-surface/20">
@@ -177,9 +234,16 @@ export default function AccountPage() {
                        </div>
                     </div>
 
-                    <button className="btn-primary py-4 px-10 rounded-xl text-[11px] font-[800] uppercase tracking-widest mt-8">Save Changes</button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className={`btn-primary py-4 px-10 rounded-xl text-[11px] font-[800] uppercase tracking-widest mt-8 flex items-center gap-2 ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {saving ? 'Saving...' : saved ? 'Changes Saved ✓' : 'Save Changes'}
+                    </button>
                   </div>
                 )}
+
 
                 {activeTab === 'permissions' && (
                   <div className="space-y-8">

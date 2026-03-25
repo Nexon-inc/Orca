@@ -67,17 +67,17 @@ export default function OnboardingPage() {
     // Save current step data to backend before advancing
     const stepPayloads: Record<number, any> = {
       0: { selected_plan: selectedPlan || 'starter' },
-      2: { // Step 2: Company Profile
+      1: { // Step 1: Company Profile
         company_name: companyInfo.name,
         mission: companyInfo.mission,
         industry: companyInfo.industry,
         icp: companyInfo.icp,
       },
-      3: { // Step 3: Org Architecture
+      2: { // Step 2: Org Architecture
         template_slug: selectedTemplate?.slug || null,
         selected_departments: selectedDepts.length > 0 ? selectedDepts : null,
       },
-      4: { // Step 4: Protocol — operating mode
+      3: { // Step 3: Protocol Alpha — operating mode
         agent_mode: operatingMode === 'Autopilot' ? 'autopilot' :
                    operatingMode === 'Suggest Only' ? 'suggest_only' : 'approve_first',
       },
@@ -307,14 +307,14 @@ export default function OnboardingPage() {
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {DEPARTMENTS.map(d => {
-                                  const isSelected = selectedDepts.includes(d.name);
+                                  const isSelected = selectedDepts.includes(d.id);
                                   const isLocked = false;
                                   
                                   return (
                                     <button 
                                       key={d.id}
                                       disabled={isLocked}
-                                      onClick={() => toggleDept(d.name)}
+                                      onClick={() => toggleDept(d.id)}
                                       className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all group relative ${isSelected ? 'bg-green/10 border-green/30 shadow-[0_5px_15px_rgba(0,255,135,0.1)]' : isLocked ? 'opacity-40 grayscale cursor-not-allowed' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
                                     >
                                       <span className={`text-xl ${isSelected ? 'grayscale-0' : 'grayscale group-hover:grayscale-0 transition-all'}`}>{d.icon}</span>

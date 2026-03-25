@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { animate, stagger } from 'animejs';
 import { useRole } from '@/hooks/useRole';
 import { createClientSupabaseClient } from '@/lib/supabase/client';
@@ -55,6 +55,14 @@ export default function DashboardSidebar({ active }: SidebarProps) {
       ease: 'outExpo'
     });
   }, [isCollapsed, dbDepts]);
+
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClientSupabaseClient();
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -166,9 +174,9 @@ export default function DashboardSidebar({ active }: SidebarProps) {
 
       <div className="mt-auto p-4 border-t border-white/5">
         <button 
-          onClick={() => window.location.href = '/'}
+          onClick={handleLogout}
+          title="Logout"
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white/20 hover:text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 group/logout ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
-          title="Terminate Session"
         >
           <span className="text-[16px] group-hover/logout:scale-110 transition-transform">⏻</span>
           {!isCollapsed && (
