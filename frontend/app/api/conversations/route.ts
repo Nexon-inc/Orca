@@ -42,7 +42,15 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+   if (error) {
+     console.error('CONVERSATION_CREATE_ERROR:', error);
+     return NextResponse.json({ 
+       error: error.message, 
+       details: error.details,
+       hint: error.hint,
+       code: error.code 
+     }, { status: 400 })
+   }
 
   return NextResponse.json({ conversation })
 }

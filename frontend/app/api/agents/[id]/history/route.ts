@@ -19,7 +19,15 @@ export async function GET(
     .order('updated_at', { ascending: false })
     .limit(20)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+   if (error) {
+     console.error('HISTORY_FETCH_ERROR:', error);
+     return NextResponse.json({
+       error: error.message,
+       details: error.details,
+       hint: error.hint,
+       code: error.code
+     }, { status: 400 })
+   }
 
   return NextResponse.json({ history })
 }

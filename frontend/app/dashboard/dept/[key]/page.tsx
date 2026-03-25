@@ -35,11 +35,13 @@ export default function DeptWorkspacePage() {
    const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
    const [conversationId, setConversationId] = useState<string | null>(null);
    const [inputText, setInputText] = useState('');
+   const [deptInputText, setDeptInputText] = useState('');
+   const [isRouting, setIsRouting] = useState(false);
    const [isLoadingAgents, setIsLoadingAgents] = useState(true);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showNewBriefMenu, setShowNewBriefMenu] = useState(false);
   const [attachments, setAttachments] = useState<{name: string, type: string, data: string, text?: string}[]>([]);
-  const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string, video?: any, wrenCode?: any }[]>([]);
+  const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string, senderName?: string, senderIcon?: string, video?: any, wrenCode?: any }[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const threadEndRef = useRef<HTMLDivElement>(null);
@@ -144,39 +146,53 @@ export default function DeptWorkspacePage() {
     return null;
   };
 
-   const handleSend = async () => {
-     if (!inputText.trim() && attachments.length === 0) return;
-     if (!selectedAgent) return;
+   const handleSend = async (customMsg?: string, forceAgent?: any) => {
+     const text = customMsg || inputText;
+     if (!text.trim() && attachments.length === 0) return;
+     
+     const targetAgent = forceAgent || selectedAgent;
+     if (!targetAgent) return;
  
-     const userMsg = inputText;
+     const userMsg = text;
      const currentAttachments = [...attachments];
-     setInputText('');
+     if (!customMsg) setInputText('');
      setAttachments([]);
      setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
      setIsTyping(true);
  
      try {
        let activeConvId = conversationId;
- 
-       // Self-healing: if conversationId is missing, try to sync it now
-       if (!activeConvId) {
-         console.log('No conversationId, syncing before send...');
-         const historyRes = await fetch(`/api/agents/${selectedAgent.id}/history`);
+       if (forceAgent && forceAgent.id !== selectedAgent?.id) {
+         // Switch context if routing to a different agent
+         const historyRes = await fetch(`/api/agents/${forceAgent.id}/history`);
          const historyData = await historyRes.json();
-         
          if (historyData.history && historyData.history.length > 0) {
            activeConvId = historyData.history[0].id;
          } else {
            const createRes = await fetch('/api/conversations', {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: apiDeptKey })
+             body: JSON.stringify({ agent_id: forceAgent.id, department_key: apiDeptKey })
            });
            const createData = await createRes.json();
            activeConvId = createData.conversation?.id;
          }
-         
-         if (activeConvId) setConversationId(activeConvId);
+       }
+ 
+       if (!activeConvId) {
+         const historyRes = await fetch(`/api/agents/${targetAgent.id}/history`);
+         const historyData = await historyRes.json();
+         if (historyData.history && historyData.history.length > 0) {
+           activeConvId = historyData.history[0].id;
+         } else {
+           const createRes = await fetch('/api/conversations', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ agent_id: targetAgent.id, department_key: apiDeptKey })
+           });
+           const createData = await createRes.json();
+           activeConvId = createData.conversation?.id;
+         }
        }
  
        if (!activeConvId) throw new Error('Could not establish conversation');
@@ -195,18 +211,45 @@ export default function DeptWorkspacePage() {
          setMessages(prev => [...prev, { 
            role: 'agent', 
            content: agentMsg.content,
+           senderName: targetAgent.name,
+           senderIcon: targetAgent.icon,
            video: parseVideoTag(agentMsg.content),
            wrenCode: parseWrenCode(agentMsg.content)
          }]);
        }
      } catch (err: any) {
        console.error('Send failed details:', err);
-       setMessages(prev => [...prev, { role: 'agent', content: `Something went wrong: ${err.message || 'Unknown error'}` }]);
+       const errorText = err.message || 'Unknown error';
+       setMessages(prev => [...prev, { role: 'agent', content: `Something went wrong: ${errorText}` }]);
      } finally {
        setIsTyping(false);
        setTimeout(() => {
          threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
        }, 100);
+     }
+   };
+ 
+   const handleDeptSend = async () => {
+     if (!deptInputText.trim()) return;
+     const brief = deptInputText;
+     setDeptInputText('');
+     setIsRouting(true);
+ 
+     try {
+       const res = await fetch(`/api/departments/${apiDeptKey}`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ content: brief })
+       });
+       const data = await res.json();
+       if (data.agent) {
+         setSelectedAgent(data.agent);
+         handleSend(brief, data.agent);
+       }
+     } catch (err) {
+       console.error('Routing failed:', err);
+     } finally {
+       setIsRouting(false);
      }
    };
 
@@ -364,124 +407,180 @@ export default function DeptWorkspacePage() {
            ))}
          </div>
 
-        <div className="flex-1 flex overflow-hidden">
-            {/* Message Thread */}
-            <div className="flex-1 flex flex-col border-r border-white/5 overflow-hidden">
-              <div className="flex-1 p-8 overflow-y-auto space-y-10 messenger-thread no-scrollbar">
-                {messages.length === 0 ? (
-                  <div className="py-24 text-center border border-dashed border-white/5 rounded-[3rem] bg-white/[0.01] workspace-anim">
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-xl mx-auto mb-6 opacity-20">💬</div>
-                    <p className="font-dm-mono text-[11px] text-white/10 font-black uppercase tracking-[0.3em]">Initialize mission parameters to begin coordination</p>
-                  </div>
-                ) : (
-                  messages.map((msg, i) => (
-                    <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} workspace-anim`}>
-                       <div className={`max-w-[80%] p-6 rounded-[2rem] ${
-                         msg.role === 'user' ? 'bg-green/10 border border-green/20' : 'bg-surface/30 border border-white/5'
-                       }`}>
-                          <p className="text-[13px] text-white/80 leading-relaxed font-dm-mono italic whitespace-pre-wrap">
-                            {msg.content}
-                          </p>
-                       </div>
-                       {msg.video && (
-                         <VideoResultCard 
-                           id={`vid-${i}`}
-                           template={msg.video.template}
-                           props={msg.video.props}
-                           orgId="demo-org-123" 
-                         />
-                       )}
-                       {msg.wrenCode && (
-                         <WrenCodeCard
-                           id={`wren-${i}`}
-                           filePath={msg.wrenCode.filePath}
-                           code={msg.wrenCode.code}
-                           explanation={msg.wrenCode.explanation}
-                           hasPr={msg.wrenCode.hasPr}
-                         />
-                       )}
+         <div className="flex-1 flex flex-col overflow-hidden">
+             {/* Department Briefing Input (TOP) */}
+             <div className="px-8 py-6 border-b border-white/5 bg-surface/10 workspace-anim">
+               <div className="max-w-4xl mx-auto relative group">
+                 <textarea 
+                   value={deptInputText}
+                   onChange={(e) => setDeptInputText(e.target.value)}
+                   onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }}
+                   placeholder={`Brief your ${deptKey} team...`}
+                   className="w-full bg-bg/50 border border-white/10 focus:border-green/30 rounded-2xl p-6 pr-16 font-dm-mono text-sm text-white placeholder:text-white/20 resize-none outline-none shadow-inner transition-all min-h-[80px]"
+                 />
+                 <button 
+                   onClick={handleDeptSend}
+                   disabled={isRouting}
+                   className="absolute right-4 bottom-4 w-10 h-10 rounded-xl bg-green text-bg flex items-center justify-center text-lg font-bold shadow-[0_4px_15px_rgba(0,255,135,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                 >
+                   {isRouting ? '...' : '↑'}
+                 </button>
+               </div>
+             </div>
+ 
+             {/* Message Thread */}
+             <div className="flex-1 flex flex-col overflow-hidden">
+               <div className="flex-1 p-8 overflow-y-auto space-y-10 messenger-thread no-scrollbar">
+                 {messages.length === 0 ? (
+                   <div className="py-24 text-center border border-dashed border-white/5 rounded-[3rem] bg-white/[0.01] workspace-anim">
+                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-xl mx-auto mb-6 opacity-20">💬</div>
+                     <p className="font-dm-mono text-[11px] text-white/10 font-black uppercase tracking-[0.3em]">Initialize mission parameters to begin coordination</p>
+                   </div>
+                 ) : (
+                   messages.map((msg, i) => (
+                     <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} workspace-anim`}>
+                        {msg.role === 'agent' && (
+                          <div className="flex items-center gap-2 mb-2 ml-4">
+                            <span className="text-lg">{msg.senderIcon}</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{msg.senderName} responded</span>
+                          </div>
+                        )}
+                        <div className={`max-w-[80%] p-6 rounded-[2rem] ${
+                          msg.role === 'user' ? 'bg-green/10 border border-green/20' : 'bg-surface/30 border border-white/5'
+                        }`}>
+                           <p className="text-[13px] text-white/80 leading-relaxed font-dm-mono italic whitespace-pre-wrap">
+                             {msg.content}
+                           </p>
+                        </div>
+                        {msg.video && (
+                          <VideoResultCard 
+                            id={`vid-${i}`}
+                            template={msg.video.template}
+                            props={msg.video.props}
+                            orgId="demo-org-123" 
+                          />
+                        )}
+                        {msg.wrenCode && (
+                          <WrenCodeCard
+                            id={`wren-${i}`}
+                            filePath={msg.wrenCode.filePath}
+                            code={msg.wrenCode.code}
+                            explanation={msg.wrenCode.explanation}
+                            hasPr={msg.wrenCode.hasPr}
+                          />
+                        )}
+                     </div>
+                   ))
+                 )}
+                 {isTyping && (
+                   <div className="flex items-center gap-2 opacity-40 ml-4">
+                     <div className="w-2 h-2 rounded-full bg-green animate-bounce" />
+                     <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.2s]" />
+                     <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.4s]" />
+                   </div>
+                 )}
+                 <div ref={threadEndRef} />
+               </div>
+ 
+               {/* Team Roster & Quick Inputs (BOTTOM) */}
+               <div className="px-8 pb-8 pt-6 border-t border-white/5 bg-surface/20 shrink-0">
+                  <div className="max-w-4xl mx-auto space-y-6">
+                    {/* Your Team Label */}
+                    <div className="flex items-center gap-4">
+                      <div className="h-px flex-1 bg-white/5" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Your Team</span>
+                      <div className="h-px flex-1 bg-white/5" />
                     </div>
-                  ))
-                )}
-                {isTyping && (
-                  <div className="flex items-center gap-2 opacity-40">
-                    <div className="w-2 h-2 rounded-full bg-green animate-bounce" />
-                    <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.4s]" />
-                  </div>
-                )}
-                <div ref={threadEndRef} />
-              </div>
-
-              {/* Input Area */}
-              <div className="px-8 pb-4 pt-4 border-t border-white/5 bg-surface/20 shrink-0">
-                 <div className="relative max-w-4xl mx-auto flex flex-col items-start gap-2">
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar w-full">
-                      {selectedAgent?.prompts.slice(0, 3).map((p: string) => (
-                        <button key={p} 
-                          onClick={() => setInputText(p)}
-                          className="px-4 py-2 rounded-full border border-white/10 bg-bg hover:bg-white/5 text-[11px] font-dm-mono font-black text-white/60 hover:text-white uppercase tracking-tight whitespace-nowrap transition-all"
+ 
+                    {/* Agent Tabs */}
+                    <div className="flex gap-2 justify-center">
+                      {isLoadingAgents ? (
+                        [1,2,3].map(i => <div key={i} className="w-32 h-10 bg-white/5 rounded-xl animate-pulse" />)
+                      ) : dbAgents.map(agent => (
+                        <button 
+                          key={agent.id}
+                          onClick={() => setSelectedAgent(agent)}
+                          className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-300 outline-none ${
+                            selectedAgent?.id === agent.id 
+                            ? 'bg-white/10 border-white/10 text-white shadow-lg scale-105' 
+                            : 'bg-transparent border-transparent text-white/40 hover:text-white'
+                          }`}
                         >
-                          {p}
+                          <span className="text-xl">{agent.icon}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{agent.name}</span>
                         </button>
                       ))}
                     </div>
-
-                    {attachments.length > 0 && (
-                      <div className="flex gap-2 flex-wrap mb-1 w-full">
-                        {attachments.map((file, idx) => (
-                          <div key={idx} className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg border border-white/10 bg-white/5 font-dm-mono text-[11px] text-white/80">
-                             📄 {file.name}
-                            <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))} className="hover:text-red-400 opacity-60 hover:opacity-100 ml-1">✕</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="relative w-full flex items-end bg-bg/50 border border-white/10 focus-within:border-green/30 rounded-[1.5rem] shadow-inner transition-all p-2 gap-2">
-                      <div className="relative shrink-0">
-                        <button 
-                          onClick={() => setShowAttachMenu(!showAttachMenu)}
-                          className="w-10 h-10 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center text-2xl font-light transition-all"
-                        >
-                          +
-                        </button>
-                        {showAttachMenu && (
-                          <div className="absolute bottom-12 left-0 w-64 bg-surface rounded-2xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.5)] p-2 z-50 font-dm-mono animate-in fade-in slide-in-from-bottom-2 duration-200">
-                             <div className="px-3 py-2 border-b border-white/5 mb-1">
-                               <p className="text-[9px] text-white/30 uppercase tracking-widest font-black">Suggested Uploads</p>
+ 
+                    {/* Individual Agent Input Area */}
+                    <div className="flex flex-col items-start gap-2">
+                       <div className="flex gap-2 overflow-x-auto no-scrollbar w-full py-1">
+                         {selectedAgent?.prompts.slice(0, 3).map((p: string) => (
+                           <button key={p} 
+                             onClick={() => setInputText(p)}
+                             className="px-4 py-2 rounded-full border border-white/10 bg-bg hover:bg-white/5 text-[11px] font-dm-mono font-black text-white/60 hover:text-white uppercase tracking-tight whitespace-nowrap transition-all"
+                           >
+                             {p}
+                           </button>
+                         ))}
+                       </div>
+ 
+                       {attachments.length > 0 && (
+                         <div className="flex gap-2 flex-wrap mb-1 w-full">
+                           {attachments.map((file, idx) => (
+                             <div key={idx} className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg border border-white/10 bg-white/5 font-dm-mono text-[11px] text-white/80">
+                                📄 {file.name}
+                               <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))} className="hover:text-red-400 opacity-60 hover:opacity-100 ml-1">✕</button>
                              </div>
-                             {ATTACH_SUGGESTIONS[selectedAgent?.dept || '']?.map(sug => (
-                               <button key={sug} className="w-full text-left px-3 py-2 text-[11px] text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-colors truncate">
-                                 {sug}
-                               </button>
-                             ))}
-                             <div className="my-1 border-t border-white/5"></div>
-                             <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-bold text-white hover:bg-white/5 rounded-lg transition-colors">
-                               <span className="opacity-70 text-base">📎</span> Upload file
-                             </button>
-                             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileAttach} />
-                          </div>
-                        )}
-                      </div>
-                      <textarea 
-                        value={inputText}
-                        onChange={handleInput}
-                        placeholder={`Command ${selectedAgent?.name}...`}
-                        className="flex-1 bg-transparent font-dm-mono text-[14px] text-white placeholder:text-white/20 resize-none outline-none no-scrollbar py-2.5 leading-relaxed"
-                        style={{ minHeight: '40px', maxHeight: '120px', height: '40px', overflowY: 'auto' }}
-                      />
-                      <button 
-                        onClick={handleSend}
-                        className="w-10 h-10 shrink-0 rounded-xl bg-green text-bg flex items-center justify-center text-lg font-bold shadow-[0_4px_15px_rgba(0,255,135,0.3)] hover:scale-105 active:scale-95 transition-all outline-none"
-                      >
-                         ↑
-                      </button>
+                           ))}
+                         </div>
+                       )}
+ 
+                       <div className="relative w-full flex items-end bg-bg/50 border border-white/10 focus-within:border-green/30 rounded-[1.5rem] shadow-inner transition-all p-2 gap-2">
+                         <div className="relative shrink-0">
+                           <button 
+                             onClick={() => setShowAttachMenu(!showAttachMenu)}
+                             className="w-10 h-10 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center text-2xl font-light transition-all"
+                           >
+                             +
+                           </button>
+                           {showAttachMenu && (
+                             <div className="absolute bottom-12 left-0 w-64 bg-surface rounded-2xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.5)] p-2 z-50 font-dm-mono animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <div className="px-3 py-2 border-b border-white/5 mb-1">
+                                  <p className="text-[9px] text-white/30 uppercase tracking-widest font-black">Suggested Uploads</p>
+                                </div>
+                                {ATTACH_SUGGESTIONS[selectedAgent?.dept || '']?.map(sug => (
+                                  <button key={sug} className="w-full text-left px-3 py-2 text-[11px] text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-colors truncate">
+                                    {sug}
+                                  </button>
+                                ))}
+                                <div className="my-1 border-t border-white/5"></div>
+                                <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-bold text-white hover:bg-white/5 rounded-lg transition-colors">
+                                  <span className="opacity-70 text-base">📎</span> Upload file
+                                </button>
+                                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileAttach} />
+                             </div>
+                           )}
+                         </div>
+                         <textarea 
+                           value={inputText}
+                           onChange={handleInput}
+                           placeholder={`Directly brief ${selectedAgent?.name}...`}
+                           className="flex-1 bg-transparent font-dm-mono text-[14px] text-white placeholder:text-white/20 resize-none outline-none no-scrollbar py-2.5 leading-relaxed"
+                           style={{ minHeight: '40px', maxHeight: '120px', height: '40px', overflowY: 'auto' }}
+                         />
+                         <button 
+                           onClick={() => handleSend()}
+                           className="w-10 h-10 shrink-0 rounded-xl bg-green text-bg flex items-center justify-center text-lg font-bold shadow-[0_4px_15px_rgba(0,255,135,0.3)] hover:scale-105 active:scale-95 transition-all outline-none"
+                         >
+                            ↑
+                         </button>
+                       </div>
                     </div>
-                 </div>
-              </div>
-            </div>
-        </div>
+                  </div>
+               </div>
+             </div>
+         </div>
       </main>
     </div>
   );
