@@ -25,7 +25,20 @@ export async function GET() {
 
   if (!member) return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
 
-  return NextResponse.json({ member })
+  // Also fetch the user's display name from profiles (if table exists) or fall back to auth metadata
+  const { data: profileRow } = await supabase
+    .from('profiles')
+    .select('full_name, avatar_url')
+    .eq('id', user.id)
+    .single()
+
+  const profile = {
+    full_name: profileRow?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || '',
+    email: user.email || '',
+    avatar_url: profileRow?.avatar_url || '',
+  }
+
+  return NextResponse.json({ member, profile })
 }
 
 export async function PUT(request: Request) {

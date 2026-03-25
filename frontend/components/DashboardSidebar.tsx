@@ -32,19 +32,27 @@ export default function DashboardSidebar({ active }: SidebarProps) {
 
   useEffect(() => {
     setMounted(true);
-    if (orgId) {
-      const fetchDepts = async () => {
-        const supabase = createClientSupabaseClient();
-        const { data } = await supabase
-          .from('departments')
-          .select('*')
-          .eq('org_id', orgId)
-          .order('name', { ascending: true });
-        if (data) setDbDepts(data);
-      };
-      fetchDepts();
-    }
-  }, [orgId]);
+    const supabase = createClientSupabaseClient();
+    // Fetch departments regardless of orgId — try from session
+    const fetchDepts = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // Get the org_id from org_members
+      const { data: memberRow } = await supabase
+        .from('org_members')
+        .select('org_id')
+        .eq('user_id', user.id)
+        .single();
+      if (!memberRow) return;
+      const { data } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('org_id', memberRow.org_id)
+        .order('name', { ascending: true });
+      if (data) setDbDepts(data);
+    };
+    fetchDepts();
+  }, []);
 
   useEffect(() => {
     animate('.side-item', {
@@ -140,7 +148,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
                 return (
                   <a
                     key={dept.id}
-                    href={isPaused ? '/dashboard/upgrade' : `/dashboard/dept/${dept.key}`}
+                    href={`/dashboard/dept/${dept.key}`}
                     className={`flex items-center justify-between px-4 py-2 rounded-xl text-[12px] transition-all duration-200 group ${isActive ? 'text-green bg-green/5' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
                   >
                     <div className="flex items-center gap-3">

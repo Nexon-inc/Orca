@@ -81,6 +81,56 @@ export async function GET() {
       published: true
     },
     {
+      slug: 'content-marketing-agency',
+      name: 'Content Marketing Agency',
+      description: 'For agencies running content, SEO, and social for multiple clients. Activates Marketing, Intelligence, Community, and Ops.',
+      category: 'marketing_agency',
+      tags: ['agency','marketing','content','seo'],
+      template_data: {
+        departments: [
+          {key:'marketing',agent_mode:'approve_first',priority:'high',description:'Content, social, SEO, ads',active_agents:['Aria','Jackie','Eric','Lucy']},
+          {key:'intel',agent_mode:'autopilot',priority:'medium',description:'Competitor and market research',active_agents:['Roman','Sage','Nate']},
+          {key:'community',agent_mode:'approve_first',priority:'medium',description:'Partnerships and growth',active_agents:['Milo','Rio','Spike']},
+          {key:'ops',agent_mode:'autopilot',priority:'low',description:'Project and task management',active_agents:['Atlas','Dean','Iris']}
+        ],
+        suggested_integrations: ['linkedin','twitter','wordpress','google_analytics','ahrefs','notion','slack'],
+        day1_briefs: [
+          {agent_name:'Jackie',brief:'Write a 1,200-word blog post about the top 5 AI tools for small business owners. SEO-optimised, professional tone.',rationale:'Jackie produces your first piece of content immediately — sets the quality bar.'},
+          {agent_name:'Lucy',brief:'Run an SEO audit of our main website. Report the top 10 on-page issues to fix this week.',rationale:'Lucy identifies quick wins that improve organic visibility without new content.'},
+          {agent_name:'Roman',brief:'Research our top 5 competitors. Summarise their content strategy, publishing frequency, and top performing topics.',rationale:'Roman builds the competitive intelligence your whole team will reference.'},
+          {agent_name:'Sage',brief:'Monitor our brand name and top 3 competitors on LinkedIn, X, and Reddit for the next 30 days.',rationale:'Sage keeps you informed of market movements without manual searching.'}
+        ]
+      },
+      author: 'orca_official',
+      plan_required: 'starter',
+      published: true
+    },
+    {
+      slug: 'ecommerce-operator',
+      name: 'E-commerce Operator',
+      description: 'For DTC brands and online stores. Activates Marketing, Sales, Customer Success, and Finance with an e-commerce focus.',
+      category: 'ecommerce',
+      tags: ['ecommerce','dtc','retail','shopify'],
+      template_data: {
+        departments: [
+          {key:'marketing',agent_mode:'approve_first',priority:'high',description:'Ads, social, email',active_agents:['Aria','Eric','Jackie']},
+          {key:'sales',agent_mode:'autopilot',priority:'high',description:'Lead gen and pipeline',active_agents:['Rex','Clara','Chase']},
+          {key:'cs',agent_mode:'autopilot',priority:'high',description:'Support and retention',active_agents:['Purity','Bruce','Nadia']},
+          {key:'finance',agent_mode:'approve_first',priority:'medium',description:'Invoicing and expenses',active_agents:['Bill','Felix','Reid']}
+        ],
+        suggested_integrations: ['meta','mailchimp','stripe_revenue','intercom','google_analytics'],
+        day1_briefs: [
+          {agent_name:'Aria',brief:'Write 5 Instagram captions for our product launch campaign. Bold, energetic tone. Include a call to action.',rationale:'Aria kick-starts your social presence for the launch.'},
+          {agent_name:'Eric',brief:'Write 3 Facebook ad copy variants for our best-selling product. Pain-solution format. Audience: 25-40, online shoppers.',rationale:'Eric creates ad copy variants ready to test immediately.'},
+          {agent_name:'Purity',brief:'Create an FAQ document for our 10 most common customer support questions.',rationale:'Purity builds a knowledge base that reduces support volume from day one.'},
+          {agent_name:'Bill',brief:'Set up an invoice template for our standard product orders including terms and payment details.',rationale:'Bill creates a professional invoice template you can use immediately.'}
+        ]
+      },
+      author: 'orca_official',
+      plan_required: 'starter',
+      published: true
+    },
+    {
       slug: 'recruiting-firm',
       name: 'Recruiting Firm',
       description: 'For boutique recruitment agencies. Activates People & Hiring, Sales, Intelligence, and Ops with a hiring-first setup.',
@@ -102,7 +152,7 @@ export async function GET() {
         ]
       },
       author: 'orca_official',
-      plan_required: 'pro',
+      plan_required: 'starter',
       published: true
     },
     {
@@ -127,7 +177,7 @@ export async function GET() {
         ]
       },
       author: 'orca_official',
-      plan_required: 'pro',
+      plan_required: 'starter',
       published: true
     },
     {
@@ -151,10 +201,11 @@ export async function GET() {
         ]
       },
       author: 'orca_official',
-      plan_required: 'pro',
+      plan_required: 'starter',
       published: true
     }
   ]
+
 
   const { error } = await supabase
     .from('orcahub_templates')

@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   const installedIds = new Set((installs || []).map(i => i.template_id))
 
   // Mark plan accessibility and install status
-  const PLAN_ORDER = ['free', 'starter', 'pro', 'enterprise']
+  const PLAN_ORDER = ['none', 'free', 'starter', 'pro', 'enterprise']
   const enriched = (templates || []).map(t => ({
     ...t,
     is_installed: installedIds.has(t.id),
