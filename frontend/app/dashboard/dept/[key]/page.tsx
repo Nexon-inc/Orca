@@ -25,7 +25,7 @@ export default function DeptWorkspacePage() {
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
-    e.target.style.height = '52px';
+    e.target.style.height = '40px';
     e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
   };
 
@@ -299,7 +299,7 @@ export default function DeptWorkspacePage() {
               </div>
 
               {/* Input Area */}
-              <div className="px-8 pb-8 pt-4 border-t border-white/5 bg-surface/20 shrink-0">
+              <div className="px-8 pb-4 pt-4 border-t border-white/5 bg-surface/20 shrink-0">
                  <div className="relative max-w-4xl mx-auto flex flex-col items-start gap-2">
                     <div className="flex gap-2 overflow-x-auto no-scrollbar w-full">
                       {selectedAgent?.prompts.slice(0, 3).map(p => (
@@ -354,7 +354,7 @@ export default function DeptWorkspacePage() {
                         onChange={handleInput}
                         placeholder={`Command ${selectedAgent?.name}...`}
                         className="flex-1 bg-transparent font-dm-mono text-[14px] text-white placeholder:text-white/20 resize-none outline-none no-scrollbar py-2.5 leading-relaxed"
-                        style={{ minHeight: '52px', maxHeight: '120px', height: '52px', overflowY: 'auto' }}
+                        style={{ minHeight: '40px', maxHeight: '120px', height: '40px', overflowY: 'auto' }}
                       />
                       <button 
                         onClick={handleSend}
@@ -364,7 +364,6 @@ export default function DeptWorkspacePage() {
                       </button>
                     </div>
                  </div>
-                 <p className="mt-4 text-center text-[9px] text-white/10 font-black uppercase tracking-[0.3em]">Foundational Intelligence Layer Active</p>
               </div>
             </div>
         </div>
