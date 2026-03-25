@@ -13,8 +13,9 @@ export default function DeptWorkspacePage() {
   const deptKey = params.key as string;
   
   const agents = useMemo(() => getAgentsByDept(deptKey?.toLowerCase() || ''), [deptKey]);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [inputText, setInputText] = useState('');
+   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+   const [conversationId, setConversationId] = useState<string | null>(null);
+   const [inputText, setInputText] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showNewBriefMenu, setShowNewBriefMenu] = useState(false);
   const [attachments, setAttachments] = useState<{name: string, type: string, data: string, text?: string}[]>([]);
@@ -123,44 +124,44 @@ export default function DeptWorkspacePage() {
     return null;
   };
 
-  const handleSend = async () => {
-    if (!inputText.trim() && attachments.length === 0) return;
-
-    const userMsg = inputText;
-    setInputText('');
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      let agentResponse = `Acknowledged. Processing strategic directive for the ${deptKey} department.`;
-      
-      if (selectedAgent?.id === 'eric' && userMsg.toLowerCase().includes('video')) {
-        agentResponse = `Understood. I have designed a high-converting Ad video for the current campaign. [GENERATE_VIDEO: template=AdTemplate, headline="Revolutionize Workflow", subheadline="AI Autonomy for your entire team.", cta="Start Trial"]`;
-      } else if (selectedAgent?.id === 'aria' && userMsg.toLowerCase().includes('video')) {
-         agentResponse = `I have scripted a dynamic social teaser for our next update. [GENERATE_VIDEO: template=SocialTemplate, text="Major Update Incoming"]`;
-      } else if (selectedAgent?.id === 'jackie' && userMsg.toLowerCase().includes('video')) {
-         agentResponse = `I've prepared a concise video summary of our latest research insights. [GENERATE_VIDEO: template=BlogSummary, title="The Future of AI", points=["Autonomous Agents", "Ecosystem Scaling"]]`;
-      }
-
-      const videoData = parseVideoTag(agentResponse);
-      const wrenData = parseWrenCode(agentResponse);
-      
-      setMessages(prev => [...prev, { 
-        role: 'agent', 
-        content: agentResponse
-          .replace(/\[GENERATE_VIDEO: .*\]/, '')
-          .replace(/FILE:[\s\S]*?EXPLANATION:[\s\S]*?(?:HOW TO USE|$)/, '') // Hide the raw code blocks if card is shown
-          .trim(),
-        video: videoData,
-        wrenCode: wrenData
-      }]);
-      setIsTyping(false);
-      
-      setTimeout(() => {
-        threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }, 1500);
-  };
+   const handleSend = async () => {
+     if (!inputText.trim() && attachments.length === 0) return;
+     if (!conversationId) return;
+ 
+     const userMsg = inputText;
+     const currentAttachments = [...attachments];
+     setInputText('');
+     setAttachments([]);
+     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+     setIsTyping(true);
+ 
+     try {
+       const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ content: userMsg, attachments: currentAttachments })
+       });
+       
+       const data = await res.json();
+       if (data.message) {
+         const agentMsg = data.message;
+         setMessages(prev => [...prev, { 
+           role: 'agent', 
+           content: agentMsg.content,
+           video: parseVideoTag(agentMsg.content),
+           wrenCode: parseWrenCode(agentMsg.content)
+         }]);
+       }
+     } catch (err) {
+       console.error('Send failed:', err);
+       setMessages(prev => [...prev, { role: 'agent', content: 'Connection failed. Please retry.' }]);
+     } finally {
+       setIsTyping(false);
+       setTimeout(() => {
+         threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+       }, 100);
+     }
+   };
 
 
   useEffect(() => {
@@ -169,17 +170,55 @@ export default function DeptWorkspacePage() {
     }
   }, [agents, selectedAgent]);
 
-  useEffect(() => {
-    if (selectedAgent) {
-      animate('.workspace-anim', {
-        opacity: [0, 1],
-        y: [20, 0],
-        delay: stagger(100),
-        duration: 800,
-        ease: 'outExpo'
-      });
-    }
-  }, [selectedAgent]);
+   // Fetch or create conversation when agent changes
+   useEffect(() => {
+     if (!selectedAgent) return;
+ 
+     const syncConversation = async () => {
+       try {
+         // 1. Check history for existing conversation
+         const historyRes = await fetch(`/api/agents/${selectedAgent.id}/history`);
+         const historyData = await historyRes.json();
+         
+         if (historyData.history && historyData.history.length > 0) {
+           const latestConv = historyData.history[0];
+           setConversationId(latestConv.id);
+           
+           // Transform messages for UI
+           const formatted = latestConv.messages.map((m: any) => ({
+             role: m.sender_type === 'user' ? 'user' : 'agent',
+             content: m.content
+           }));
+           setMessages(formatted.reverse());
+         } else {
+           // 2. Create new conversation if none exists
+           const createRes = await fetch('/api/conversations', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: deptKey })
+           });
+           const createData = await createRes.json();
+           if (createData.conversation) {
+             setConversationId(createData.conversation.id);
+             setMessages([]);
+           }
+         }
+       } catch (err) {
+         console.error('Conversation sync failed:', err);
+       }
+     };
+ 
+     syncConversation();
+ 
+     // Entrance animation
+     animate('.workspace-anim', {
+       opacity: [0, 1],
+       y: [20, 0],
+       delay: stagger(100),
+       duration: 800,
+       ease: 'outExpo'
+     });
+   }, [selectedAgent, deptKey]);
 
   if (!selectedAgent && agents.length === 0) {
     return (
