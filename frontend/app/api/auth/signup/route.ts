@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     .insert({
       name: orgName,
       owner_id: userId,
-      plan: isAdmin ? 'enterprise' : 'none',
+      plan: isAdmin ? 'enterprise' : 'free',
       plan_expires_at: isAdmin ? new Date('2124-01-01T00:00:00Z').toISOString() : null,
     })
     .select()

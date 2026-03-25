@@ -25,6 +25,23 @@ export async function GET() {
 
   if (!member) return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
 
+  // Ensure master admin ALWAYS has enterprise access
+  const MASTER_ADMIN_EMAIL = 'nexonicindustries@gmail.com'
+  if (user.email?.toLowerCase().trim() === MASTER_ADMIN_EMAIL) {
+    const org = (member as any).organizations
+    if (org && org.plan !== 'enterprise') {
+      await supabase.from('organizations')
+        .update({ 
+          plan: 'enterprise', 
+          plan_expires_at: new Date('2124-01-01T00:00:00Z').toISOString() 
+        })
+        .eq('id', org.id)
+      
+      org.plan = 'enterprise'
+      org.plan_expires_at = new Date('2124-01-01T00:00:00Z').toISOString()
+    }
+  }
+
   // Also fetch the user's display name from profiles (if table exists) or fall back to auth metadata
   const { data: profileRow } = await supabase
     .from('profiles')

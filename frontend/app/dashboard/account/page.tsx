@@ -18,6 +18,7 @@ const tabs = [
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState({ full_name: '', email: '' });
+  const [plan, setPlan] = useState('');
   const [identity, setIdentity] = useState<any>({
     company_name: '',
     industry: 'AI & Robotics',
@@ -42,6 +43,7 @@ export default function AccountPage() {
       .then(r => r.json())
       .then(d => {
         if (d.profile) setProfile({ full_name: d.profile.full_name || '', email: d.profile.email || '' });
+        if (d.member?.organizations?.plan) setPlan(d.member.organizations.plan);
       });
 
     // Fetch company identity
@@ -295,9 +297,9 @@ export default function AccountPage() {
                 {activeTab === 'billing' && (
                   <div className="space-y-10">
                     <div className="p-10 rounded-[2.5rem] border border-green/20 bg-green/5 relative overflow-hidden">
-                       <div className="absolute top-0 right-0 p-8 text-4xl opacity-10 font-syne font-[800]">PRO</div>
-                       <h3 className="font-syne text-xl font-[800] text-white mb-2 uppercase tracking-tight">Active Plan: <span className="text-green">—</span></h3>
-                       <p className="text-[11px] text-green/60 font-[800] uppercase tracking-widest mb-8">— / Month · Renews —</p>
+                       <div className="absolute top-0 right-0 p-8 text-4xl opacity-10 font-syne font-[800]">{plan ? plan.toUpperCase() : 'FREE'}</div>
+                       <h3 className="font-syne text-xl font-[800] text-white mb-2 uppercase tracking-tight">Active Plan: <span className="text-green">{plan ? plan.toUpperCase() : 'FREE'}</span></h3>
+                       <p className="text-[11px] text-green/60 font-[800] uppercase tracking-widest mb-8">{plan === 'enterprise' ? 'Custom' : plan === 'pro' ? '$199' : plan === 'starter' ? '$99' : 'Free'} / Month</p>
                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
                           <div>
                              <p className="text-[9px] text-white/40 font-[800] uppercase mb-1">Seats Used</p>
