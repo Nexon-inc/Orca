@@ -17,6 +17,10 @@ const menuItems = [
   { id: 'account', name: 'Account', icon: '⚙️', path: '/dashboard/account' },
 ];
 
+interface SidebarProps {
+  active?: string;
+}
+
 export default function DashboardSidebar({ active }: SidebarProps) {
   const pathname = usePathname();
   const { plan, orgId } = useRole();
@@ -50,9 +54,6 @@ export default function DashboardSidebar({ active }: SidebarProps) {
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
-
-  const visibleDepts = dbDepts; // Show all seeded departments
-
 
   return (
     <aside 
