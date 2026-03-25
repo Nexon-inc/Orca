@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { animate, stagger } from 'animejs';
-import { getAgentsByDept, Agent } from '@/lib/agents';
+import { getAgentsByDept, Agent, AGENT_ROSTER } from '@/lib/agents';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import VideoResultCard from '@/components/VideoResultCard';
 import WrenCodeCard from '@/components/WrenCodeCard';
@@ -12,10 +12,30 @@ export default function DeptWorkspacePage() {
   const params = useParams();
   const deptKey = params.key as string;
   
-  const agents = useMemo(() => getAgentsByDept(deptKey?.toLowerCase() || ''), [deptKey]);
-   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+   const agents = useMemo(() => getAgentsByDept(deptKey?.toLowerCase() || ''), [deptKey]);
+   
+   const DEPT_MAP: Record<string, string> = {
+     'marketing': 'marketing',
+     'sales': 'sales',
+     'customer': 'cs',
+     'cs': 'cs',
+     'tech': 'tech',
+     'people': 'hiring',
+     'hiring': 'hiring',
+     'ops': 'ops',
+     'finance': 'finance',
+     'intelligence': 'intel',
+     'intel': 'intel',
+     'community': 'community'
+   };
+ 
+   const apiDeptKey = DEPT_MAP[deptKey?.toLowerCase()] || deptKey?.toLowerCase();
+ 
+   const [dbAgents, setDbAgents] = useState<any[]>([]);
+   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
    const [conversationId, setConversationId] = useState<string | null>(null);
    const [inputText, setInputText] = useState('');
+   const [isLoadingAgents, setIsLoadingAgents] = useState(true);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showNewBriefMenu, setShowNewBriefMenu] = useState(false);
   const [attachments, setAttachments] = useState<{name: string, type: string, data: string, text?: string}[]>([]);
@@ -150,7 +170,7 @@ export default function DeptWorkspacePage() {
            const createRes = await fetch('/api/conversations', {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: deptKey })
+             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: apiDeptKey })
            });
            const createData = await createRes.json();
            activeConvId = createData.conversation?.id;
@@ -191,11 +211,36 @@ export default function DeptWorkspacePage() {
    };
 
 
-  useEffect(() => {
-    if (agents.length > 0 && !selectedAgent) {
-      setSelectedAgent(agents[0]);
-    }
-  }, [agents, selectedAgent]);
+   // Fetch DB agents on mount
+   useEffect(() => {
+     const fetchAgents = async () => {
+       setIsLoadingAgents(true);
+       try {
+         const res = await fetch(`/api/departments/${apiDeptKey}/agents`);
+         const data = await res.json();
+         if (data.agents) {
+           // Merge with static metadata (prompts, etc)
+           const merged = data.agents.map((dbA: any) => {
+             const staticA = AGENT_ROSTER.find((s: Agent) => s.id.toLowerCase() === dbA.acronym?.toLowerCase());
+             return {
+               ...dbA,
+               role: dbA.role_description || staticA?.role || 'Agent',
+               icon: dbA.icon || staticA?.icon || '🤖',
+               prompts: staticA?.prompts || ['Help me with a task'],
+               dept: deptKey
+             };
+           });
+           setDbAgents(merged);
+           if (merged.length > 0) setSelectedAgent(merged[0]);
+         }
+       } catch (err) {
+         console.error('Failed to load DB agents:', err);
+       } finally {
+         setIsLoadingAgents(false);
+       }
+     };
+     fetchAgents();
+   }, [deptKey]);
 
    // Fetch or create conversation when agent changes
    useEffect(() => {
@@ -222,7 +267,7 @@ export default function DeptWorkspacePage() {
            const createRes = await fetch('/api/conversations', {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: deptKey })
+             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: apiDeptKey })
            });
            const createData = await createRes.json();
            if (createData.conversation) {
@@ -247,14 +292,14 @@ export default function DeptWorkspacePage() {
      });
    }, [selectedAgent, deptKey]);
 
-  if (!selectedAgent && agents.length === 0) {
-    return (
-      <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
-        <DashboardSidebar />
-        <div className="p-20 text-white/20 font-dm-mono uppercase tracking-widest font-black">Department protocol not found...</div>
-      </div>
-    );
-  }
+   if (!selectedAgent && dbAgents.length === 0 && !isLoadingAgents) {
+     return (
+       <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
+         <DashboardSidebar />
+         <div className="p-20 text-white/20 font-dm-mono uppercase tracking-widest font-black">Department protocol not found...</div>
+       </div>
+     );
+   }
 
   return (
     <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
@@ -297,23 +342,27 @@ export default function DeptWorkspacePage() {
           </div>
         </header>
 
-        {/* Agent Roster Tab Bar */}
-        <div className="px-8 bg-surface/30 border-b border-white/5 flex gap-1 overflow-x-auto no-scrollbar pt-4 shrink-0">
-          {agents.map(agent => (
-            <button 
-              key={agent.id}
-              onClick={() => setSelectedAgent(agent)}
-              className={`flex flex-col items-center gap-2 px-6 py-3 rounded-t-2xl border-x border-t transition-all duration-300 min-w-[100px] outline-none ${
-                selectedAgent?.id === agent.id 
-                ? 'bg-bg border-white/5 text-white shadow-[0_-10px_20px_rgba(0,0,0,0.2)]' 
-                : 'bg-transparent border-transparent text-white/40 hover:text-white'
-              }`}
-            >
-              <span className="text-xl">{agent.icon}</span>
-              <span className="text-[10px] font-black uppercase tracking-widest">{agent.name}</span>
-            </button>
-          ))}
-        </div>
+         {/* Agent Roster Tab Bar */}
+         <div className="px-8 bg-surface/30 border-b border-white/5 flex gap-1 overflow-x-auto no-scrollbar pt-4 shrink-0">
+           {isLoadingAgents ? (
+             <div className="flex gap-4 px-4 py-3">
+               {[1,2,3].map(i => <div key={i} className="w-24 h-8 bg-white/5 rounded-xl animate-pulse" />)}
+             </div>
+           ) : dbAgents.map(agent => (
+             <button 
+               key={agent.id}
+               onClick={() => setSelectedAgent(agent)}
+               className={`flex flex-col items-center gap-2 px-6 py-3 rounded-t-2xl border-x border-t transition-all duration-300 min-w-[100px] outline-none ${
+                 selectedAgent?.id === agent.id 
+                 ? 'bg-bg border-white/5 text-white shadow-[0_-10px_20px_rgba(0,0,0,0.2)]' 
+                 : 'bg-transparent border-transparent text-white/40 hover:text-white'
+               }`}
+             >
+               <span className="text-xl">{agent.icon}</span>
+               <span className="text-[10px] font-black uppercase tracking-widest">{agent.name}</span>
+             </button>
+           ))}
+         </div>
 
         <div className="flex-1 flex overflow-hidden">
             {/* Message Thread */}
@@ -368,7 +417,7 @@ export default function DeptWorkspacePage() {
               <div className="px-8 pb-4 pt-4 border-t border-white/5 bg-surface/20 shrink-0">
                  <div className="relative max-w-4xl mx-auto flex flex-col items-start gap-2">
                     <div className="flex gap-2 overflow-x-auto no-scrollbar w-full">
-                      {selectedAgent?.prompts.slice(0, 3).map(p => (
+                      {selectedAgent?.prompts.slice(0, 3).map((p: string) => (
                         <button key={p} 
                           onClick={() => setInputText(p)}
                           className="px-4 py-2 rounded-full border border-white/10 bg-bg hover:bg-white/5 text-[11px] font-dm-mono font-black text-white/60 hover:text-white uppercase tracking-tight whitespace-nowrap transition-all"
