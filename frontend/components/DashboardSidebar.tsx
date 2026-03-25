@@ -8,6 +8,7 @@ import { createClientSupabaseClient } from '@/lib/supabase/client';
 
 const menuItems = [
   { id: 'overview', name: 'Overview', icon: '⬡', path: '/dashboard' },
+  { id: 'departments', name: 'Departments', icon: '📂', path: '/dashboard/dept/marketing' },
   { id: 'review', name: 'Review', icon: '👁', path: '/dashboard/review' },
   { id: 'team', name: 'Teams', icon: '👥', path: '/dashboard/team' },
   { id: 'integrations', name: 'Integrations', icon: '🔌', path: '/dashboard/integrations' },
@@ -16,34 +17,16 @@ const menuItems = [
   { id: 'account', name: 'Account', icon: '⚙️', path: '/dashboard/account' },
 ];
 
-interface SidebarProps {
-  active?: string;
-}
-
 export default function DashboardSidebar({ active }: SidebarProps) {
   const pathname = usePathname();
   const { plan, orgId } = useRole();
-  const currentActive = active || (pathname === '/dashboard' ? 'overview' : pathname.split('/').pop());
+  const currentActive = active || (pathname === '/dashboard' ? 'overview' : (pathname.includes('/dept/') ? 'departments' : pathname.split('/').pop()));
 
-  const [isDeptsOpen, setIsDeptsOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [dbDepts, setDbDepts] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
-    const supabase = createClientSupabaseClient();
-    // Fetch departments seamlessly from the secure API
-    const fetchDepts = async () => {
-      try {
-        const res = await fetch('/api/departments');
-        const data = await res.json();
-        if (data.departments) setDbDepts(data.departments);
-      } catch (err) {
-        console.error('Failed to load DB depts', err);
-      }
-    };
-    fetchDepts();
   }, []);
 
   useEffect(() => {
@@ -54,7 +37,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
       duration: 600,
       ease: 'outExpo'
     });
-  }, [isCollapsed, dbDepts]);
+  }, [isCollapsed]);
 
   const router = useRouter();
 
@@ -114,48 +97,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
           )}
         </a>
 
-        {/* Departments Dropdown */}
-        <div className={`side-item flex flex-col gap-1 mt-1 ${isCollapsed ? 'items-center' : 'w-full'}`}>
-          <button
-            onClick={() => !isCollapsed && setIsDeptsOpen(!isDeptsOpen)}
-            className={`flex items-center justify-between w-full rounded-xl transition-all duration-200 group ${currentActive === 'departments' || pathname.includes('/dept/') ? 'text-green' : 'text-white/40 hover:text-white hover:bg-white/5'} ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'px-4 py-2.5'}`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-[16px]">📂</span>
-              {!isCollapsed && (
-                <span className={`font-syne text-[14px] font-[800] uppercase tracking-wider ${currentActive === 'departments' || pathname.includes('/dept/') ? 'text-green' : 'text-white/60 group-hover:text-white transition-colors'}`}>Departments</span>
-              )}
-            </div>
-            {mounted && !isCollapsed && (
-              <span className={`text-[10px] transition-transform duration-300 ${isDeptsOpen ? 'rotate-180' : ''}`}>▼</span>
-            )}
-          </button>
 
-          {mounted && !isCollapsed && isDeptsOpen && (
-            <div className="pl-5 flex flex-col gap-1 overflow-hidden animate-in slide-in-from-top-2 duration-300 border-l border-white/5 ml-2 mt-1 mb-1">
-              {visibleDepts.map((dept) => {
-                const isActive = currentActive === dept.key || pathname.includes(`/dept/${dept.key}`);
-                const isPaused = dept.agents_paused;
-
-                return (
-                  <a
-                    key={dept.id}
-                    href={`/dashboard/dept/${dept.key}`}
-                    className={`flex items-center justify-between px-4 py-2 rounded-xl text-[12px] transition-all duration-200 group ${isActive ? 'text-green bg-green/5' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`grayscale group-hover:grayscale-0 transition-opacity ${isActive ? 'opacity-100 grayscale-0' : 'opacity-50 group-hover:opacity-100'} text-[14px]`}>{dept.icon || '🏢'}</span>
-                      <span className={`font-syne truncate font-[800] uppercase tracking-tight text-[11px] ${isActive ? 'text-green opacity-100' : 'text-white/40 group-hover:text-white group-hover:opacity-100 transition-colors'}`}>{dept.name}</span>
-                    </div>
-                    {isPaused && (
-                      <span className="text-[10px] opacity-40">🔒</span>
-                    )}
-                  </a>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
         {menuItems.slice(1).map((item) => (
           <div key={item.id} className="relative group/nav">

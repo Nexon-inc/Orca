@@ -12,8 +12,6 @@ export default function DeptWorkspacePage() {
   const params = useParams();
   const deptKey = params.key as string;
   
-   const agents = useMemo(() => getAgentsByDept(deptKey?.toLowerCase() || ''), [deptKey]);
-   
    const DEPT_MAP: Record<string, string> = {
      'marketing': 'marketing',
      'sales': 'sales',
@@ -28,233 +26,48 @@ export default function DeptWorkspacePage() {
      'intel': 'intel',
      'community': 'community'
    };
- 
+
    const apiDeptKey = DEPT_MAP[deptKey?.toLowerCase()] || deptKey?.toLowerCase();
- 
+
    const [dbAgents, setDbAgents] = useState<any[]>([]);
+   const [dbDepts, setDbDepts] = useState<any[]>([]);
    const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
    const [conversationId, setConversationId] = useState<string | null>(null);
-   const [inputText, setInputText] = useState('');
    const [deptInputText, setDeptInputText] = useState('');
    const [isRouting, setIsRouting] = useState(false);
    const [isLoadingAgents, setIsLoadingAgents] = useState(true);
-  const [showAttachMenu, setShowAttachMenu] = useState(false);
-  const [showNewBriefMenu, setShowNewBriefMenu] = useState(false);
-  const [attachments, setAttachments] = useState<{name: string, type: string, data: string, text?: string}[]>([]);
-  const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string, senderName?: string, senderIcon?: string, video?: any, wrenCode?: any }[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const threadEndRef = useRef<HTMLDivElement>(null);
+   const [showAttachMenu, setShowAttachMenu] = useState(false);
+   const [attachments, setAttachments] = useState<{name: string, type: string, data: string, text?: string}[]>([]);
+   const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string, senderName?: string, senderIcon?: string, video?: any, wrenCode?: any }[]>([]);
+   const [isTyping, setIsTyping] = useState(false);
+   const fileInputRef = useRef<HTMLInputElement>(null);
+   const threadEndRef = useRef<HTMLDivElement>(null);
 
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputText(e.target.value);
-    e.target.style.height = '40px';
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-  };
-
-  const ATTACH_SUGGESTIONS: Record<string, string[]> = {
-    marketing: ['Brand guidelines PDF', 'Previous content examples', 'Campaign brief'],
-    sales: ['Lead list CSV', 'Product one-pager', 'CRM export'],
-    customer: ['Customer feedback CSV', 'Support ticket export', 'NPS results'],
-    tech: ['Code file', 'Repository doc', 'Error logs TXT'],
-    people: ['Job description', 'Candidate CV PDF', 'Interview scorecard'],
-    ops: ['Project brief', 'Meeting notes', 'Process SOP'],
-    finance: ['Invoice PDF', 'Expense CSV', 'Contract PDF'],
-    intelligence: ['Research PDF', 'Market data CSV', 'Industry report'],
-    community: ['Partnership proposal', 'Influencer list CSV', 'Growth brief'],
-  };
-
-  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const sizeInMB = file.size / (1024 * 1024);
-    const isImage = file.type.startsWith('image/');
-    const isCode = ['ts', 'js', 'py', 'go', 'json'].some(ext => file.name.endsWith(`.${ext}`));
-
-    if (isImage && sizeInMB > 5) { alert('Images must be under 5MB'); return; }
-    if (isCode && sizeInMB > 2) { alert('Code files must be under 2MB'); return; }
-    if (!isImage && !isCode && sizeInMB > 10) { alert('Documents must be under 10MB'); return; }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Data = (event.target?.result as string).split(',')[1];
-      let typeStr = 'pdf'; 
-      if (isImage) typeStr = 'image';
-      else if (isCode) typeStr = 'code';
-      else if (file.name.endsWith('.csv')) typeStr = 'csv';
-      else if (file.name.endsWith('.txt') || file.name.endsWith('.md')) typeStr = 'txt';
-      
-      let textContent = '';
-      if (!isImage) {
-          try {
-             textContent = file.type.includes('pdf') || file.type.includes('word') 
-                 ? `[Extracted simulated text content for document ${file.name}]` 
-                 : decodeURIComponent(escape(atob(base64Data)));
-          } catch {
-             textContent = `[Could not extract text from document ${file.name}]`;
-          }
-      }
-      
-      setAttachments(prev => [...prev, {
-        name: file.name,
-        type: typeStr,
-        data: base64Data,
-        text: textContent
-      }]);
-    };
-    reader.readAsDataURL(file);
-    setShowAttachMenu(false);
-  };
-
-  const parseVideoTag = (text: string) => {
-    const regex = /\[GENERATE_VIDEO: template=([^,]+), (.*)\]/;
-    const match = text.match(regex);
-    if (match) {
-      const template = match[1].trim();
-      const propsStr = match[2].trim();
-      const props: any = {};
-      
-      propsStr.split(', ').forEach(pair => {
-        const [key, val] = pair.split('=');
-        if (!key || !val) return;
-        try {
-          props[key.trim()] = JSON.parse(val.trim());
-        } catch {
-          props[key.trim()] = val.trim().replace(/^"(.*)"$/, '$1');
-        }
-      });
-      return { template, props };
-    }
-    return null;
-  };
-
-  const parseWrenCode = (text: string) => {
-    const fileMatch = text.match(/FILE:\s*(.+?)\n/);
-    const codeMatch = text.match(/```(?:typescript|tsx|javascript|js)?\n([\s\S]+?)```/);
-    const explanationMatch = text.match(/EXPLANATION:\s*([\s\S]+?)(?:HOW TO USE|$)/);
-    const prMatch = text.includes('[OPEN_PR:');
-
-    if (fileMatch && codeMatch) {
-      return {
-        filePath: fileMatch[1].trim(),
-        code: codeMatch[1].trim(),
-        explanation: explanationMatch ? explanationMatch[1].trim() : 'Code generated by Wren.',
-        hasPr: prMatch
-      };
-    }
-    return null;
-  };
-
-   const handleSend = async (customMsg?: string, forceAgent?: any) => {
-     const text = customMsg || inputText;
-     if (!text.trim() && attachments.length === 0) return;
-     
-     const targetAgent = forceAgent || selectedAgent;
-     if (!targetAgent) return;
- 
-     const userMsg = text;
-     const currentAttachments = [...attachments];
-     if (!customMsg) setInputText('');
-     setAttachments([]);
-     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-     setIsTyping(true);
- 
-     try {
-       let activeConvId = conversationId;
-       if (forceAgent && forceAgent.id !== selectedAgent?.id) {
-         // Switch context if routing to a different agent
-         const historyRes = await fetch(`/api/agents/${forceAgent.id}/history`);
-         const historyData = await historyRes.json();
-         if (historyData.history && historyData.history.length > 0) {
-           activeConvId = historyData.history[0].id;
-         } else {
-           const createRes = await fetch('/api/conversations', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ agent_id: forceAgent.id, department_key: apiDeptKey })
-           });
-           const createData = await createRes.json();
-           activeConvId = createData.conversation?.id;
-         }
-       }
- 
-       if (!activeConvId) {
-         const historyRes = await fetch(`/api/agents/${targetAgent.id}/history`);
-         const historyData = await historyRes.json();
-         if (historyData.history && historyData.history.length > 0) {
-           activeConvId = historyData.history[0].id;
-         } else {
-           const createRes = await fetch('/api/conversations', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ agent_id: targetAgent.id, department_key: apiDeptKey })
-           });
-           const createData = await createRes.json();
-           activeConvId = createData.conversation?.id;
-         }
-       }
- 
-       if (!activeConvId) throw new Error('Could not establish conversation');
- 
-       const res = await fetch(`/api/conversations/${activeConvId}/messages`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ content: userMsg, attachments: currentAttachments })
-       });
-       
-       if (!res.ok) throw new Error(`Server error: ${res.status}`);
-       
-       const data = await res.json();
-       if (data.message) {
-         const agentMsg = data.message;
-         setMessages(prev => [...prev, { 
-           role: 'agent', 
-           content: agentMsg.content,
-           senderName: targetAgent.name,
-           senderIcon: targetAgent.icon,
-           video: parseVideoTag(agentMsg.content),
-           wrenCode: parseWrenCode(agentMsg.content)
-         }]);
-       }
-     } catch (err: any) {
-       console.error('Send failed details:', err);
-       const errorText = err.message || 'Unknown error';
-       setMessages(prev => [...prev, { role: 'agent', content: `Something went wrong: ${errorText}` }]);
-     } finally {
-       setIsTyping(false);
-       setTimeout(() => {
-         threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-       }, 100);
-     }
-   };
- 
-   const handleDeptSend = async () => {
-     if (!deptInputText.trim()) return;
-     const brief = deptInputText;
-     setDeptInputText('');
-     setIsRouting(true);
- 
-     try {
-       const res = await fetch(`/api/departments/${apiDeptKey}`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ content: brief })
-       });
-       const data = await res.json();
-       if (data.agent) {
-         setSelectedAgent(data.agent);
-         handleSend(brief, data.agent);
-       }
-     } catch (err) {
-       console.error('Routing failed:', err);
-     } finally {
-       setIsRouting(false);
-     }
+   const ATTACH_SUGGESTIONS: Record<string, string[]> = {
+     marketing: ['Brand guidelines PDF', 'Previous content examples', 'Campaign brief'],
+     sales: ['Lead list CSV', 'Product one-pager', 'CRM export'],
+     customer: ['Customer feedback CSV', 'Support ticket export', 'NPS results'],
+     tech: ['Code file', 'Repository doc', 'Error logs TXT'],
+     people: ['Job description', 'Candidate CV PDF', 'Interview scorecard'],
+     ops: ['Project brief', 'Meeting notes', 'Process SOP'],
+     finance: ['Invoice PDF', 'Expense CSV', 'Contract PDF'],
+     intelligence: ['Research PDF', 'Market data CSV', 'Industry report'],
+     community: ['Partnership proposal', 'Influencer list CSV', 'Growth brief'],
    };
 
+   useEffect(() => {
+     const fetchDepts = async () => {
+       try {
+         const res = await fetch('/api/departments');
+         const data = await res.json();
+         if (data.departments) setDbDepts(data.departments);
+       } catch (err) {
+         console.error('Failed to load depts:', err);
+       }
+     };
+     fetchDepts();
+   }, []);
 
-   // Fetch DB agents on mount
    useEffect(() => {
      const fetchAgents = async () => {
        setIsLoadingAgents(true);
@@ -262,7 +75,6 @@ export default function DeptWorkspacePage() {
          const res = await fetch(`/api/departments/${apiDeptKey}/agents`);
          const data = await res.json();
          if (data.agents) {
-           // Merge with static metadata (prompts, etc)
            const merged = data.agents.map((dbA: any) => {
              const staticA = AGENT_ROSTER.find((s: Agent) => s.id.toLowerCase() === dbA.acronym?.toLowerCase());
              return {
@@ -283,49 +95,33 @@ export default function DeptWorkspacePage() {
        }
      };
      fetchAgents();
-   }, [deptKey]);
+   }, [deptKey, apiDeptKey]);
 
-   // Fetch or create conversation when agent changes
    useEffect(() => {
      if (!selectedAgent) return;
- 
      const syncConversation = async () => {
        try {
-         // 1. Check history for existing conversation
          const historyRes = await fetch(`/api/agents/${selectedAgent.id}/history`);
          const historyData = await historyRes.json();
-         
          if (historyData.history && historyData.history.length > 0) {
            const latestConv = historyData.history[0];
            setConversationId(latestConv.id);
-           
-           // Transform messages for UI
            const formatted = latestConv.messages.map((m: any) => ({
              role: m.sender_type === 'user' ? 'user' : 'agent',
-             content: m.content
+             content: m.content,
+             senderName: m.sender_type === 'agent' ? selectedAgent.name : undefined,
+             senderIcon: m.sender_type === 'agent' ? selectedAgent.icon : undefined
            }));
            setMessages(formatted.reverse());
          } else {
-           // 2. Create new conversation if none exists
-           const createRes = await fetch('/api/conversations', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: apiDeptKey })
-           });
-           const createData = await createRes.json();
-           if (createData.conversation) {
-             setConversationId(createData.conversation.id);
-             setMessages([]);
-           }
+            setMessages([]);
          }
        } catch (err) {
          console.error('Conversation sync failed:', err);
        }
      };
- 
      syncConversation();
- 
-     // Entrance animation
+     
      animate('.workspace-anim', {
        opacity: [0, 1],
        y: [20, 0],
@@ -335,253 +131,189 @@ export default function DeptWorkspacePage() {
      });
    }, [selectedAgent, deptKey]);
 
-   if (!selectedAgent && dbAgents.length === 0 && !isLoadingAgents) {
-     return (
-       <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
-         <DashboardSidebar />
-         <div className="p-20 text-white/20 font-dm-mono uppercase tracking-widest font-black">Department protocol not found...</div>
-       </div>
-     );
-   }
+   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (!file) return;
+     const reader = new FileReader();
+     reader.onload = (event) => {
+       const base64Data = (event.target?.result as string).split(',')[1];
+       setAttachments(prev => [...prev, { name: file.name, type: 'file', data: base64Data }]);
+     };
+     reader.readAsDataURL(file);
+     setShowAttachMenu(false);
+   };
 
-  return (
-    <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
-      <DashboardSidebar />
+   const handleDeptSend = async () => {
+     if (!deptInputText.trim() && attachments.length === 0) return;
+     const brief = deptInputText;
+     setDeptInputText('');
+     setIsRouting(true);
+     setMessages(prev => [...prev, { role: 'user', content: brief }]);
 
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Workspace Header */}
-        <header className="p-8 border-b border-white/5 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 workspace-anim shrink-0">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-3xl bg-green/10 border border-green/20 flex items-center justify-center text-4xl relative group">
-              <span className="group-hover:scale-110 transition-transform duration-500">{selectedAgent?.icon}</span>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green border-4 border-bg" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="font-syne text-3xl font-[800] text-white uppercase tracking-tight">{selectedAgent?.name}</h1>
-                <span className="font-dm-mono text-[9px] text-green border border-green/20 bg-green/10 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Autonomous</span>
-              </div>
-               <p className="font-dm-mono text-[11px] text-white/40 font-[900] uppercase tracking-[0.2em]">{selectedAgent?.role}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-             <button className="btn-secondary text-[10px] font-black px-6 py-2.5 rounded-xl uppercase tracking-widest border border-white/10 hover:bg-white/5 outline-none">History</button>
-             <div className="relative">
-               <button 
-                 onClick={() => setShowNewBriefMenu(!showNewBriefMenu)}
-                 className="btn-primary text-[10px] font-black px-8 py-2.5 rounded-xl uppercase tracking-widest shadow-[0_4px_20px_rgba(0,255,135,0.2)] active:scale-95 transition-all outline-none"
-               >
-                 New Brief +
-               </button>
-               {showNewBriefMenu && (
-                 <div className="absolute top-12 right-0 w-48 bg-surface rounded-2xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.5)] p-2 z-50 font-dm-mono animate-in fade-in slide-in-from-top-2 duration-200">
-                    <button onClick={() => { setShowNewBriefMenu(false); document.querySelector('textarea')?.focus(); }} className="w-full text-left px-3 py-2 text-[10px] font-black tracking-widest uppercase text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3">
-                       <span className="text-sm opacity-70">📄</span> Blank Brief
-                    </button>
+     try {
+       // 1. Route to agent
+       let targetAgent = selectedAgent;
+       if (!selectedAgent) {
+          const routeRes = await fetch(`/api/departments/${apiDeptKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: brief })
+          });
+          const routeData = await routeRes.json();
+          if (routeData.agent) {
+            targetAgent = routeData.agent;
+            setSelectedAgent(targetAgent);
+          }
+       }
 
+       if (!targetAgent) throw new Error('Could not route to an agent');
+
+       // 2. Send message
+       setIsTyping(true);
+       const historyRes = await fetch(`/api/agents/${targetAgent.id}/history`);
+       const historyData = await historyRes.json();
+       let activeConvId = historyData.history?.[0]?.id;
+
+       if (!activeConvId) {
+         const createRes = await fetch('/api/conversations', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ agent_id: targetAgent.id, department_key: apiDeptKey })
+         });
+         const createData = await createRes.json();
+         activeConvId = createData.conversation?.id;
+       }
+
+       const msgRes = await fetch(`/api/conversations/${activeConvId}/messages`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ content: brief, attachments })
+       });
+       const msgData = await msgRes.json();
+       if (msgData.message) {
+         setMessages(prev => [...prev, { 
+           role: 'agent', 
+           content: msgData.message.content,
+           senderName: targetAgent.name,
+           senderIcon: targetAgent.icon
+         }]);
+       }
+     } catch (err: any) {
+       console.error('Send failed:', err);
+       setMessages(prev => [...prev, { role: 'agent', content: `Error: ${err.message}` }]);
+     } finally {
+       setIsRouting(false);
+       setIsTyping(false);
+       setAttachments([]);
+       setTimeout(() => threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+     }
+   };
+
+   return (
+     <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
+       <DashboardSidebar />
+       <main className="flex-1 flex flex-col min-w-0 h-full relative">
+         {/* Department Navigation Header */}
+         <header className="p-6 border-b border-white/5 bg-surface/30 workspace-anim shrink-0">
+           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+             {dbDepts.map(dept => {
+               const isActive = dept.key === deptKey;
+               return (
+                 <a key={dept.id} href={`/dashboard/dept/${dept.key}`} className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-300 whitespace-nowrap ${isActive ? 'bg-green/10 border-green/20 text-green shadow-[0_4px_15px_rgba(0,255,135,0.15)]' : 'bg-transparent border-transparent text-white/30 hover:text-white hover:bg-white/5'}`}>
+                   <span className={`text-xl ${isActive ? 'opacity-100' : 'opacity-40'}`}>{dept.icon || '🏢'}</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest">{dept.name}</span>
+                 </a>
+               );
+             })}
+           </div>
+         </header>
+
+         {/* Messenger Content */}
+         <div className="flex-1 flex flex-col overflow-hidden">
+           {/* Briefing Input (TOP) */}
+           <div className="px-8 py-8 border-b border-white/5 bg-surface/10 workspace-anim shrink-0">
+             <div className="max-w-4xl mx-auto space-y-4">
+               {attachments.length > 0 && (
+                 <div className="flex gap-2 flex-wrap mb-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                   {attachments.map((file, idx) => (
+                     <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] text-white/80">📄 {file.name}
+                       <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))} className="ml-1 hover:text-red-400 opacity-60">✕</button>
+                     </div>
+                   ))}
                  </div>
                )}
-             </div>
-          </div>
-        </header>
-
-         {/* Agent Roster Tab Bar */}
-         <div className="px-8 bg-surface/30 border-b border-white/5 flex gap-1 overflow-x-auto no-scrollbar pt-4 shrink-0">
-           {isLoadingAgents ? (
-             <div className="flex gap-4 px-4 py-3">
-               {[1,2,3].map(i => <div key={i} className="w-24 h-8 bg-white/5 rounded-xl animate-pulse" />)}
-             </div>
-           ) : dbAgents.map(agent => (
-             <button 
-               key={agent.id}
-               onClick={() => setSelectedAgent(agent)}
-               className={`flex flex-col items-center gap-2 px-6 py-3 rounded-t-2xl border-x border-t transition-all duration-300 min-w-[100px] outline-none ${
-                 selectedAgent?.id === agent.id 
-                 ? 'bg-bg border-white/5 text-white shadow-[0_-10px_20px_rgba(0,0,0,0.2)]' 
-                 : 'bg-transparent border-transparent text-white/40 hover:text-white'
-               }`}
-             >
-               <span className="text-xl">{agent.icon}</span>
-               <span className="text-[10px] font-black uppercase tracking-widest">{agent.name}</span>
-             </button>
-           ))}
-         </div>
-
-         <div className="flex-1 flex flex-col overflow-hidden">
-             {/* Department Briefing Input (TOP) */}
-             <div className="px-8 py-6 border-b border-white/5 bg-surface/10 workspace-anim">
-               <div className="max-w-4xl mx-auto relative group">
-                 <textarea 
-                   value={deptInputText}
-                   onChange={(e) => setDeptInputText(e.target.value)}
-                   onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }}
-                   placeholder={`Brief your ${deptKey} team...`}
-                   className="w-full bg-bg/50 border border-white/10 focus:border-green/30 rounded-2xl p-6 pr-16 font-dm-mono text-sm text-white placeholder:text-white/20 resize-none outline-none shadow-inner transition-all min-h-[80px]"
-                 />
-                 <button 
-                   onClick={handleDeptSend}
-                   disabled={isRouting}
-                   className="absolute right-4 bottom-4 w-10 h-10 rounded-xl bg-green text-bg flex items-center justify-center text-lg font-bold shadow-[0_4px_15px_rgba(0,255,135,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-                 >
-                   {isRouting ? '...' : '↑'}
-                 </button>
-               </div>
-             </div>
- 
-             {/* Message Thread */}
-             <div className="flex-1 flex flex-col overflow-hidden">
-               <div className="flex-1 p-8 overflow-y-auto space-y-10 messenger-thread no-scrollbar">
-                 {messages.length === 0 ? (
-                   <div className="py-24 text-center border border-dashed border-white/5 rounded-[3rem] bg-white/[0.01] workspace-anim">
-                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-xl mx-auto mb-6 opacity-20">💬</div>
-                     <p className="font-dm-mono text-[11px] text-white/10 font-black uppercase tracking-[0.3em]">Initialize mission parameters to begin coordination</p>
-                   </div>
-                 ) : (
-                   messages.map((msg, i) => (
-                     <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} workspace-anim`}>
-                        {msg.role === 'agent' && (
-                          <div className="flex items-center gap-2 mb-2 ml-4">
-                            <span className="text-lg">{msg.senderIcon}</span>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{msg.senderName} responded</span>
-                          </div>
-                        )}
-                        <div className={`max-w-[80%] p-6 rounded-[2rem] ${
-                          msg.role === 'user' ? 'bg-green/10 border border-green/20' : 'bg-surface/30 border border-white/5'
-                        }`}>
-                           <p className="text-[13px] text-white/80 leading-relaxed font-dm-mono italic whitespace-pre-wrap">
-                             {msg.content}
-                           </p>
-                        </div>
-                        {msg.video && (
-                          <VideoResultCard 
-                            id={`vid-${i}`}
-                            template={msg.video.template}
-                            props={msg.video.props}
-                            orgId="demo-org-123" 
-                          />
-                        )}
-                        {msg.wrenCode && (
-                          <WrenCodeCard
-                            id={`wren-${i}`}
-                            filePath={msg.wrenCode.filePath}
-                            code={msg.wrenCode.code}
-                            explanation={msg.wrenCode.explanation}
-                            hasPr={msg.wrenCode.hasPr}
-                          />
-                        )}
+               <div className="relative group">
+                 <div className="absolute left-3 bottom-3 flex items-center gap-2">
+                   <button onClick={() => setShowAttachMenu(!showAttachMenu)} className="w-12 h-12 rounded-2xl bg-white/5 text-white/20 hover:text-white hover:bg-white/10 flex items-center justify-center text-2xl transition-all shadow-xl active:scale-95">+</button>
+                   {showAttachMenu && (
+                     <div className="absolute bottom-14 left-0 w-64 bg-surface rounded-2xl border border-white/10 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-bottom-2">
+                        {ATTACH_SUGGESTIONS[deptKey?.toLowerCase()]?.map(sug => (<button key={sug} onClick={() => { setDeptInputText(sug); setShowAttachMenu(false); }} className="w-full text-left px-3 py-2 text-[11px] text-white/40 hover:text-white hover:bg-white/5 rounded-lg truncate">{sug}</button>))}
+                        <div className="my-1 border-t border-white/5" />
+                        <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-bold text-white hover:bg-white/5 rounded-lg"><span className="opacity-70">📎</span> Upload file</button>
+                        <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileAttach} />
                      </div>
-                   ))
-                 )}
-                 {isTyping && (
-                   <div className="flex items-center gap-2 opacity-40 ml-4">
-                     <div className="w-2 h-2 rounded-full bg-green animate-bounce" />
-                     <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.2s]" />
-                     <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.4s]" />
-                   </div>
-                 )}
-                 <div ref={threadEndRef} />
-               </div>
- 
-               {/* Team Roster & Quick Inputs (BOTTOM) */}
-               <div className="px-8 pb-8 pt-6 border-t border-white/5 bg-surface/20 shrink-0">
-                  <div className="max-w-4xl mx-auto space-y-6">
-                    {/* Your Team Label */}
-                    <div className="flex items-center gap-4">
-                      <div className="h-px flex-1 bg-white/5" />
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Your Team</span>
-                      <div className="h-px flex-1 bg-white/5" />
-                    </div>
- 
-                    {/* Agent Tabs */}
-                    <div className="flex gap-2 justify-center">
-                      {isLoadingAgents ? (
-                        [1,2,3].map(i => <div key={i} className="w-32 h-10 bg-white/5 rounded-xl animate-pulse" />)
-                      ) : dbAgents.map(agent => (
-                        <button 
-                          key={agent.id}
-                          onClick={() => setSelectedAgent(agent)}
-                          className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-300 outline-none ${
-                            selectedAgent?.id === agent.id 
-                            ? 'bg-white/10 border-white/10 text-white shadow-lg scale-105' 
-                            : 'bg-transparent border-transparent text-white/40 hover:text-white'
-                          }`}
-                        >
-                          <span className="text-xl">{agent.icon}</span>
-                          <span className="text-[10px] font-black uppercase tracking-widest">{agent.name}</span>
-                        </button>
-                      ))}
-                    </div>
- 
-                    {/* Individual Agent Input Area */}
-                    <div className="flex flex-col items-start gap-2">
-                       <div className="flex gap-2 overflow-x-auto no-scrollbar w-full py-1">
-                         {selectedAgent?.prompts.slice(0, 3).map((p: string) => (
-                           <button key={p} 
-                             onClick={() => setInputText(p)}
-                             className="px-4 py-2 rounded-full border border-white/10 bg-bg hover:bg-white/5 text-[11px] font-dm-mono font-black text-white/60 hover:text-white uppercase tracking-tight whitespace-nowrap transition-all"
-                           >
-                             {p}
-                           </button>
-                         ))}
-                       </div>
- 
-                       {attachments.length > 0 && (
-                         <div className="flex gap-2 flex-wrap mb-1 w-full">
-                           {attachments.map((file, idx) => (
-                             <div key={idx} className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg border border-white/10 bg-white/5 font-dm-mono text-[11px] text-white/80">
-                                📄 {file.name}
-                               <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))} className="hover:text-red-400 opacity-60 hover:opacity-100 ml-1">✕</button>
-                             </div>
-                           ))}
-                         </div>
-                       )}
- 
-                       <div className="relative w-full flex items-end bg-bg/50 border border-white/10 focus-within:border-green/30 rounded-[1.5rem] shadow-inner transition-all p-2 gap-2">
-                         <div className="relative shrink-0">
-                           <button 
-                             onClick={() => setShowAttachMenu(!showAttachMenu)}
-                             className="w-10 h-10 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center text-2xl font-light transition-all"
-                           >
-                             +
-                           </button>
-                           {showAttachMenu && (
-                             <div className="absolute bottom-12 left-0 w-64 bg-surface rounded-2xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.5)] p-2 z-50 font-dm-mono animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                <div className="px-3 py-2 border-b border-white/5 mb-1">
-                                  <p className="text-[9px] text-white/30 uppercase tracking-widest font-black">Suggested Uploads</p>
-                                </div>
-                                {ATTACH_SUGGESTIONS[selectedAgent?.dept || '']?.map(sug => (
-                                  <button key={sug} className="w-full text-left px-3 py-2 text-[11px] text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-colors truncate">
-                                    {sug}
-                                  </button>
-                                ))}
-                                <div className="my-1 border-t border-white/5"></div>
-                                <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-bold text-white hover:bg-white/5 rounded-lg transition-colors">
-                                  <span className="opacity-70 text-base">📎</span> Upload file
-                                </button>
-                                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileAttach} />
-                             </div>
-                           )}
-                         </div>
-                         <textarea 
-                           value={inputText}
-                           onChange={handleInput}
-                           placeholder={`Directly brief ${selectedAgent?.name}...`}
-                           className="flex-1 bg-transparent font-dm-mono text-[14px] text-white placeholder:text-white/20 resize-none outline-none no-scrollbar py-2.5 leading-relaxed"
-                           style={{ minHeight: '40px', maxHeight: '120px', height: '40px', overflowY: 'auto' }}
-                         />
-                         <button 
-                           onClick={() => handleSend()}
-                           className="w-10 h-10 shrink-0 rounded-xl bg-green text-bg flex items-center justify-center text-lg font-bold shadow-[0_4px_15px_rgba(0,255,135,0.3)] hover:scale-105 active:scale-95 transition-all outline-none"
-                         >
-                            ↑
-                         </button>
-                       </div>
-                    </div>
-                  </div>
+                   )}
+                 </div>
+                 <textarea value={deptInputText} onChange={(e) => setDeptInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }} placeholder={selectedAgent ? `Command ${selectedAgent.name}...` : `Brief your ${deptKey} team...`} className="w-full bg-bg/40 border border-white/5 focus:border-green/20 rounded-[2.5rem] p-7 pl-16 pr-16 text-[14px] text-white placeholder:text-white/10 resize-none outline-none shadow-inner transition-all min-h-[120px] leading-relaxed" />
+                 <button onClick={handleDeptSend} disabled={isRouting} className="absolute right-3 bottom-3 w-12 h-12 rounded-2xl bg-green text-bg flex items-center justify-center text-xl font-bold shadow-[0_4px_25px_rgba(0,255,135,0.4)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50">{isRouting ? '...' : '↑'}</button>
                </div>
              </div>
+           </div>
+
+           {/* Conversation Thread */}
+           <div className="flex-1 overflow-y-auto p-8 space-y-12 no-scrollbar pb-40">
+             {messages.length === 0 ? (
+               <div className="py-24 text-center border border-dashed border-white/5 rounded-[4rem] bg-white/[0.01] flex flex-col items-center opacity-40">
+                 <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-3xl mb-6 opacity-20">💬</div>
+                 <p className="text-[10px] font-black uppercase tracking-[0.5em]">Ready for Command Input</p>
+               </div>
+             ) : (
+               messages.map((msg, i) => (
+                 <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} workspace-anim animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+                   {msg.role === 'agent' && (
+                     <div className="flex items-center gap-3 mb-3 ml-4">
+                       <span className="text-2xl">{msg.senderIcon}</span>
+                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">{msg.senderName} Responded</span>
+                     </div>
+                   )}
+                   <div className={`max-w-[80%] p-8 rounded-[3rem] shadow-2xl backdrop-blur-sm ${msg.role === 'user' ? 'bg-green/10 border border-green/20' : 'bg-surface/50 border border-white/5'}`}>
+                      <p className="text-[14px] text-white/90 leading-relaxed italic whitespace-pre-wrap">{msg.content}</p>
+                   </div>
+                 </div>
+               ))
+             )}
+             {isTyping && (
+               <div className="flex items-center gap-3 opacity-30 ml-8">
+                 <div className="w-2 h-2 rounded-full bg-green animate-bounce" />
+                 <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.2s]" />
+                 <div className="w-2 h-2 rounded-full bg-green animate-bounce [animation-delay:0.4s]" />
+               </div>
+             )}
+             <div ref={threadEndRef} />
+           </div>
+
+           {/* Team Personnel (FOOTER) */}
+           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-bg via-bg/95 to-transparent pointer-events-none">
+             <div className="max-w-4xl mx-auto flex flex-col items-center gap-5 pointer-events-auto">
+               <div className="flex items-center gap-5 w-full opacity-10">
+                 <div className="h-px flex-1 bg-white" />
+                 <span className="text-[9px] font-black uppercase tracking-[0.8em] text-white">Personnel</span>
+                 <div className="h-px flex-1 bg-white" />
+               </div>
+               <div className="flex gap-4 p-3 bg-surface/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 shadow-3xl">
+                 {isLoadingAgents ? [1,2,3].map(i => <div key={i} className="w-16 h-16 bg-white/5 rounded-[1.5rem] animate-pulse" />) : dbAgents.map(agent => (
+                   <button key={agent.id} onClick={() => setSelectedAgent(agent)} title={agent.role} className={`group relative flex items-center justify-center w-16 h-16 rounded-[1.75rem] border transition-all duration-500 hover:scale-110 active:scale-90 ${selectedAgent?.id === agent.id ? 'bg-green/10 border-green/40 shadow-[0_0_30px_rgba(0,255,135,0.2)] ring-1 ring-green/30' : 'bg-white/5 border-transparent grayscale hover:grayscale-0 hover:border-white/10 hover:bg-white/10'}`}>
+                     <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-active:scale-95">{agent.icon}</span>
+                     <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-bg border border-white/10 text-[10px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all shadow-3xl translate-y-2 group-hover:translate-y-0 pointer-events-none z-50 whitespace-nowrap">
+                       {agent.name}
+                     </div>
+                   </button>
+                 ))}
+               </div>
+             </div>
+           </div>
          </div>
-      </main>
-    </div>
-  );
+       </main>
+     </div>
+   );
 }
