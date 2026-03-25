@@ -37,7 +37,7 @@ export default function DashboardPage() {
         const orgData = data.member?.organizations || {};
         setOrg(orgData);
         // Show pricing modal if no plan or free plan
-        if (orgData.plan === 'none' || orgData.plan === 'free') {
+        if (orgData.plan === 'none' || orgData.plan === 'free' || !orgData.plan_expires_at) {
           setShowPricingModal(true);
         } else if (orgData.plan_expires_at && new Date() > new Date(orgData.plan_expires_at)) {
           // Trial expired
