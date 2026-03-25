@@ -126,7 +126,7 @@ export default function DeptWorkspacePage() {
 
    const handleSend = async () => {
      if (!inputText.trim() && attachments.length === 0) return;
-     if (!conversationId) return;
+     if (!selectedAgent) return;
  
      const userMsg = inputText;
      const currentAttachments = [...attachments];
@@ -136,11 +136,38 @@ export default function DeptWorkspacePage() {
      setIsTyping(true);
  
      try {
-       const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+       let activeConvId = conversationId;
+ 
+       // Self-healing: if conversationId is missing, try to sync it now
+       if (!activeConvId) {
+         console.log('No conversationId, syncing before send...');
+         const historyRes = await fetch(`/api/agents/${selectedAgent.id}/history`);
+         const historyData = await historyRes.json();
+         
+         if (historyData.history && historyData.history.length > 0) {
+           activeConvId = historyData.history[0].id;
+         } else {
+           const createRes = await fetch('/api/conversations', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ agent_id: selectedAgent.id, department_key: deptKey })
+           });
+           const createData = await createRes.json();
+           activeConvId = createData.conversation?.id;
+         }
+         
+         if (activeConvId) setConversationId(activeConvId);
+       }
+ 
+       if (!activeConvId) throw new Error('Could not establish conversation');
+ 
+       const res = await fetch(`/api/conversations/${activeConvId}/messages`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ content: userMsg, attachments: currentAttachments })
        });
+       
+       if (!res.ok) throw new Error(`Server error: ${res.status}`);
        
        const data = await res.json();
        if (data.message) {
@@ -152,9 +179,9 @@ export default function DeptWorkspacePage() {
            wrenCode: parseWrenCode(agentMsg.content)
          }]);
        }
-     } catch (err) {
-       console.error('Send failed:', err);
-       setMessages(prev => [...prev, { role: 'agent', content: 'Connection failed. Please retry.' }]);
+     } catch (err: any) {
+       console.error('Send failed details:', err);
+       setMessages(prev => [...prev, { role: 'agent', content: `Something went wrong: ${err.message || 'Unknown error'}` }]);
      } finally {
        setIsTyping(false);
        setTimeout(() => {
