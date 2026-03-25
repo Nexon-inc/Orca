@@ -8,10 +8,10 @@ import { createClientSupabaseClient } from '@/lib/supabase/client';
 
 const menuItems = [
   { id: 'overview', name: 'Overview', icon: '⬡', path: '/dashboard' },
-  { id: 'orcahub', name: 'OrcaHub', icon: '🏪', path: '/dashboard/orcahub' },
   { id: 'review', name: 'Review', icon: '👁', path: '/dashboard/review' },
   { id: 'team', name: 'Teams', icon: '👥', path: '/dashboard/team' },
   { id: 'integrations', name: 'Integrations', icon: '🔌', path: '/dashboard/integrations' },
+  { id: 'orcahub', name: 'OrcaHub', icon: '🌊', path: '/dashboard/orcahub' },
   { id: 'upgrade', name: 'Upgrade', icon: '💎', path: '/dashboard/upgrade' },
   { id: 'account', name: 'Account', icon: '⚙️', path: '/dashboard/account' },
 ];
@@ -178,7 +178,9 @@ export default function DashboardSidebar({ active }: SidebarProps) {
           title="Logout"
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white/20 hover:text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 group/logout ${isCollapsed ? 'w-12 h-12 justify-center p-0' : 'w-full'}`}
         >
-          <span className="text-[16px] group-hover/logout:scale-110 transition-transform">⏻</span>
+          <span className="text-[16px] group-hover/logout:scale-110 transition-transform">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </span>
           {!isCollapsed && (
             <span className="font-syne text-[12px] font-[800] uppercase tracking-widest">Logout</span>
           )}

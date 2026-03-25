@@ -19,7 +19,7 @@ export async function POST(
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { content: rawContent } = await request.json()
+  const { content: rawContent, attachments } = await request.json()
   const supabase = await createServerSupabaseClient()
 
   // 1a. Security: Sanitize Input
@@ -73,6 +73,7 @@ export async function POST(
     conversation_id: conversationId,
     sender_type: 'user',
     content,
+    // Note: attachments could be saved to DB here if schema supported it
   })
 
   // 6. Update agent to busy
@@ -83,18 +84,42 @@ export async function POST(
     .eq('id', agent.id)
 
   // 7. Build system prompt
-  const systemPrompt = buildAgentSystemPrompt(agent, company, member)
+  let systemPrompt = buildAgentSystemPrompt(agent, company, member)
+  
+  // 7b. Append document attachments text to system prompt
+  if (attachments && attachments.length > 0) {
+    for (const file of attachments) {
+      if (file.type !== 'image') {
+        systemPrompt += `\n\nATTACHED FILE — ${file.name}:\n${file.text || 'No text extracted'}`
+      }
+    }
+  }
 
   // 8. Build messages array
-  const langchainMessages = [
+  const langchainMessages: any[] = [
     new SystemMessage(systemPrompt),
     ...(history || []).reverse().map((m: any) =>
       m.sender_type === 'user'
         ? new HumanMessage(m.content)
         : new SystemMessage(`Previous agent response: ${m.content}`)
     ),
-    new HumanMessage(content),
   ]
+
+  // 8b. Construct Human Message with potential Vision Images
+  if (attachments && attachments.some((f: any) => f.type === 'image')) {
+    const messageContent: any[] = [{ type: 'text', text: content }]
+    for (const file of attachments) {
+      if (file.type === 'image') {
+        messageContent.push({ 
+          type: 'image_url', 
+          image_url: { url: `data:image/jpeg;base64,${file.data}` } 
+        })
+      }
+    }
+    langchainMessages.push(new HumanMessage({ content: messageContent }))
+  } else {
+    langchainMessages.push(new HumanMessage(content))
+  }
 
   // 9. Call AI (Gemini 1.5 Pro is primary; Groq is secondary for fast responses)
   const useHighSpeed = content.length < 50 // Only use Groq for extremely short queries

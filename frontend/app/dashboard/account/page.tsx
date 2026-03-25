@@ -43,13 +43,17 @@ export default function AccountPage() {
       .then(r => r.json())
       .then(d => {
         if (d.profile) setProfile({ full_name: d.profile.full_name || '', email: d.profile.email || '' });
-        if (d.member?.organizations?.plan) setPlan(d.member.organizations.plan);
+        if (d.member?.organizations?.plan) setPlan(d.member.organizations.plan.toLowerCase());
       });
 
     // Fetch company identity
     fetch('/api/company')
       .then(r => r.json())
-      .then(d => { if (d.identity) setIdentity(d.identity); });
+      .then(d => { 
+        if (d.identity) {
+          setIdentity((prev: any) => ({ ...prev, ...d.identity }));
+        }
+      });
   }, []);
 
   const handleSave = async () => {
@@ -95,24 +99,24 @@ export default function AccountPage() {
 
         <div className="flex-1 flex flex-col overflow-hidden">
            {/* Tab Navigation */}
-           <div className="px-8 border-b border-white/5 bg-surface/30 shrink-0">
-              <div className="flex items-center gap-8 py-4 overflow-x-auto no-scrollbar">
-                {tabs.map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`text-[11px] font-[800] uppercase tracking-[0.2em] transition-all relative pb-4 whitespace-nowrap ${
-                      activeTab === tab.id ? 'text-green' : 'text-white/40 hover:text-white'
-                    }`}
-                  >
-                    {tab.name}
-                    {activeTab === tab.id && (
-                      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green shadow-[0_0_10px_rgba(0,255,135,0.5)]" />
-                    )}
-                  </button>
-                ))}
-              </div>
-           </div>
+            <div className="px-8 border-b border-white/5 bg-surface/30 shrink-0">
+               <div className="flex items-center gap-8 py-4 overflow-x-auto no-scrollbar">
+                {tabs
+                  .filter(t => t.id !== 'upgrade' || (plan !== 'pro' && plan !== 'enterprise'))
+                  .map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`acc-tab-anim px-4 py-2 rounded-xl text-[11px] font-[800] uppercase tracking-widest transition-all whitespace-nowrap relative ${activeTab === tab.id ? 'bg-green text-bg shadow-[0_4px_15px_rgba(0,255,135,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                    >
+                      {tab.name}
+                      {activeTab === tab.id && (
+                        <div className="absolute bottom-[-16px] left-0 w-full h-0.5 bg-green shadow-[0_0_10px_rgba(0,255,135,0.5)]" />
+                      )}
+                    </button>
+                  ))}
+               </div>
+            </div>
 
            {/* Tab Content */}
            <div className="flex-1 overflow-y-auto no-scrollbar p-8">

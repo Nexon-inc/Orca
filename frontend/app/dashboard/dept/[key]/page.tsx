@@ -16,7 +16,8 @@ export default function DeptWorkspacePage() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [inputText, setInputText] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
-  const [attachments, setAttachments] = useState<{name: string, type: string, data: string}[]>([]);
+  const [showNewBriefMenu, setShowNewBriefMenu] = useState(false);
+  const [attachments, setAttachments] = useState<{name: string, type: string, data: string, text?: string}[]>([]);
   const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string, video?: any, wrenCode?: any }[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,11 +60,24 @@ export default function DeptWorkspacePage() {
       if (isImage) typeStr = 'image';
       else if (isCode) typeStr = 'code';
       else if (file.name.endsWith('.csv')) typeStr = 'csv';
+      else if (file.name.endsWith('.txt') || file.name.endsWith('.md')) typeStr = 'txt';
+      
+      let textContent = '';
+      if (!isImage) {
+          try {
+             textContent = file.type.includes('pdf') || file.type.includes('word') 
+                 ? `[Extracted simulated text content for document ${file.name}]` 
+                 : decodeURIComponent(escape(atob(base64Data)));
+          } catch {
+             textContent = `[Could not extract text from document ${file.name}]`;
+          }
+      }
       
       setAttachments(prev => [...prev, {
         name: file.name,
         type: typeStr,
-        data: base64Data
+        data: base64Data,
+        text: textContent
       }]);
     };
     reader.readAsDataURL(file);
@@ -198,7 +212,22 @@ export default function DeptWorkspacePage() {
           </div>
           <div className="flex items-center gap-3">
              <button className="btn-secondary text-[10px] font-black px-6 py-2.5 rounded-xl uppercase tracking-widest border border-white/10 hover:bg-white/5 outline-none">History</button>
-             <button className="btn-primary text-[10px] font-black px-8 py-2.5 rounded-xl uppercase tracking-widest shadow-[0_4px_20px_rgba(0,255,135,0.2)] active:scale-95 transition-all">New Brief +</button>
+             <div className="relative">
+               <button 
+                 onClick={() => setShowNewBriefMenu(!showNewBriefMenu)}
+                 className="btn-primary text-[10px] font-black px-8 py-2.5 rounded-xl uppercase tracking-widest shadow-[0_4px_20px_rgba(0,255,135,0.2)] active:scale-95 transition-all outline-none"
+               >
+                 New Brief +
+               </button>
+               {showNewBriefMenu && (
+                 <div className="absolute top-12 right-0 w-48 bg-surface rounded-2xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.5)] p-2 z-50 font-dm-mono animate-in fade-in slide-in-from-top-2 duration-200">
+                    <button onClick={() => { setShowNewBriefMenu(false); document.querySelector('textarea')?.focus(); }} className="w-full text-left px-3 py-2 text-[10px] font-black tracking-widest uppercase text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3">
+                       <span className="text-sm opacity-70">📄</span> Blank Brief
+                    </button>
+
+                 </div>
+               )}
+             </div>
           </div>
         </header>
 
@@ -270,7 +299,7 @@ export default function DeptWorkspacePage() {
               </div>
 
               {/* Input Area */}
-              <div className="p-8 border-t border-white/5 bg-surface/20 shrink-0">
+              <div className="px-8 pb-8 pt-4 border-t border-white/5 bg-surface/20 shrink-0">
                  <div className="relative max-w-4xl mx-auto flex flex-col items-start gap-2">
                     <div className="flex gap-2 overflow-x-auto no-scrollbar w-full">
                       {selectedAgent?.prompts.slice(0, 3).map(p => (
