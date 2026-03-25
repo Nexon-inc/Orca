@@ -21,6 +21,19 @@ export async function GET() {
   today.setHours(0, 0, 0, 0)
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
+  // Pre-fetch related IDs to avoid invalid subquery builder errors
+  const [convRes, deptRes, salesConvRes] = await Promise.all([
+    supabase.from('conversations').select('id').eq('org_id', orgId),
+    supabase.from('departments').select('id').eq('org_id', orgId),
+    supabase.from('conversations').select('id').eq('org_id', orgId).eq('department_key', 'sales'),
+  ])
+
+  // Fallback to dummy UUID if empty to avoid Postgres syntax error on empty IN ()
+  const dummyId = '00000000-0000-0000-0000-000000000000'
+  const convIds = convRes.data?.length ? convRes.data.map(c => c.id) : [dummyId]
+  const deptIds = deptRes.data?.length ? deptRes.data.map(d => d.id) : [dummyId]
+  const salesConvIds = salesConvRes.data?.length ? salesConvRes.data.map(c => c.id) : [dummyId]
+
   // Run all stat queries in parallel
   const [
     tasksResult,
@@ -36,20 +49,14 @@ export async function GET() {
       .select('id', { count: 'exact', head: true })
       .eq('sender_type', 'agent')
       .gte('created_at', today.toISOString())
-      .in(
-        'conversation_id',
-        supabase.from('conversations').select('id').eq('org_id', orgId)
-      ),
+      .in('conversation_id', convIds),
 
     // Active agents — agents with status 'active' or 'busy'
     supabase
       .from('agents')
       .select('id', { count: 'exact', head: true })
       .in('status', ['active', 'busy'])
-      .in(
-        'department_id',
-        supabase.from('departments').select('id').eq('org_id', orgId)
-      ),
+      .in('department_id', deptIds),
 
     // Coordination events in last 24h
     supabase
@@ -64,14 +71,7 @@ export async function GET() {
       .select('id', { count: 'exact', head: true })
       .eq('status', 'approved')
       .gte('created_at', today.toISOString())
-      .in(
-        'conversation_id',
-        supabase
-          .from('conversations')
-          .select('id')
-          .eq('org_id', orgId)
-          .eq('department_key', 'sales')
-      ),
+      .in('conversation_id', salesConvIds),
 
     // Last coordination — for the "Last: X → Y" label
     supabase

@@ -33,23 +33,15 @@ export default function DashboardSidebar({ active }: SidebarProps) {
   useEffect(() => {
     setMounted(true);
     const supabase = createClientSupabaseClient();
-    // Fetch departments regardless of orgId — try from session
+    // Fetch departments seamlessly from the secure API
     const fetchDepts = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      // Get the org_id from org_members
-      const { data: memberRow } = await supabase
-        .from('org_members')
-        .select('org_id')
-        .eq('user_id', user.id)
-        .single();
-      if (!memberRow) return;
-      const { data } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('org_id', memberRow.org_id)
-        .order('name', { ascending: true });
-      if (data) setDbDepts(data);
+      try {
+        const res = await fetch('/api/departments');
+        const data = await res.json();
+        if (data.departments) setDbDepts(data.departments);
+      } catch (err) {
+        console.error('Failed to load DB depts', err);
+      }
     };
     fetchDepts();
   }, []);
