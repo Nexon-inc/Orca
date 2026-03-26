@@ -1,6 +1,6 @@
 'use client';
 
-import { MissionProvider } from './context/MissionContext';
+import { MissionProvider } from '../context/MissionContext';
 import { Toaster } from 'sonner';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
