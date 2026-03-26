@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Syne, DM_Mono } from 'next/font/google'
 import Providers from './Providers'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const syne = Syne({ subsets: ["latin"], variable: "--font-syne", weight: ['400', '700', '800'] });
