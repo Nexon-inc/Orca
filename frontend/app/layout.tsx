@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Syne, DM_Mono } from 'next/font/google'
-import { Toaster } from 'sonner'
-import { Analytics } from '@vercel/analytics/next'
+import Providers from './Providers'
 import './globals.css'
 
 const syne = Syne({ subsets: ["latin"], variable: "--font-syne", weight: ['400', '700', '800'] });
@@ -24,8 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${syne.variable} ${dmMono.variable} dark`}>
       <body className="font-sans antialiased bg-bg text-text-body">
-        {children}
-        <Toaster position="top-center" richColors />
+        <Providers>
+          {children}
+        </Providers>
         <Analytics />
       </body>
     </html>

@@ -7,10 +7,12 @@ import { getAgentsByDept, Agent, AGENT_ROSTER } from '@/lib/agents';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import VideoResultCard from '@/components/VideoResultCard';
 import WrenCodeCard from '@/components/WrenCodeCard';
+import { useMission } from '@/context/MissionContext';
 
 export default function DeptWorkspacePage() {
   const params = useParams();
-  const deptKey = params.key as string;
+  const deptKey = (params.key as string) || 'marketing';
+  const { processingDepts, startMission, completeMission } = useMission();
   
    const DEPT_MAP: Record<string, string> = {
      'marketing': 'marketing',
@@ -86,7 +88,6 @@ export default function DeptWorkspacePage() {
              };
            });
            setDbAgents(merged);
-           if (merged.length > 0) setSelectedAgent(merged[0]);
          }
        } catch (err) {
          console.error('Failed to load DB agents:', err);
@@ -102,6 +103,7 @@ export default function DeptWorkspacePage() {
      const syncConversation = async () => {
        try {
          const historyRes = await fetch(`/api/agents/${selectedAgent.id}/history`);
+         if (!historyRes.ok) throw new Error('Failed to fetch conversation history');
          const historyData = await historyRes.json();
          if (historyData.history && historyData.history.length > 0) {
            const latestConv = historyData.history[0];
@@ -131,6 +133,14 @@ export default function DeptWorkspacePage() {
      });
    }, [selectedAgent, deptKey]);
 
+   useEffect(() => {
+     if (isTyping || isRouting) {
+       startMission(deptKey);
+     } else {
+       completeMission(deptKey);
+     }
+   }, [isTyping, isRouting, deptKey]);
+
    const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
      const file = e.target.files?.[0];
      if (!file) return;
@@ -151,24 +161,23 @@ export default function DeptWorkspacePage() {
      setMessages(prev => [...prev, { role: 'user', content: brief }]);
 
      try {
-       // 1. Route to agent
        let targetAgent = selectedAgent;
-       if (!selectedAgent) {
+       if (!targetAgent) {
           const routeRes = await fetch(`/api/departments/${apiDeptKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: brief })
           });
+          if (!routeRes.ok) throw new Error('Routing failure');
           const routeData = await routeRes.json();
           if (routeData.agent) {
-            targetAgent = routeData.agent;
-            setSelectedAgent(targetAgent);
+             targetAgent = dbAgents.find(a => a.id === routeData.agent.id) || routeData.agent;
+             setSelectedAgent(targetAgent);
           }
        }
 
-       if (!targetAgent) throw new Error('Could not route to an agent');
+       if (!targetAgent) throw new Error('Coordination Error');
 
-       // 2. Send message
        setIsTyping(true);
        const historyRes = await fetch(`/api/agents/${targetAgent.id}/history`);
        const historyData = await historyRes.json();
@@ -189,6 +198,7 @@ export default function DeptWorkspacePage() {
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ content: brief, attachments })
        });
+       
        const msgData = await msgRes.json();
        if (msgData.message) {
          setMessages(prev => [...prev, { 
@@ -199,8 +209,8 @@ export default function DeptWorkspacePage() {
          }]);
        }
      } catch (err: any) {
-       console.error('Send failed:', err);
-       setMessages(prev => [...prev, { role: 'agent', content: `Error: ${err.message}` }]);
+       console.error('Action Failed:', err);
+       setMessages(prev => [...prev, { role: 'agent', content: `CRITICAL ERROR: ${err.message}`, senderName: 'SYSTEM', senderIcon: '⚠️' }]);
      } finally {
        setIsRouting(false);
        setIsTyping(false);
@@ -215,23 +225,36 @@ export default function DeptWorkspacePage() {
      <div className="h-screen bg-bg flex text-text-body font-dm-mono overflow-hidden">
        <DashboardSidebar />
        <main className="flex-1 flex flex-col min-w-0 h-full relative">
-         {/* Department Navigation Header (Un-squeezed) */}
+         {/* Department Navigation Header (With Background Task Indicators) */}
          <header className="px-8 py-5 border-b border-white/5 bg-surface/30 workspace-anim shrink-0">
            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth">
              {dbDepts.map(dept => {
                const isActive = dept.key === deptKey;
+               const isWorking = processingDepts.includes(dept.key.toLowerCase());
                return (
                  <a 
                    key={dept.id} 
                    href={`/dashboard/dept/${dept.key}`} 
-                   className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border transition-all duration-300 whitespace-nowrap ${
+                   className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border transition-all duration-300 whitespace-nowrap relative ${
                      isActive 
                      ? 'bg-green/10 border-green/30 text-green shadow-[0_4px_20px_rgba(0,255,135,0.15)] ring-1 ring-green/20' 
                      : 'bg-white/5 border-white/5 text-white/50 hover:text-white hover:bg-white/10'
                    }`}
                  >
-                   <span className="text-xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">{dept.icon || '🏢'}</span>
-                   <span className="text-[10px] font-black uppercase tracking-widest">{dept.name}</span>
+                   {isWorking && !isActive && (
+                      <div className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green"></span>
+                      </div>
+                   )}
+                   <span className={`text-xl transition-all ${isActive ? 'text-green opacity-100 filter drop-shadow-[0_0_8px_rgba(0,255,135,0.5)]' : 'opacity-50 grayscale hover:grayscale-0'}`}>{dept.icon || '🏢'}</span>
+                   <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-green' : 'text-white/40'}`}>{dept.name}</span>
+                   {isWorking && isActive && (
+                     <div className="ml-2 flex items-center gap-1">
+                        <div className="w-1 h-1 rounded-full bg-green animate-pulse" />
+                        <div className="w-1 h-1 rounded-full bg-green animate-pulse [animation-delay:0.2s]" />
+                     </div>
+                   )}
                  </a>
                );
              })}
@@ -241,18 +264,18 @@ export default function DeptWorkspacePage() {
          {/* Messenger Content */}
          <div className="flex-1 flex flex-col overflow-hidden relative">
            
-           {/* CONVERSATION THREAD (CENTERED) */}
-           <div className={`flex-1 overflow-y-auto p-8 space-y-12 no-scrollbar scroll-smooth transition-all duration-700 ${hasStarted ? 'pb-56 pt-12' : 'hidden'}`}>
+           {/* CONVERSATION THREAD */}
+           <div className={`flex-1 overflow-y-auto p-8 space-y-12 no-scrollbar scroll-smooth transition-all duration-700 ${hasStarted ? 'pb-72 pt-12' : 'hidden'}`}>
              {messages.map((msg, i) => (
                  <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} workspace-anim animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-                   {msg.role === 'agent' && (
+                   {(msg.role === 'agent' || msg.senderName === 'SYSTEM') && (
                      <div className="flex items-center gap-3 mb-4 ml-4">
-                       <span className="text-2xl filter drop-shadow-md">{msg.senderIcon}</span>
-                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">{msg.senderName} Responded</span>
+                       <span className="text-2xl">{msg.senderIcon}</span>
+                       <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${msg.senderName === 'SYSTEM' ? 'text-red-500/50' : 'text-white/20'}`}>{msg.senderName} Responded</span>
                      </div>
                    )}
-                   <div className={`max-w-[75%] p-10 rounded-[3.5rem] shadow-2xl backdrop-blur-md ${msg.role === 'user' ? 'bg-green/10 border border-green/20' : 'bg-surface/50 border border-white/5'}`}>
-                      <p className="text-[15px] text-white/90 leading-relaxed italic whitespace-pre-wrap">{msg.content}</p>
+                   <div className={`max-w-[75%] p-10 rounded-[3.5rem] shadow-2xl backdrop-blur-md ${msg.role === 'user' ? 'bg-green/10 border border-green/20' : msg.senderName === 'SYSTEM' ? 'bg-red-500/10 border border-red-500/20' : 'bg-surface/50 border border-white/5'}`}>
+                      <p className={`text-[15px] leading-relaxed italic whitespace-pre-wrap ${msg.senderName === 'SYSTEM' ? 'text-red-400 font-bold' : 'text-white/90'}`}>{msg.content}</p>
                    </div>
                  </div>
              ))}
@@ -266,77 +289,59 @@ export default function DeptWorkspacePage() {
              <div ref={threadEndRef} />
            </div>
 
-           {/* INITIAL BRIEFING AREA (CENTERED) */}
-           {!hasStarted && (
-             <div className="flex-1 flex flex-col items-center justify-center p-8 pb-32 workspace-anim">
-                <div className="w-full max-w-3xl space-y-12 text-center">
-                   <div className="space-y-4">
-                      <div className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl mx-auto mb-6 shadow-2xl">⚡</div>
-                      <h2 className="text-[11px] font-black uppercase tracking-[0.6em] text-white/10">Initialize Department Brief</h2>
-                   </div>
-                   
-                   {/* Main Centered Input */}
-                   <div className="relative group w-full">
-                      <textarea 
-                        value={deptInputText} 
-                        onChange={(e) => setDeptInputText(e.target.value)} 
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }} 
-                        placeholder={`Brief your ${deptKey} team...`} 
-                        className="w-full bg-surface/40 border border-white/10 focus:border-green/50 rounded-[3rem] p-10 pl-20 pr-20 text-[18px] text-white placeholder:text-white/10 resize-none outline-none shadow-[0_20px_60px_rgba(0,0,0,0.4)] hover:shadow-[0_30px_80px_rgba(0,0,0,0.5)] transition-all min-h-[180px] leading-relaxed" 
-                      />
-                      
-                      {/* Icons placement (Corrected) */}
-                      <button onClick={() => setShowAttachMenu(!showAttachMenu)} className="absolute left-6 bottom-7 w-12 h-12 rounded-[1.25rem] bg-white/5 text-white/20 hover:text-white hover:bg-white/10 flex items-center justify-center text-3xl transition-all active:scale-90">+</button>
-                      <button onClick={handleDeptSend} disabled={isRouting} className="absolute right-6 bottom-7 w-12 h-12 rounded-[1.25rem] bg-green text-bg flex items-center justify-center text-2xl font-bold shadow-[0_4px_30px_rgba(0,255,135,0.4)] hover:scale-110 active:scale-95 transition-all">↑</button>
-                      
-                      {showAttachMenu && (
-                        <div className="absolute bottom-24 left-6 w-72 bg-surface rounded-[2rem] border border-white/10 shadow-3xl p-3 z-50 text-left animate-in fade-in slide-in-from-bottom-4">
-                           {ATTACH_SUGGESTIONS[deptKey?.toLowerCase()]?.map(sug => (<button key={sug} onClick={() => { setDeptInputText(sug); setShowAttachMenu(false); }} className="w-full text-left px-4 py-3 text-[12px] text-white/40 hover:text-white hover:bg-white/5 rounded-xl truncate">{sug}</button>))}
-                           <div className="my-2 border-t border-white/5" />
-                           <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-4 px-4 py-3.5 text-[12px] font-bold text-white hover:bg-white/5 rounded-xl"><span className="opacity-70 text-lg">📎</span> Upload file</button>
-                        </div>
-                      )}
-                   </div>
+           {/* UNIFIED INTERACTION UNIT */}
+           <div className={`flex flex-col items-center transition-all duration-1000 ease-out px-8 w-full max-w-4xl mx-auto z-50 ${hasStarted ? 'absolute bottom-20 left-1/2 -translate-x-1/2' : 'flex-1 justify-center'}`}>
+              <div className="w-full relative group">
+                
+                {/* Agent Personnel Unit */}
+                <div className="flex gap-4 p-4 px-6 bg-surface/90 backdrop-blur-3xl rounded-t-[2.5rem] border border-white/10 border-b-0 shadow-2xl overflow-x-auto no-scrollbar">
+                  {dbAgents.map(agent => (
+                    <button 
+                      key={agent.id} 
+                      onClick={() => setSelectedAgent(selectedAgent?.id === agent.id ? null : agent)} 
+                      className={`group relative flex items-center gap-2.5 px-3 py-1.5 rounded-xl border transition-all duration-500 shrink-0 ${
+                        selectedAgent?.id === agent.id 
+                        ? 'bg-green/10 border-green/30 text-green shadow-[0_0_15px_rgba(0,255,135,0.1)] ring-1 ring-green/20' 
+                        : 'bg-white/5 border-white/5 grayscale hover:grayscale-0 hover:bg-white/10'
+                      }`}
+                    >
+                      <span className="text-xl transition-transform duration-500 group-hover:scale-110">{agent.icon}</span>
+                      <span className={`text-[9px] font-black uppercase tracking-wider ${selectedAgent?.id === agent.id ? 'text-green' : 'text-white/30 group-hover:text-white'}`}>{agent.name}</span>
+                    </button>
+                  ))}
                 </div>
-             </div>
-           )}
 
-           {/* INPUT BAR (BOTTOM POSITION - When Active) */}
-           <div className={`absolute bottom-32 left-0 right-0 p-8 pt-0 transition-all duration-700 ease-in-out ${hasStarted ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
-              <div className="max-w-4xl mx-auto relative group">
-                <textarea 
-                  value={deptInputText} 
-                  onChange={(e) => setDeptInputText(e.target.value)} 
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }} 
-                  placeholder={selectedAgent ? `Command ${selectedAgent.name}...` : `Continue briefing...`} 
-                  className="w-full bg-surface/80 backdrop-blur-xl border border-white/10 focus:border-green/50 rounded-[2.5rem] p-7 pl-16 pr-16 text-[14px] text-white placeholder:text-white/10 resize-none outline-none shadow-3xl transition-all min-h-[100px] leading-relaxed" 
-                />
-                <button onClick={() => setShowAttachMenu(!showAttachMenu)} className="absolute left-4 bottom-5 w-10 h-10 rounded-xl bg-white/5 text-white/30 hover:text-white hover:bg-white/10 flex items-center justify-center text-2xl transition-all">+</button>
-                <button onClick={handleDeptSend} disabled={isRouting} className="absolute right-4 bottom-5 w-10 h-10 rounded-xl bg-green text-bg flex items-center justify-center text-xl font-bold shadow-lg">↑</button>
+                {/* Primary Input Unit */}
+                <div className="relative">
+                  <textarea 
+                    value={deptInputText} 
+                    onChange={(e) => setDeptInputText(e.target.value)} 
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDeptSend(); } }} 
+                    placeholder={selectedAgent ? `Command ${selectedAgent.name}...` : `Brief your ${deptKey} team...`} 
+                    className={`w-full bg-surface/90 backdrop-blur-3xl border border-white/10 focus:border-green/50 rounded-b-[2.5rem] p-8 pl-8 pr-16 text-white placeholder:text-white/10 resize-none outline-none shadow-3xl transition-all leading-relaxed ${hasStarted ? 'min-h-[100px] text-[14px]' : 'min-h-[160px] text-[18px]'}`} 
+                  />
+                  <div className="absolute right-4 bottom-4 flex items-center gap-2">
+                    <button onClick={() => setShowAttachMenu(!showAttachMenu)} className="w-10 h-10 rounded-xl bg-white/5 text-white/30 hover:text-white hover:bg-white/10 flex items-center justify-center text-xl transition-all active:scale-90">+</button>
+                    <button onClick={handleDeptSend} disabled={isRouting} className="w-10 h-10 rounded-xl bg-green text-bg flex items-center justify-center text-xl font-bold shadow-lg hover:scale-110 active:scale-95 transition-all">{isRouting ? '...' : '↑'}</button>
+                  </div>
+                  
+                  {showAttachMenu && (
+                    <div className="absolute bottom-16 right-0 w-72 bg-surface rounded-2xl border border-white/10 shadow-3xl p-3 z-50 text-left animate-in fade-in slide-in-from-bottom-2">
+                        {ATTACH_SUGGESTIONS[deptKey?.toLowerCase()]?.map(sug => (<button key={sug} onClick={() => { setDeptInputText(sug); setShowAttachMenu(false); }} className="w-full text-left px-4 py-3 text-[12px] text-white/40 hover:text-white hover:bg-white/5 rounded-xl truncate">{sug}</button>))}
+                        <div className="my-2 border-t border-white/5" />
+                        <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-4 px-4 py-3.5 text-[12px] font-bold text-white hover:bg-white/5 rounded-xl">📎 Upload file</button>
+                    </div>
+                  )}
+                </div>
               </div>
            </div>
 
-           {/* TEAM PERSONNEL (FOOTER OVERLAY) */}
-           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-bg via-bg/95 to-transparent pointer-events-none">
-             <div className="max-w-4xl mx-auto flex flex-col items-center gap-5 pointer-events-auto">
-               <div className="flex items-center gap-5 w-full opacity-10">
-                 <div className="h-px flex-1 bg-white" />
-                 <span className="text-[9px] font-black uppercase tracking-[0.8em] text-white">Personnel</span>
-                 <div className="h-px flex-1 bg-white" />
-               </div>
-               <div className="flex gap-4 p-3 bg-surface/90 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 shadow-3xl">
-                 {isLoadingAgents ? [1,2,3].map(i => <div key={i} className="w-14 h-14 bg-white/5 rounded-[1.25rem] animate-pulse" />) : dbAgents.map(agent => (
-                   <button key={agent.id} onClick={() => setSelectedAgent(agent)} title={agent.role} className={`group relative flex items-center justify-center w-14 h-14 rounded-[1.25rem] border transition-all duration-500 hover:scale-110 active:scale-90 ${selectedAgent?.id === agent.id ? 'bg-green/10 border-green/40 shadow-[0_0_25px_rgba(0,255,135,0.2)] ring-1 ring-green/20' : 'bg-white/5 border-white/5 grayscale hover:grayscale-0 hover:border-white/10 hover:bg-white/5'}`}>
-                     <span className="text-2xl transition-transform duration-500 group-hover:scale-110">{agent.icon}</span>
-                     <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-bg border border-white/10 text-[10px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all shadow-3xl translate-y-2 group-hover:translate-y-0 pointer-events-none z-50 whitespace-nowrap">
-                       {agent.name}
-                     </div>
-                   </button>
-                 ))}
-               </div>
-             </div>
+           {/* MISSION DISCLAIMER */}
+           <div className="absolute bottom-5 left-0 right-0 py-2 flex items-center justify-center gap-2 pointer-events-none opacity-60">
+              <span className="text-[14px] text-white/30">⬡</span>
+              <p className="text-[11px] font-syne text-white/30 tracking-tight">ORCA can make mistakes. Always review outputs before approving actions.</p>
            </div>
-
+ 
          </div>
          <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileAttach} />
        </main>
