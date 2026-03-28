@@ -14,6 +14,7 @@ Built to run a company — not assist one.
 ## What is ORCA?
 
 ORCA is an AI Company OS. It gives any company — from a solo founder to a 15-person team — a full AI workforce across 9 departments and 45 named, specialized agents, all coordinated in one dashboard.
+ORCA is an AI Solo Founder OS. It gives any founder a full AI workforce across 5 core departments and 25 named, specialized agents, all coordinated in one dashboard.
 
 ORCA is not a chatbot. It is not a prompt tool. It is not another automation layer on top of your existing tools. It is an operating system for your company. Agents have roles, memory, and the ability to coordinate with each other across departments — just like a real team would.
 
@@ -24,21 +25,19 @@ ORCA removes that bottleneck by giving them a coordinated AI workforce that work
 
 ---
 
-## The 9 Departments
+## The 5 Core Departments
 
-Every ORCA deployment comes with 9 departments, each staffed with 5 specialized agents.
+Every ORCA deployment comes with 5 active departments, each staffed with 5 specialized agents.
 
 | Department | Agents | What it handles |
 |-----------|--------|----------------|
 | 📣 Marketing | Aria · Jackie · Eric · Lucy · Joe | Content, social, SEO, ads, brand voice |
 | 💼 Sales & Revenue | Rex · Clara · Chase · Mark · Teo | Lead prospecting, CRM, outreach, follow-up, intel |
 | 🤝 Customer Success | Purity · Bruce · Nadia · John · Beatrice | Support, onboarding, retention, NPS, health |
-| 🛡️ Tech & Security | Ghost · Cipher · Wren · Hex · Volt | Code security, PR reviews, DevOps, docs, incidents |
-| 🧠 People & Hiring | Marcus · Vera · Zara · Eli · Nina | Talent sourcing, screening, verification, offers, culture |
-| 📋 Operations | Atlas · Cal · Dean · Iris · Owen | Project management, calendar, notes, inbox, tasks |
-| 📊 Finance & Legal | Bill · Felix · Lena · Reid · Cora | Invoicing, expenses, contracts, budget, audit |
-| 🔍 Intelligence | Roman · Sage · Nate · Ada · Dex | Research, market signals, summaries, forecasting, trends |
-| 🌐 Community & Growth | Spike · Milo · Rio · Zoe · Kai | Growth experiments, community, partnerships, influencers |
+| 🛡️ Tech & Vibe Coding | Ghost · Cipher · Wren · Hex · Volt | Code reviews, deployments, security, DevOps |
+| 🔍 Intelligence & Research | Roman · Finn · Nate · Ada · Dex | Research, market signals, summaries, forecasting, trends |
+
+*Note: Hiring, Ops, Finance, and Community are currently in Protocol Staged (Coming Soon) mode.*
 
 ---
 
