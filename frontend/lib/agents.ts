@@ -16,8 +16,8 @@ export const AGENT_ROSTER: Agent[] = [
   { id: 'lucy', name: 'Lucy', icon: '🔍', role: 'SEO Specialist', dept: 'marketing', description: 'Keyword research, meta descriptions, rank tracking, technical SEO audits, link building briefs.', prompts: ['SEO audit', 'Keyword research', 'Meta descriptions'] },
   { id: 'joe', name: 'Joe', icon: '🎨', role: 'Brand Voice', dept: 'marketing', description: 'Maintains brand guidelines, reviews all content for tone consistency, updates style guide, audits voice across channels.', prompts: ['Brand voice guide', 'Tagline options', 'Tone review'] },
 
-  // SALES
-  { id: 'rex', name: 'Rex', icon: '💰', role: 'Lead Prospector', dept: 'sales', description: 'Finds high-intent leads using hiring signals, funding data, and social activity. Builds qualified prospect lists.', prompts: ['Find 20 leads', 'Enrich contacts', 'ICP research'] },
+  // SALES & REVENUE
+  { id: 'rex', name: 'Rex', icon: '💰', role: 'Lead Prospector', dept: 'sales', description: 'Finds high-intent leads using hiring signals, funding data, social activity, and handles payments via Flutterwave/Lemon Squeezy.', prompts: ['Find 20 leads', 'Enrich contacts', 'Payment report'] },
   { id: 'clara', name: 'Clara', icon: '📋', role: 'CRM Manager', dept: 'sales', description: 'Keeps the CRM clean and updated. Logs meetings, moves deals through stages, flags overdue opportunities.', prompts: ['Update CRM', 'Pipeline report', 'Deal summary'] },
   { id: 'chase', name: 'Chase', icon: '🏃', role: 'Follow-up Agent', dept: 'sales', description: 'Sends timed follow-up sequences, re-engages cold leads, writes breakup emails, monitors reply rates.', prompts: ['Follow-up sequence', 'Re-engagement email', 'Check-in message'] },
   { id: 'mark_sales', name: 'Mark', icon: '📬', role: 'Outreach Agent', dept: 'sales', description: 'Writes personalised cold emails, subject lines, LinkedIn messages, and multi-step sequences.', prompts: ['Cold outreach email', 'LinkedIn DM', 'Sequence draft'] },
@@ -58,9 +58,9 @@ export const AGENT_ROSTER: Agent[] = [
   { id: 'reid', name: 'Reid', icon: '📐', role: 'Budget Agent', dept: 'finance', description: 'Forecasts budgets, sets spending alerts, approves expenses within thresholds, generates cash flow reports.', prompts: ['Budget forecast', 'Spend analysis', 'Q report'] },
   { id: 'cora', name: 'Cora', icon: '🔬', role: 'Financial Review', dept: 'finance', description: 'Audits financial records, runs budget vs actual analysis, prepares reports for CEO, flags discrepancies.', prompts: ['Financial audit', 'Revenue report', 'Cost breakdown'] },
 
-  // INTELLIGENCE
-  { id: 'roman', name: 'Roman', icon: '🏛️', role: 'Research Agent', dept: 'intelligence', description: 'Deep competitor research, market analysis, industry reports, SWOT analysis, trend identification.', prompts: ['Market research', 'Competitor analysis', 'Industry deep dive'] },
-  { id: 'sage', name: 'Sage', icon: '📡', role: 'Market Listener', dept: 'intelligence', description: 'Monitors brand mentions, tracks keywords, watches competitor activity, sets alerts for key signals.', prompts: ['Monitor mentions', 'Signal report', 'Trend watch'] },
+  // INTELLIGENCE & RESEARCH
+  { id: 'roman', name: 'Roman', icon: '🏛️', role: 'Market Analyst', dept: 'intelligence', description: 'Deep market analysis, SWOT analysis, trend identification, and real-time news monitoring via NewsAPI.', prompts: ['Market research', 'Competitor analysis', 'SWOT analysis'] },
+  { id: 'finn', name: 'Finn', icon: '🌐', role: 'Research Specialist', dept: 'intelligence', description: 'Live web research and deep intelligence gathering via Tavily and SerpApi. Expert in finding the unfindable.', prompts: ['Deep web search', 'Competitor deep dive', 'Data gathering'] },
   { id: 'nate', name: 'Nate', icon: '📰', role: 'Summary Agent', dept: 'intelligence', description: 'Compiles weekly intel digests, summarises articles and reports, extracts key takeaways, delivers news briefs.', prompts: ['Weekly brief', 'News summary', 'Key takeaways'] },
   { id: 'ada', name: 'Ada', icon: '🔮', role: 'Forecasting Agent', dept: 'intelligence', description: 'Builds growth projections, Q-by-Q forecasts, scenario planning, risk analysis, revenue modelling.', prompts: ['Revenue forecast', 'Growth model', 'Scenario analysis'] },
   { id: 'dex', name: 'Dex', icon: '📈', role: 'Trend Analyst', dept: 'intelligence', description: 'Identifies emerging trends, tracks market shifts, connects intelligence to product and marketing strategy.', prompts: ['Trend report', 'Emerging topics', 'Opportunity scan'] },

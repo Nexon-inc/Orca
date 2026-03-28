@@ -204,8 +204,8 @@ export default function HeroSection() {
 
         <div ref={subheadRef} className="mb-10 opacity-0">
           <p className="max-w-xl mx-auto font-dm-mono text-[13px] text-text-muted leading-relaxed uppercase tracking-[0.2em] opacity-80">
-            9 AI departments. 45 coordinated agents. <br />
-            One dashboard. Built to run a company — not assist one.
+            5 AI departments. 25 coordinated agents. <br />
+            Built for solo founders who are tired of doing everything alone.
           </p>
         </div>
 
@@ -224,9 +224,6 @@ export default function HeroSection() {
               See how it works ↓
             </button>
           </div>
-          <p className="mt-2 font-dm-mono text-[10px] text-text-muted/40 uppercase tracking-[0.2em]">
-            Free to start · No credit card · Founding pricing locked
-          </p>
         </div>
 
         {/* Hero Visual Simulation */}
@@ -261,7 +258,7 @@ export default function HeroSection() {
                          </h2>
                          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-green/10 border border-green/20">
                             <div className="w-1 h-1 rounded-full bg-green animate-pulse" />
-                            <span className="text-[8px] text-green font-bold uppercase">{simStep === 'overview' ? '9 ONLINE' : '5 ONLINE'}</span>
+                            <span className="text-[8px] text-green font-bold uppercase">{simStep === 'overview' ? '5 ONLINE' : '5 ONLINE'}</span>
                          </div>
                       </div>
                    </header>
@@ -348,7 +345,7 @@ export default function HeroSection() {
           <div className="absolute -right-12 bottom-20 hidden xl:flex flex-col gap-4 animate-[float_5s_infinite_ease-in-out_1s]">
              <div className="p-3 bg-surface/80 backdrop-blur-md border border-green/20 rounded-xl shadow-xl flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-green flex items-center justify-center text-bg text-[12px]">🤖</div>
-                <div className="text-left text-[14px] text-white font-syne font-bold">Synchronized <span className="block text-[9px] text-green/80 uppercase tracking-widest mt-0.5">45 Agents Live</span></div>
+                <div className="text-left text-[14px] text-white font-syne font-bold">Synchronized <span className="block text-[9px] text-green/80 uppercase tracking-widest mt-0.5">25 Agents Live</span></div>
              </div>
           </div>
         </div>

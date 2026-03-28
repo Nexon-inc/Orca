@@ -10,22 +10,28 @@ export const handleWeeklyReports = inngest.createFunction(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Get all orgs with active plans
-    const { data: orgs } = await step.run('get-active-orgs', async () => {
+    // Get all active orgs
+    const orgs = await step.run('get-active-orgs', async () => {
       return supabase
         .from('organizations')
-        .select('id, name')
-        .neq('plan', 'free')
+        .select('id, name, plan')
         .then(r => r.data)
     })
 
     // For each org, generate dept reports
     for (const org of orgs || []) {
       await step.run(`generate-reports-${org.id}`, async () => {
-        const { data: depts } = await supabase
+        const query = supabase
           .from('departments')
           .select('*, agents(*)')
           .eq('org_id', org.id)
+        
+        // Free plan limit: only 1 department's report
+        if (org.plan === 'free') {
+          query.limit(1)
+        }
+
+        const { data: depts } = await query
 
         for (const dept of depts || []) {
           // Aggregate last 7 days of agent activity

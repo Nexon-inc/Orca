@@ -32,16 +32,16 @@ export default function ProblemSection() {
 
   const problems = [
     {
-      title: 'The Hiring Trap',
-      desc: 'Top talent is expensive, hard to find, and takes 3 months to onboard.'
+      title: 'Context Switching',
+      desc: 'Jumping between marketing, sales, and code kills your focus and velocity.'
     },
     {
-      title: 'Management Debt',
-      desc: 'More people means more meetings, more Slack noise, and less actual work.'
+      title: 'The Solo Trap',
+      desc: 'If you stop, everything stops. No growth, just endless maintenance.'
     },
     {
-      title: 'Human Inconsistency',
-      desc: 'Sickness, burnout, and churn are bugs in your business OS. Agents don\'t sleep.'
+      title: 'The Talent Gap',
+      desc: 'You need a world-class team, but you don\'t have the runway to hire 5 experts.'
     }
   ];
 
@@ -51,9 +51,9 @@ export default function ProblemSection() {
         <span className="font-dm-mono text-[12px] text-green uppercase tracking-[0.2em] mb-4 block">
           The Problem
         </span>
-        <h2 className="text-3xl sm:text-4xl font-syne font-bold text-white mb-6">
+        <h2 className="text-3xl sm:text-4xl font-syne font-bold text-white mb-6 tracking-tight">
           Building a company shouldn't <br />
-          <span className="opacity-50 italic">feel like this.</span>
+          <span className="opacity-50 italic">feel like a solo fight.</span>
         </h2>
       </div>
 

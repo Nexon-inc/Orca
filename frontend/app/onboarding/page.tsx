@@ -33,12 +33,12 @@ const DEPARTMENTS = [
   { id: 'marketing', name: 'Marketing', icon: '📣', desc: 'Content, social, SEO, and brand voice.' },
   { id: 'sales', name: 'Sales & Revenue', icon: '💰', desc: 'Lead prospecting and CRM management.' },
   { id: 'cs', name: 'Customer Success', icon: '🤝', desc: 'Onboarding, retention, and support.' },
-  { id: 'tech', name: 'Tech & Security', icon: '🛡️', desc: 'Code reviews, deployments, and security.' },
-  { id: 'hiring', name: 'People & Hiring', icon: '🧠', desc: 'Sourcing, screening, and offer coordination.' },
-  { id: 'ops', name: 'Operations', icon: '📋', desc: 'Project management and inbox automation.' },
-  { id: 'finance', name: 'Finance & Legal', icon: '📊', desc: 'Invoicing, contracts, and budgeting.' },
-  { id: 'intel', name: 'Intelligence', icon: '🔍', desc: 'Market research and competitor tracking.' },
-  { id: 'community', name: 'Community', icon: '🌐', desc: 'Growth experiments and partnerships.' }
+  { id: 'tech', name: 'Tech & Vibe Coding', icon: '🛡️', desc: 'Code reviews, deployments, and security.' },
+  { id: 'intel', name: 'Intelligence & Research', icon: '🔍', desc: 'Market research and competitor tracking.' },
+  { id: 'hiring', name: 'People & Hiring', icon: '🧠', desc: 'Sourcing, screening, and offer coordination.', comingSoon: true },
+  { id: 'ops', name: 'Operations', icon: '📋', desc: 'Project management and inbox automation.', comingSoon: true },
+  { id: 'finance', name: 'Finance & Legal', icon: '📊', desc: 'Invoicing, contracts, and budgeting.', comingSoon: true },
+  { id: 'community', name: 'Community', icon: '🌐', desc: 'Growth experiments and partnerships.', comingSoon: true }
 ];
 
 export default function OnboardingPage() {
@@ -51,6 +51,8 @@ export default function OnboardingPage() {
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
   const [suggestedTemplateSlug, setSuggestedTemplateSlug] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [techMode, setTechMode] = useState<'build_for_me' | 'build_with_me'>('build_for_me');
+  const [showTechModePicker, setShowTechModePicker] = useState(false);
   
   const router = useRouter();
 
@@ -129,10 +131,18 @@ export default function OnboardingPage() {
   const toggleDept = (dept: string) => {
     setSelectionType('department');
     setSelectedTemplate(null);
+    
+    // Plan restrictions
+    const maxDepts = selectedPlan === 'free' ? 2 : 5;
+
     if (selectedDepts.includes(dept)) {
       setSelectedDepts(selectedDepts.filter(d => d !== dept));
+      if (dept === 'tech') setShowTechModePicker(false);
     } else {
-      setSelectedDepts([...selectedDepts, dept]);
+      if (selectedDepts.length < maxDepts) {
+        setSelectedDepts([...selectedDepts, dept]);
+        if (dept === 'tech') setShowTechModePicker(true);
+      }
     }
   };
 
@@ -302,28 +312,29 @@ export default function OnboardingPage() {
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Department Selection */}
                             <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                  {selectedDepts.length} / 9 Selected
+                              <div className="flex items-center justify-between font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">
+                                  <span>{selectedDepts.length} / {selectedPlan === 'free' ? '2' : '5'} Selected</span>
+                                  {selectedPlan === 'free' && <span>Free Plan Limit: 2</span>}
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {DEPARTMENTS.map(d => {
                                   const isSelected = selectedDepts.includes(d.id);
-                                  const isLocked = false;
+                                  const isLocked = !!d.comingSoon;
                                   
                                   return (
                                     <button 
                                       key={d.id}
                                       disabled={isLocked}
                                       onClick={() => toggleDept(d.id)}
-                                      className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all group relative ${isSelected ? 'bg-green/10 border-green/30 shadow-[0_5px_15px_rgba(0,255,135,0.1)]' : isLocked ? 'opacity-40 grayscale cursor-not-allowed' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
+                                      className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all group relative ${isSelected ? 'bg-green/10 border-green/30 shadow-[0_5px_15px_rgba(0,255,135,0.1)]' : isLocked ? 'opacity-30 grayscale cursor-not-allowed bg-black/20' : 'bg-surface/50 border-white/5 hover:border-white/20 hover:bg-white/[0.03]'}`}
                                     >
-                                      <span className={`text-xl ${isSelected ? 'grayscale-0' : 'grayscale group-hover:grayscale-0 transition-all'}`}>{d.icon}</span>
-                                      <div>
-                                        <h5 className={`font-syne text-[13px] font-bold mb-1 ${isSelected ? 'text-green' : 'text-white group-hover:text-green transition-colors'}`}>{d.name}</h5>
-                                        <p className="font-dm-mono text-[10px] text-text-muted leading-tight line-clamp-2">{d.desc}</p>
+                                      <span className={`text-xl ${isSelected ? 'grayscale-0' : isLocked ? 'grayscale opacity-50' : 'grayscale group-hover:grayscale-0 transition-all'}`}>{d.icon}</span>
+                                      <div className="flex flex-col">
+                                        <h5 className={`font-syne text-[13px] font-bold mb-1 ${isSelected ? 'text-green' : isLocked ? 'text-white/20' : 'text-white group-hover:text-green transition-colors'}`}>{d.name}</h5>
+                                        <p className="font-dm-mono text-[10px] text-text-muted leading-tight line-clamp-2">{isLocked ? 'Protocol Staged (Coming Soon)' : d.desc}</p>
                                       </div>
                                       {isLocked && (
-                                        <div className="absolute top-2 right-2 text-[10px]">🔒</div>
+                                        <div className="absolute top-2 right-2 text-[10px] opacity-40">🔒</div>
                                       )}
                                     </button>
                                   );
@@ -359,6 +370,35 @@ export default function OnboardingPage() {
                                   </div>
                                 </button>
                               )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Tech Mode Selection Overlay */}
+                        {showTechModePicker && (
+                          <div className="mt-8 p-6 rounded-2xl bg-white/[0.03] border border-green/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex items-center gap-3 mb-6">
+                              <span className="text-2xl">🛡️</span>
+                              <div>
+                                <h4 className="font-syne font-bold text-white text-[15px]">Tech Department: Vibe Coding Mode</h4>
+                                <p className="font-dm-mono text-[10px] text-text-muted uppercase tracking-[0.1em]">Configure deployment architecture</p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <button 
+                                onClick={() => setTechMode('build_for_me')}
+                                className={`p-5 rounded-xl border text-left transition-all ${techMode === 'build_for_me' ? 'bg-green/10 border-green/40' : 'bg-surface border-white/5 hover:border-white/20'}`}
+                              >
+                                <h5 className={`font-syne font-bold text-[13px] mb-2 ${techMode === 'build_for_me' ? 'text-green' : 'text-white'}`}>Build FOR Me</h5>
+                                <p className="font-dm-mono text-[10px] text-text-muted leading-relaxed">Agents handle all code, PRs, and infra tasks autonomously. Perfect for non-technical founders.</p>
+                              </button>
+                              <button 
+                                onClick={() => setTechMode('build_with_me')}
+                                className={`p-5 rounded-xl border text-left transition-all ${techMode === 'build_with_me' ? 'bg-green/10 border-green/40' : 'bg-surface border-white/5 hover:border-white/20'}`}
+                              >
+                                <h5 className={`font-syne font-bold text-[13px] mb-2 ${techMode === 'build_with_me' ? 'text-green' : 'text-white'}`}>Build WITH Me</h5>
+                                <p className="font-dm-mono text-[10px] text-text-muted leading-relaxed">Agents act as pair programmers, explaining changes and leaving final implementation to you.</p>
+                              </button>
                             </div>
                           </div>
                         )}

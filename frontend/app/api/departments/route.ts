@@ -20,7 +20,7 @@ export async function GET() {
   let query = supabase
     .from('departments')
     .select(`
-      id, key, name, icon, agent_mode, agents_paused, created_at,
+      id, key, name, icon, agent_mode, agents_paused, tech_mode, created_at,
       head_user_id,
       profiles:head_user_id (full_name, avatar_initials)
     `)

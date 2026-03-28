@@ -1,24 +1,28 @@
 // Call this immediately after creating an org — seeds all 9 depts + 45 agents
 
 import { createClient } from '@supabase/supabase-js'
-import { DEPARTMENT_SEED_DATA, AGENT_SEED_DATA } from './agentData'
+import { DEPARTMENT_SEED_DATA, AGENT_SEED_DATA, ACTIVE_DEPT_KEYS } from './agentData'
 
 export async function seedNewOrg(orgId: string) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // service role — bypasses RLS for seeding
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // 1. Insert all 9 departments
+  // 1. Filter to active departments only
+  const activeDepts = DEPARTMENT_SEED_DATA.filter(d => 
+    ACTIVE_DEPT_KEYS.includes(d.key)
+  )
+  
   const { data: departments, error: deptError } = await supabase
     .from('departments')
     .insert(
-      DEPARTMENT_SEED_DATA.map(dept => ({
+      activeDepts.map(dept => ({
         org_id: orgId,
         key: dept.key,
         name: dept.name,
         icon: dept.icon,
-        agent_mode: 'approve_first', // safe default for every new org
+        agent_mode: 'approve_first',
         agents_paused: true,
       }))
     )
@@ -34,8 +38,12 @@ export async function seedNewOrg(orgId: string) {
     (departments || []).map(d => [d.key, d.id])
   )
 
-  // 2. Insert all 45 agents linked to their departments
-  const agentRows = AGENT_SEED_DATA.map(agent => ({
+  // 2. Filter to active agents only (5 agents per active dept = 25)
+  const activeAgentsData = AGENT_SEED_DATA.filter(a => 
+    ACTIVE_DEPT_KEYS.includes(a.dept)
+  )
+
+  const agentRows = activeAgentsData.map(agent => ({
     department_id: deptMap[agent.dept],
     name: agent.name,
     icon: agent.icon,
@@ -54,5 +62,5 @@ export async function seedNewOrg(orgId: string) {
     throw agentError
   }
 
-  return { departments_seeded: 9, agents_seeded: 45 }
+  return { departments_seeded: activeDepts.length, agents_seeded: activeAgentsData.length }
 }

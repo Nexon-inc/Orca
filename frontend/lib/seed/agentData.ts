@@ -51,8 +51,8 @@ export const AGENT_SEED_DATA = [
   { dept: 'finance', name: 'Cora',   icon: '🔬', acronym: 'CO', role: 'Financial Review' },
 
   // ── INTELLIGENCE & RESEARCH ────────────────────────────────
-  { dept: 'intel', name: 'Roman',    icon: '🏛️', acronym: 'RM', role: 'Research Agent' },
-  { dept: 'intel', name: 'Sage',     icon: '📡', acronym: 'SG', role: 'Market Listener' },
+  { dept: 'intel', name: 'Roman',    icon: '🏛️', acronym: 'RM', role: 'Market Analyst' },
+  { dept: 'intel', name: 'Finn',     icon: '🌐', acronym: 'FN', role: 'Research Specialist' },
   { dept: 'intel', name: 'Nate',     icon: '📰', acronym: 'NT', role: 'Summary Agent' },
   { dept: 'intel', name: 'Ada',      icon: '🔮', acronym: 'AD', role: 'Forecasting Agent' },
   { dept: 'intel', name: 'Dex',      icon: '📈', acronym: 'DX', role: 'Trend Analyst' },
@@ -65,14 +65,16 @@ export const AGENT_SEED_DATA = [
   { dept: 'community', name: 'Kai',   icon: '🔊', acronym: 'KI', role: 'Brand Amplifier' },
 ]
 
+export const ACTIVE_DEPT_KEYS = ['marketing', 'sales', 'cs', 'intel', 'tech']
+
 export const DEPARTMENT_SEED_DATA = [
   { key: 'marketing', name: 'Marketing',            icon: '📣' },
   { key: 'sales',     name: 'Sales & Revenue',      icon: '💼' },
   { key: 'cs',        name: 'Customer Success',     icon: '🤝' },
-  { key: 'tech',      name: 'Tech & Security',      icon: '🛡️' },
-  { key: 'hiring',    name: 'People & Hiring',      icon: '🧠' },
-  { key: 'ops',       name: 'Operations',           icon: '📋' },
-  { key: 'finance',   name: 'Finance & Legal',      icon: '📊' },
+  { key: 'tech',      name: 'Tech & Vibe Coding',   icon: '🛡️' },
   { key: 'intel',     name: 'Intelligence & Research', icon: '🔍' },
-  { key: 'community', name: 'Community & Growth',   icon: '🌐' },
+  { key: 'hiring',    name: 'People & Hiring',      icon: '🧠', coming_soon: true },
+  { key: 'ops',       name: 'Operations',           icon: '📋', coming_soon: true },
+  { key: 'finance',   name: 'Finance & Legal',      icon: '📊', coming_soon: true },
+  { key: 'community', name: 'Community & Growth',   icon: '🌐', coming_soon: true },
 ]
