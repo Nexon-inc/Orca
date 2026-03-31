@@ -197,6 +197,3 @@ export default function OrcaHubPage() {
     </div>
   );
 }
-  );
-}
-
