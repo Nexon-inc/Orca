@@ -6,55 +6,50 @@ import DashboardSidebar from '@/components/DashboardSidebar';
 
 const plans = [
   {
-    id: 'starter',
-    name: 'STARTER',
-    tagline: 'Your first AI team, ready to work.',
-    monthlyPrice: 99,
-    annualPrice: 83,
+    id: 'free',
+    name: 'Free',
+    tagline: 'Perfect for exploring the OS.',
+    monthlyPrice: 0,
+    annualPrice: 0,
     features: [
-      '3 Departments unlocked',
-      '15 specialized agents',
-      'Unlimited tasks',
-      '3 team members + 1 Dept Head',
-      'Essential security',
-      'Email support'
+      '2 executives from your team',
+      'Unified Chat Console',
+      'Daily Briefings',
+      'Basic security'
     ],
-    cta: 'Start Free Trial'
+    cta: 'Current Plan',
+    current: true
+  },
+  {
+    id: 'builder',
+    name: 'BUILDER',
+    tagline: 'Scale your operations with the full team.',
+    monthlyPrice: 29,
+    annualPrice: 24,
+    features: [
+      'Full executive team (CMO, CSO, CCO, CIO, CTO)',
+      'Unlimited tasks',
+      'Vercel & HubSpot Integrations',
+      'Weekly Inngest Intelligence',
+      'Priority support'
+    ],
+    cta: 'Upgrade to Builder',
+    highlighted: true
   },
   {
     id: 'pro',
     name: 'PRO',
-    tagline: 'Your entire company, on autopilot.',
-    monthlyPrice: 199,
-    annualPrice: 166,
+    tagline: 'Full autonomy for the elite founder.',
+    monthlyPrice: 59,
+    annualPrice: 49,
     features: [
-      'All 9 Departments (Full Access)',
-      'All 45 specialized agents',
-      'Unlimited tasks',
-      '10 team members + 2 Dept Heads',
-      'Full Nexonic Ecosystem',
-      'BYOLLM + Web Intelligence',
-      'Priority support'
+      'Full executive team + AI CEO Mode (ATLAS)',
+      'Fully Autonomous Mode',
+      'Custom Workflow Creation',
+      'Advanced Intelligence Reports',
+      '24/7 Concierge'
     ],
-    cta: 'Current Plan',
-    highlighted: true,
-    current: true
-  },
-  {
-    id: 'enterprise',
-    name: 'ENTERPRISE',
-    tagline: 'Built for teams at scale.',
-    monthlyPrice: 399,
-    annualPrice: 332,
-    features: [
-      'Everything in Pro',
-      'Custom agent training',
-      'Unlimited members & heads',
-      'Full API Access',
-      'Self-hosted Ollama support',
-      '24/7 concierge support'
-    ],
-    cta: 'Contact Sales'
+    cta: 'Get Pro Access'
   }
 ];
 

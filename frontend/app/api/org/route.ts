@@ -89,7 +89,7 @@ export async function PATCH(request: Request) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { onboarding_step, onboarding_completed } = await request.json()
+  const { onboarding_step, onboarding_completed, autonomous_mode } = await request.json()
   const supabase = await createServerSupabaseClient()
 
   const { data: member } = await supabase
@@ -105,6 +105,7 @@ export async function PATCH(request: Request) {
   const updateData: any = { updated_at: new Date().toISOString() }
   if (onboarding_step !== undefined) updateData.onboarding_step = onboarding_step
   if (onboarding_completed !== undefined) updateData.onboarding_completed = onboarding_completed
+  if (autonomous_mode !== undefined) updateData.autonomous_mode = autonomous_mode
 
   const { error } = await supabase
     .from('organizations')

@@ -150,13 +150,16 @@ export async function POST(
   const visualMatch = agentResponse.match(/request visual for (.+)/i)
 
   // 12. Save agent message
+  const { data: org } = await supabase.from('organizations').select('autonomous_mode').eq('id', orgId).single()
+  const isAutonomous = org?.autonomous_mode || false
   const mode = agent.departments ? agent.departments.agent_mode : 'approve_first'
+  
   const { data: agentMessage } = await supabase.from('messages').insert({
     conversation_id: conversationId,
     sender_type: 'agent',
     content: agentResponse,
     result_items: resultItems,
-    status: mode === 'autopilot' ? 'approved' : 'pending',
+    status: (isAutonomous || mode === 'autopilot') ? 'approved' : 'pending',
     metadata: {
       thinking_steps: thinkingSteps,
       has_visual_request: !!visualMatch,

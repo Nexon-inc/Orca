@@ -173,7 +173,7 @@ export default function TeamsPage() {
                                 </span>
                                 {member.department_key && (
                                   <span className="text-[8px] font-[800] px-1.5 py-0.5 rounded bg-green/10 border border-green/20 text-green tracking-widest leading-none uppercase">
-                                    {member.department_key}
+                                    {member.department_key} Executive
                                   </span>
                                 )}
                              </div>
