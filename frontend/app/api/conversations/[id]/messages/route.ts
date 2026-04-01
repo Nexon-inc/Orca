@@ -202,7 +202,7 @@ export async function POST(
     })
   }
 
-  // 14b. Handle Wren Code Generation & PRs
+  // 14b. Handle Tech Code Generation & PRs (Ghost)
   const prMatch = agentResponse.match(/\[OPEN_PR: title="(.+?)" branch="(.+?)"\]/)
   const githubConnected = !!member.github_access_token // Assuming this exists in member context
 
@@ -223,17 +223,17 @@ export async function POST(
     })
   }
 
-  // 14c. Handle Ghost -> Wren coordination
-  const wrenFixMatch = agentResponse.match(/\[WREN_FIX_NEEDED: file=(.+?), line=(\d+), issue=(.+?)\]/)
-  if (wrenFixMatch) {
-    const [, file, line, issue] = wrenFixMatch
+  // 14c. Handle Tech Fixes / Code Scans (Ghost)
+  const ghostFixMatch = agentResponse.match(/\[GHOST_FIX_NEEDED: file=(.+?), line=(\d+), issue=(.+?)\]/)
+  if (ghostFixMatch) {
+    const [, file, line, issue] = ghostFixMatch
     await inngest.send({
       name: 'agent/coordination.requested',
       data: {
         org_id: orgId,
         from_agent_id: agent.id,
         target_department_key: 'tech',
-        target_agent_name: 'Wren',
+        target_agent_name: 'Ghost',
         reason: `Security fix needed in ${file} line ${line}: ${issue}`,
         context: agentResponse,
         conversation_id: conversationId,

@@ -27,7 +27,7 @@ export const emailTemplates = {
                   <strong style="color:#00FF87;">${role}</strong>.
                 </p>
                 <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.7;">
-                  ORCA is an AI Company OS — 9 departments, 45 coordinated agents, one dashboard.
+                  ORCA is an AI Company OS — 5 departments, 6 coordinated executive agents, one dashboard.
                 </p>
                 <a href="${APP_URL}/invite/accept/${token}"
                   style="display:inline-block;background:#00FF87;color:#030a06;padding:14px 28px;border-radius:8px;text-decoration:none;font-family:sans-serif;font-weight:700;font-size:14px;">
@@ -149,3 +149,4 @@ export const emailTemplates = {
     `,
   }),
 }
+

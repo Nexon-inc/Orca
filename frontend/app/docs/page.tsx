@@ -59,7 +59,7 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-8">
             <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">Introduction</h1>
             <p className="text-lg text-white/60 leading-relaxed font-dm-mono uppercase tracking-tighter font-black">
-              ORCA is an AI Company OS built by Nexonic Industries. It gives any company — from a solo founder to a 15-person team — a full AI workforce across 9 departments and 45 specialized agents, all coordinated in one dashboard.
+              ORCA is an AI Company OS built by Nexonic Industries. It gives any company — from a solo founder to a 15-person team — a full AI workforce across 5 departments and 6 executive agents, all coordinated in one dashboard.
             </p>
             <div className="prose prose-invert max-w-none text-white/40 font-dm-mono uppercase tracking-tighter font-black space-y-6">
               <p>ORCA is not a chatbot. It is not a prompt tool. It is not another automation layer on top of your existing tools. ORCA is an operating system for your company. Agents have roles, memory, and the ability to coordinate with each other across departments — just like a real team would.</p>
@@ -76,7 +76,7 @@ export default function DocsPage() {
                 <div className="p-8 rounded-3xl border border-white/5 bg-green/5">
                   <h3 className="text-green font-syne text-xl mb-4 italic uppercase">What ORCA gives you</h3>
                   <ul className="list-none space-y-2 text-sm italic text-white/40">
-                    <li>- 9 AI departments with 45 named, specialized agents</li>
+                    <li>- 5 AI departments with 6 executive agents</li>
                     <li>- Cross-department coordination with human approval gates</li>
                     <li>- Role-based access for your human team (Owner, Co-founder, Head, Member, Advisor)</li>
                     <li>- The full Nexonic ecosystem (CyberGuard, Render.AI, Intuition, The Summit, Island of Relevancy) built in</li>
@@ -213,7 +213,7 @@ export default function DocsPage() {
   └── Co-founder (optional, same access level)
       └── Department Heads (one per department)
           └── Department Members
-              └── AI Agents (5 per department)`}
+              └── Executive AI Agent (1 per department)`}
                 </pre>
              </div>
              <div className="space-y-6 text-white/40 font-dm-mono uppercase tracking-tighter font-black">
@@ -238,7 +238,7 @@ export default function DocsPage() {
         return (
           <div className="docs-content-anim space-y-8">
              <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">Department Mapping</h1>
-             <p className="text-white/40 font-dm-mono uppercase tracking-tighter font-black">ORCA has 9 departments. Each maps to a real company function.</p>
+             <p className="text-white/40 font-dm-mono uppercase tracking-tighter font-black">ORCA has 5 active departments. Each maps to a real company function.</p>
              <div className="overflow-x-auto rounded-3xl border border-white/5 bg-surface/30 px-6 pb-6">
                 <table className="w-full text-left font-dm-mono text-[11px] uppercase tracking-tighter font-black">
                    <thead>
@@ -274,10 +274,10 @@ export default function DocsPage() {
                 <h3 className="text-white text-lg font-syne italic uppercase">PLAN ACCESS</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                    {[
-                     { plan: 'Free', access: '1 Dept' },
-                     { plan: 'Starter', access: '3 Depts' },
-                     { plan: 'Pro', access: 'All 9' },
-                     { plan: 'Enterprise', access: 'Unlimited' },
+                     { plan: 'Free', access: '2 Depts' },
+                     { plan: 'Builder', access: 'All 5' },
+                     { plan: 'Pro', access: 'All 5' },
+                     { plan: 'Enterprise', access: 'All 5 + Custom' },
                    ].map(p => (
                      <div key={p.plan} className="p-4 rounded-xl bg-surface/50 border border-white/5 text-center">
                         <div className="text-[10px] text-white/20 font-black uppercase mb-1">{p.plan}</div>
@@ -493,7 +493,7 @@ export default function DocsPage() {
                   <tbody className="text-white/40">
                      {[
                        { event: 'Deal closes in CRM', agents: 'Clara → Bruce', action: 'Onboarding sequence triggered' },
-                       { event: 'Candidate passes screening', agents: 'Vera → Zara', action: 'Background verification initiated' },
+                       { event: 'Marketing lead qualifies', agents: 'Vera → Zara', action: 'Sales outreach initiated' },
                        { event: 'Vulnerability detected', agents: 'Ghost → Volt', action: 'Incident response triggered' },
                        { event: 'New lead in pipeline', agents: 'Rex → Chase', action: 'Follow-up sequence queued' },
                        { event: 'Budget limit reached', agents: 'Reid → Atlas', action: 'Spending alert sent to Owner' },
@@ -547,7 +547,7 @@ export default function DocsPage() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
                   <div className="p-8 rounded-3xl bg-green/5 border border-dashed border-green/20">
                     <h4 className="text-green uppercase mb-4 italic text-lg font-syne font-black">Capabilities</h4>
-                    <p className="text-xs italic leading-relaxed">Ghost scans vulnerabilities, Cipher reviews PRs, Wren triggers deployments, Volt monitors alerts.</p>
+                    <p className="text-xs italic leading-relaxed">Ghost scans vulnerabilities, reviews PRs, triggers deployments, and monitors alerts.</p>
                   </div>
                   <div className="p-8 rounded-3xl bg-surface/50 border border-white/5">
                     <h4 className="text-white uppercase mb-4 italic text-lg font-syne font-black">Permissions</h4>
@@ -815,3 +815,4 @@ export default function DocsPage() {
     </main>
   );
 }
+

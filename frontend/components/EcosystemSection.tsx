@@ -149,10 +149,11 @@ export default function EcosystemSection() {
           </div>
           
           <p className="mt-12 text-center font-dm-mono text-[13px] text-text-muted max-w-2xl mx-auto leading-relaxed">
-            By default, ORCA powers all 45 agents using its own ORCA-powered AI — zero setup. On Pro and Enterprise, connect your own API keys and assign different models to different departments or individual agents.
+            By default, ORCA powers all 6 executives using its own ORCA-powered AI — zero setup. On Pro and Enterprise, connect your own API keys and assign different models to different departments or individual agents.
           </p>
         </div>
       </div>
     </section>
   );
 }
+

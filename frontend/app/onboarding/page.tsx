@@ -21,12 +21,12 @@ const INDUSTRIES = [
 ];
 
 const TEMPLATES = [
-  { slug: 'saas-startup', name: 'SaaS Startup', category: 'Startup', agents: '16', depts: '4', icon: '🚀', description: 'Lean setup for early-stage software companies.' },
-  { slug: 'marketing-agency', name: 'Content Marketing Agency', category: 'Marketing', agents: '18', depts: '4', icon: '📣', description: 'Optimized for high-volume content production.' },
-  { slug: 'ecommerce-operator', name: 'E-commerce Operator', category: 'E-commerce', agents: '19', depts: '4', icon: '🛒', description: 'Full stack management for online stores.' },
-  { slug: 'recruiting-firm', name: 'Recruiting Firm', category: 'Hiring', agents: '17', depts: '4', icon: '💼', description: 'Talent sourcing and verification pipeline.' },
-  { slug: 'dev-agency', name: 'Dev Agency', category: 'Technology', agents: '19', depts: '4', icon: '🛠️', description: 'Agile development and security-first ops.' },
-  { slug: 'intel-desk', name: 'Intelligence & Research Desk', category: 'Research', agents: '15', depts: '3', icon: '🔍', description: 'Deep market research and competitor tracking.' }
+  { slug: 'saas-startup', name: 'SaaS Startup', category: 'Startup', agents: '6', depts: '5', icon: '🚀', description: 'Lean setup for early-stage software companies.' },
+  { slug: 'marketing-agency', name: 'Content Marketing Agency', category: 'Marketing', agents: '6', depts: '5', icon: '📣', description: 'Optimized for high-volume content production.' },
+  { slug: 'ecommerce-operator', name: 'E-commerce Operator', category: 'E-commerce', agents: '6', depts: '5', icon: '🛒', description: 'Full stack management for online stores.' },
+  { slug: 'recruiting-firm', name: 'Recruiting Firm', category: 'Hiring', agents: '6', depts: '5', icon: '💼', description: 'Talent sourcing and verification pipeline.' },
+  { slug: 'dev-agency', name: 'Dev Agency', category: 'Technology', agents: '6', depts: '5', icon: '🛠️', description: 'Agile development and security-first ops.' },
+  { slug: 'intel-desk', name: 'Intelligence & Research Desk', category: 'Research', agents: '6', depts: '5', icon: '🔍', description: 'Deep market research and competitor tracking.' }
 ];
 
 const DEPARTMENTS = [
@@ -562,3 +562,4 @@ export default function OnboardingPage() {
     </div>
   );
 }
+

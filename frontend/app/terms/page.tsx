@@ -23,7 +23,7 @@ export default function TermsPage() {
     },
     {
       title: '02. Description of Service',
-      content: 'ORCA is an AI Company OS provided by Nexonic Industries. The service includes access to AI agents across up to 9 departments, cross-department coordination tools, team management features, and access to the Nexonic ecosystem (CyberGuard, Render.AI, Intuition, The Summit, Island of Relevancy).'
+      content: 'ORCA is an AI Company OS provided by Nexonic Industries. The service includes access to AI executives across 5 departments, cross-department coordination tools, team management features, and access to the Nexonic ecosystem (CyberGuard, Render.AI, Intuition, The Summit, Island of Relevancy).'
     },
     {
       title: '03. Accounts and Registration',
@@ -115,3 +115,4 @@ export default function TermsPage() {
     </main>
   );
 }
+

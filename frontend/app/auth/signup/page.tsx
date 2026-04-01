@@ -182,7 +182,7 @@ export default function SignupPage() {
               Initialize your <span className="text-green">workforce</span>
             </h1>
             <p className="font-dm-mono text-[13px] text-text-muted leading-relaxed">
-              Create your account to deploy 45 AI agents across 9 departments.
+              Create your account to deploy 6 AI executives across 5 departments.
             </p>
           </div>
 
@@ -355,3 +355,4 @@ export default function SignupPage() {
     </main>
   );
 }
+

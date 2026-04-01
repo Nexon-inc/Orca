@@ -6,69 +6,11 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 const departments = [
-  {
-    icon: '📣',
-    name: 'Marketing',
-    agents: '5 Agents',
-    pills: 'AR · NV · PX · EC · TN',
-    desc: 'Content, social, SEO, ads, and brand voice — all running without a marketing hire.'
-  },
-  {
-    icon: '💼',
-    name: 'Sales & Revenue',
-    agents: '5 Agents',
-    pills: 'RX · PL · CL · CH · LN',
-    desc: 'Lead prospecting, outreach, CRM management, follow-ups, and deal intelligence.'
-  },
-  {
-    icon: '🤝',
-    name: 'Customer Success',
-    agents: '4 Agents',
-    pills: 'HB · GD · AN · FB',
-    desc: 'Support tickets, onboarding, retention, and NPS — handled before customers churn.'
-  },
-  {
-    icon: '🛡️',
-    name: 'Tech & Security',
-    agents: '4 Agents',
-    pills: 'SH · GH · DP · SC',
-    desc: 'Code scanning, PR reviews, deployments, docs — with CyberGuard built in.'
-  },
-  {
-    icon: '🧠',
-    name: 'People & Hiring',
-    agents: '4 Agents',
-    pills: 'SK · VR · TR · WL',
-    desc: 'Sourcing, screening, verification, and offer coordination — without a recruiter.'
-  },
-  {
-    icon: '📋',
-    name: 'Operations',
-    agents: '4 Agents',
-    pills: 'AT · SD · MM · FL',
-    desc: 'Project management, calendar, meeting notes, and inbox — all handled.'
-  },
-  {
-    icon: '📊',
-    name: 'Finance & Legal',
-    agents: '4 Agents',
-    pills: 'LD · BL · CZ · CP',
-    desc: 'Expenses, invoicing, contracts, and budget forecasting — no accountant needed.'
-  },
-  {
-    icon: '🔍',
-    name: 'Intelligence',
-    agents: '4 Agents',
-    pills: 'OR · SG · BR · FS',
-    desc: 'Competitor research, market signals, weekly briefs, and forecasting.'
-  },
-  {
-    icon: '🌐',
-    name: 'Community',
-    agents: '4 Agents',
-    pills: 'VB · BG · RC · SP',
-    desc: 'Community management, partnerships, influencer outreach, and growth experiments.'
-  }
+  { icon: "??", name: "Marketing", agents: "Aria (CMO)", pills: "CONTENT � SOCIAL � SEO � ADS", desc: "Content, social, SEO, ads, and brand voice � all running without a marketing hire." },
+  { icon: "??", name: "Sales & Revenue", agents: "Rex (CSO)", pills: "OUTREACH � CRM � LEADS � DEALS", desc: "Lead prospecting, outreach, CRM management, follow-ups, and deal intelligence." },
+  { icon: "??", name: "Customer Success", agents: "Purity (CCO)", pills: "SUPPORT � ONBOARDING � RETENTION", desc: "Support tickets, onboarding, retention, and NPS � handled before customers churn." },
+  { icon: "???", name: "Tech & Security", agents: "Ghost (CTO)", pills: "CODE � PRs � DEPLOYS � DOCS", desc: "Code generation, PR reviews, deployments, docs � with CyberGuard built in." },
+  { icon: "??", name: "Intelligence", agents: "Roman (CIO)", pills: "RESEARCH � SIGNALS � BRIEFS", desc: "Competitor research, market signals, weekly briefs, and forecasting." }
 ];
 
 export default function DepartmentsPage() {
@@ -90,7 +32,7 @@ export default function DepartmentsPage() {
       <section className="relative py-32 px-4 bg-bg pt-40 border-b border-white/5">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="font-syne text-5xl sm:text-7xl lg:text-[80px] font-black text-white leading-tight mb-8 uppercase tracking-tighter">
-             9 Departments. <span className="text-green">Fully Staffed.</span>
+             5 Departments. <span className="text-green">Fully Staffed.</span>
           </h1>
           <p className="font-dm-mono text-base sm:text-lg text-white/40 max-w-3xl mx-auto mb-12 leading-relaxed uppercase tracking-tighter font-black">
             The ORCA workforce covers every essential business function with coordinated AI intelligence.
@@ -142,3 +84,4 @@ export default function DepartmentsPage() {
     </main>
   );
 }
+

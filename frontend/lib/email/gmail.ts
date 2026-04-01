@@ -155,7 +155,7 @@ export async function sendWelcomeEmail(
                       <p style="color:#6b7280;font-size:14px;margin:0;">
                         1. Verify your email (check your next email)<br>
                         2. Setup your departments<br>
-                        3. Activate your first 45 agents
+                        3. Activate your executive team
                       </p>
                     </div>
                     <p style="color:#4a7a5a;font-size:12px;">Automated by Nexonic Industries</p>
@@ -171,3 +171,4 @@ export async function sendWelcomeEmail(
     text: `Welcome to ORCA, ${userName}!\n\nYou've just deployed your first AI-powered company.\n\nPlease check your next email for the verification link to activate your dashboard.`,
   })
 }
+
