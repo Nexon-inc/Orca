@@ -49,66 +49,59 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
 
   const plans: Plan[] = [
     {
-      name: 'STARTER',
-      tagline: 'Your first AI team, operational in minutes.',
-      monthlyPrice: 99,
-      annualPrice: 83,
+      name: 'FREE',
+      tagline: 'Permanent access to core automation.',
+      monthlyPrice: 0,
+      annualPrice: 0,
       features: [
-        'Pick any 3 departments',
-        '15 specialized agents',
-        'Unlimited tasks',
-        '3 team members + 1 Department Head',
-        'CyberGuard security scanner',
-        'ORCA-powered AI',
-        'Connect your own external AI models',
-        '30-day audit log',
-        'Email support'
+        '2 active executives',
+        'Core automation tools',
+        '50 tasks per month',
+        '1 team member',
+        '3 active integrations',
+        'Basic OrcaHub templates',
+        'Community support'
       ],
-      cta: 'Start Free Trial'
+      cta: 'Get Started Free'
     },
     {
-      name: 'PRO',
-      tagline: 'Your entire operation, running on autopilot.',
-      monthlyPrice: 199,
-      annualPrice: 166,
+      name: 'BUILDER',
+      tagline: 'The complete solo founder toolkit.',
+      monthlyPrice: 29,
+      annualPrice: 24,
       features: [
-        'All 9 departments (Full Access)',
-        'All 45 specialized agents',
-        'Unlimited tasks',
-        '10 team members + 2 Department Heads',
-        'Full Nexonic Ecosystem',
-        'Bring your own LLM',
-        'Per-department model assignment',
-        'Video generation (Marketing)',
-        'Code generation (Tech)',
-        'Web intelligence (500 pages/mo)',
-        '6-month audit log',
-        'Priority support'
+        'All 5 departments',
+        'Full executive team (6 executives)',
+        '500 tasks per month',
+        '3 team members',
+        'All available integrations',
+        'Executive coordination feed',
+        'Full OrcaHub marketplace access',
+        'Email support'
       ],
       cta: 'Start Free Trial',
       highlighted: true
     },
     {
-      name: 'ENTERPRISE',
-      tagline: 'Built for teams that operate at full scale.',
-      monthlyPrice: 399,
-      annualPrice: 332,
+      name: 'PRO',
+      tagline: 'Infinite scale + AI CEO Mode.',
+      monthlyPrice: 59,
+      annualPrice: 49,
       features: [
-        'All 9 departments + Custom Setup',
-        'All 45 specialized agents',
+        'All 5 departments',
+        'Full executive team + AI CEO Mode (Atlas)',
         'Unlimited tasks',
-        'Unlimited team members',
-        'Full Nexonic Ecosystem + The Summit',
-        'All LLMs including Ollama self-hosted',
-        'Unlimited video & code generation',
-        'Web intelligence (5,000 pages/mo)',
+        '10 team members',
+        'All available integrations',
+        'Bring your own LLM (OpenAI, Anthropic, etc)',
+        'Per-executive model assignment',
         'Full API access',
-        '12-month audit log + CSV export',
-        '24/7 concierge support'
+        'Priority support'
       ],
       cta: 'Start Free Trial'
     }
   ];
+
 
   const handleCheckout = async (plan: string) => {
     try {

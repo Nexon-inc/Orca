@@ -31,8 +31,8 @@ export default function FeaturesPage() {
   const features = [
     {
       icon: '⬡',
-      title: '36 AI Agents',
-      description: 'The complete workforce. Every specialized role from Marketing to Tech & Security, ready to deploy in seconds.',
+      title: '6 AI Executives',
+      description: 'Atlas · Aria · Rex · Purity · Roman · Ghost. Your complete C-suite, activated across 5 departments and ready to work in seconds.',
     },
     {
       icon: '⇄',
@@ -72,7 +72,7 @@ export default function FeaturesPage() {
             Coordinated <span className="text-green">Capabilities</span>
           </h1>
           <p className="feature-hero-text opacity-0 font-dm-mono text-[16px] sm:text-[18px] text-text-muted max-w-2xl mx-auto mb-12 leading-relaxed">
-            Everything you need to automate your entire business with coordinated AI agents working 24/7 across all departments.
+            6 AI executives across 5 departments, working 24/7 to automate your entire business — fully coordinated.
           </p>
           <div className="feature-hero-text opacity-0">
             <button className="btn-primary px-10 py-4">

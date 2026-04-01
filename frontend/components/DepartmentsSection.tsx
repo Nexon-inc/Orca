@@ -167,10 +167,10 @@ export default function DepartmentsSection() {
         {/* Section Header */}
         <div className="text-center mb-20 text-reveal">
           <h2 className="text-3xl sm:text-4xl lg:text-[48px] font-syne font-bold leading-tight mb-4 text-white">
-            9 departments. <span className="text-green">Fully staffed.</span>
+            6 executives. 5 departments. <span className="text-green">Fully activated.</span>
           </h2>
           <p className="text-text-muted font-dm-mono text-[14px] sm:text-[15px] max-w-2xl mx-auto">
-            Your entire company infrastructure, automated and coordinated.
+            Your entire company infrastructure, led by dedicated AI executives and fully automated.
           </p>
         </div>
 

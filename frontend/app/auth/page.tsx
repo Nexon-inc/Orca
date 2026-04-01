@@ -59,9 +59,9 @@ export default function AuthPage() {
 
             <ul className="space-y-4">
               {[
-                '9 fully staffed AI departments',
-                '47+ specialized agents',
-                'Cross-department coordination',
+                '6 AI executives, fully activated',
+                '5 departments, fully coordinated',
+                'Cross-executive coordination',
                 'CyberGuard security built in',
                 'Free tier — no credit card',
               ].map((feature, i) => (

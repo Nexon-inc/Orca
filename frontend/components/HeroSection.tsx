@@ -204,7 +204,7 @@ export default function HeroSection() {
 
         <div ref={subheadRef} className="mb-10 opacity-0">
           <p className="max-w-xl mx-auto font-dm-mono text-[13px] text-text-muted leading-relaxed uppercase tracking-[0.2em] opacity-80">
-            5 AI departments. 25 coordinated agents. <br />
+            6 AI executives. 5 departments. Fully autonomous. <br />
             Built for solo founders who are tired of doing everything alone.
           </p>
         </div>
