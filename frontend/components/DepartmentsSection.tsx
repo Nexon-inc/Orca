@@ -9,128 +9,52 @@ const departments = [
     id: 'marketing', 
     name: 'Marketing', 
     emoji: '📣', 
-    count: 5, 
+    count: 1, 
     agents: [
-      { id: 'aria', icon: '🎙️', name: 'Aria' },
-      { id: 'jackie', icon: '✍️', name: 'Jackie' },
-      { id: 'eric', icon: '📢', name: 'Eric' },
-      { id: 'lucy', icon: '🔍', name: 'Lucy' },
-      { id: 'joe', icon: '🎨', name: 'Joe' }
+      { id: 'aria', icon: '🎙️', name: 'Aria (CMO)' }
     ],
-    desc: 'Content, social, SEO, ads, and brand voice — all running without a marketing hire.'
+    desc: 'Content, social, SEO, ads, and brand voice — managed end-to-end by your AI CMO.'
   },
   { 
     id: 'sales', 
     name: 'Sales & Revenue', 
     emoji: '💰', 
-    count: 5, 
+    count: 1, 
     agents: [
-      { id: 'rex', icon: '💰', name: 'Rex' },
-      { id: 'clara', icon: '📋', name: 'Clara' },
-      { id: 'chase', icon: '🏃', name: 'Chase' },
-      { id: 'mark', icon: '📬', name: 'Mark' },
-      { id: 'teo', icon: '🔭', name: 'Teo' }
+      { id: 'rex', icon: '💰', name: 'Rex (CSO)' }
     ],
-    desc: 'Lead prospecting, outreach, CRM management, follow-ups, and deal intelligence.'
+    desc: 'Lead prospecting, outreach, CRM management, and deal intelligence by your AI Sales Chief.'
   },
   { 
     id: 'customer', 
     name: 'Customer Success', 
     emoji: '🤝', 
-    count: 5, 
+    count: 1, 
     agents: [
-      { id: 'purity', icon: '🛟', name: 'Purity' },
-      { id: 'bruce', icon: '🧭', name: 'Bruce' },
-      { id: 'nadia', icon: '🔗', name: 'Nadia' },
-      { id: 'john', icon: '📊', name: 'John' },
-      { id: 'beatrice', icon: '💚', name: 'Beatrice' }
+      { id: 'purity', icon: '🛟', name: 'Purity (CCO)' }
     ],
-    desc: 'Support tickets, onboarding, retention, and NPS — handled before customers churn.'
+    desc: 'Support tickets, onboarding, retention, and NPS handled autonomously.'
   },
   { 
     id: 'tech', 
     name: 'Tech & Security', 
     emoji: '🛡️', 
-    count: 5, 
+    count: 1, 
     agents: [
-      { id: 'ghost', icon: '👻', name: 'Ghost' },
-      { id: 'cipher', icon: '🔐', name: 'Cipher' },
-      { id: 'wren', icon: '⚙️', name: 'Wren' },
-      { id: 'hex', icon: '📖', name: 'Hex' },
-      { id: 'volt', icon: '⚡', name: 'Volt' }
+      { id: 'ghost', icon: '👻', name: 'Ghost (CTO)' }
     ],
-    desc: 'Code scanning, PR reviews, deployments, docs — with CyberGuard built in.'
-  },
-  { 
-    id: 'people', 
-    name: 'People & Hiring', 
-    emoji: '🧠', 
-    count: 5, 
-    agents: [
-      { id: 'marcus', icon: '🔎', name: 'Marcus' },
-      { id: 'vera', icon: '🧬', name: 'Vera' },
-      { id: 'zara', icon: '✅', name: 'Zara' },
-      { id: 'eli', icon: '📝', name: 'Eli' },
-      { id: 'nina', icon: '🌱', name: 'Nina' }
-    ],
-    desc: 'Sourcing, screening, verification, and offer coordination — without a recruiter.'
-  },
-  { 
-    id: 'ops', 
-    name: 'Operations', 
-    emoji: '📋', 
-    count: 5, 
-    agents: [
-      { id: 'atlas', icon: '🗺️', name: 'Atlas' },
-      { id: 'cal', icon: '📅', name: 'Cal' },
-      { id: 'dean', icon: '🗒️', name: 'Dean' },
-      { id: 'iris', icon: '📥', name: 'Iris' },
-      { id: 'owen', icon: '🔄', name: 'Owen' }
-    ],
-    desc: 'Project management, calendar, meeting notes, and inbox — all handled.'
-  },
-  { 
-    id: 'finance', 
-    name: 'Finance & Legal', 
-    emoji: '📊', 
-    count: 5, 
-    agents: [
-      { id: 'bill', icon: '🧾', name: 'Bill' },
-      { id: 'felix', icon: '💳', name: 'Felix' },
-      { id: 'lena', icon: '⚖️', name: 'Lena' },
-      { id: 'reid', icon: '📐', name: 'Reid' },
-      { id: 'cora', icon: '🔬', name: 'Cora' }
-    ],
-    desc: 'Expenses, invoicing, contracts, and budget forecasting — no accountant needed.'
+    desc: 'Code scanning, PR reviews, deployments, and infrastructure monitoring.'
   },
   { 
     id: 'intelligence', 
     name: 'Intelligence & Research', 
     emoji: '🔍', 
-    count: 5, 
+    count: 1, 
     agents: [
-      { id: 'roman', icon: '🏛️', name: 'Roman' },
-      { id: 'sage', icon: '📡', name: 'Sage' },
-      { id: 'nate', icon: '📰', name: 'Nate' },
-      { id: 'ada', icon: '🔮', name: 'Ada' },
-      { id: 'dex', icon: '📈', name: 'Dex' }
+      { id: 'roman', icon: '🏛️', name: 'Roman (CIO)' }
     ],
-    desc: 'Competitor research, market signals, weekly briefs, and forecasting.'
-  },
-  { 
-    id: 'community', 
-    name: 'Community & Growth', 
-    emoji: '🌐', 
-    count: 5, 
-    agents: [
-      { id: 'spike', icon: '🚀', name: 'Spike' },
-      { id: 'milo', icon: '🎵', name: 'Milo' },
-      { id: 'rio', icon: '🤝', name: 'Rio' },
-      { id: 'zoe', icon: '🌟', name: 'Zoe' },
-      { id: 'kai', icon: '🔊', name: 'Kai' }
-    ],
-    desc: 'Community management, partnerships, influencer outreach, and growth experiments.'
-  },
+    desc: 'Competitor research, deep web scraping, market signals, and forecasting.'
+  }
 ];
 
 export default function DepartmentsSection() {

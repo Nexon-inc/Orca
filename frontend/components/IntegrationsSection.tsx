@@ -4,18 +4,17 @@ import { useEffect, useRef } from 'react';
 import { animate, stagger } from 'animejs';
 
 const integrations = [
-  { name: 'GitHub', category: 'Tech', status: 'Core' },
-  { name: 'Stripe', category: 'Finance', status: 'Core' },
-  { name: 'HubSpot', category: 'Sales', status: 'API' },
-  { name: 'ZenDesk', category: 'CS', status: 'API' },
-  { name: 'Slack', category: 'Ops', status: 'Core' },
+  { name: 'HubSpot', category: 'Sales', status: 'Core' },
   { name: 'LinkedIn', category: 'Marketing', status: 'Social' },
-  { name: 'OpenAI', category: 'Agents', status: 'Native' },
-  { name: 'Anthropic', category: 'Agents', status: 'Native' },
+  { name: 'X / Twitter', category: 'Marketing', status: 'Social' },
+  { name: 'Meta (IG/FB)', category: 'Marketing', status: 'Social' },
+  { name: 'Brevo', category: 'Marketing', status: 'API' },
   { name: 'Google Workspace', category: 'Admin', status: 'Core' },
-  { name: 'AWS', category: 'Tech', status: 'API' },
-  { name: 'Intercom', category: 'CS', status: 'API' },
-  { name: 'Notion', category: 'Ops', status: 'Core' },
+  { name: 'Hunter.io', category: 'Sales', status: 'API' },
+  { name: 'Slack', category: 'CS', status: 'Core' },
+  { name: 'Notion', category: 'CS / Intel', status: 'Core' },
+  { name: 'GitHub', category: 'Tech', status: 'Core' },
+  { name: 'Vercel', category: 'Tech', status: 'API' },
 ];
 
 export default function IntegrationsSection() {
@@ -101,3 +100,4 @@ export default function IntegrationsSection() {
     </section>
   );
 }
+

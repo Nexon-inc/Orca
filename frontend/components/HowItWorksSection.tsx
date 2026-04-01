@@ -5,34 +5,40 @@ import { animate, stagger } from 'animejs';
 
 const steps = [
   {
-    number: '00',
-    title: 'Pick a Template',
-    description: "Choose from OrcaHub's pre-built company templates. Your departments, agent modes, and Day 1 briefs are configured automatically.",
-    icon: '🏪'
-  },
-  {
     number: '01',
-    title: 'Brief Your Agent',
-    description: 'Provide a goal, a document, or a simple instruction. Your department agents understand context instantly.',
-    icon: '◈'
+    title: 'Atlas (AI CEO)',
+    description: 'The overarching intelligence that manages strategy, cross-department coordination, and goal tracking.',
+    icon: '🗺️'
   },
   {
     number: '02',
-    title: 'Autonomous Execution',
-    description: 'Agents research, draft, code, or analyze. They coordinate with other departments to ensure consistency.',
-    icon: '◇'
+    title: 'Aria (CMO)',
+    description: 'Drives brand voice, social media publishing, community analytics, and SEO content generation.',
+    icon: '🎙️'
   },
   {
     number: '03',
-    title: 'Real-time Coordination',
-    description: 'Watch the Coordination Feed as agents hand off tasks and align on the company mission.',
-    icon: '⬡'
+    title: 'Rex (CSO)',
+    description: 'Handles lead prospecting, CRM management, cold outreach, and revenue pipeline analytics.',
+    icon: '💰'
   },
   {
     number: '04',
-    title: 'Human Control',
-    description: 'Review results, approve actions, or pivot. You stay in the driver’s seat while the work gets done.',
-    icon: '◆'
+    title: 'Purity (CCO)',
+    description: 'Manages incoming support tickets, onboarding flows, user feedback parsing, and retention.',
+    icon: '🛟'
+  },
+  {
+    number: '05',
+    title: 'Ghost (CTO)',
+    description: 'Monitors the codebase, reviews PRs, triggers deployments, and observes system health.',
+    icon: '👻'
+  },
+  {
+    number: '06',
+    title: 'Roman (CIO)',
+    description: 'Performs deep web research, aggregates market signals, scrapes competitor data, and tracks news.',
+    icon: '🏛️'
   }
 ];
 
@@ -93,7 +99,7 @@ export default function HowItWorksSection() {
              <div className="how-it-works-line absolute top-0 left-0 h-full bg-green/30 w-full" style={{ width: '0%' }} />
           </div>
 
-          <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
+          <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
             {steps.map((step, idx) => (
               <div 
                 key={idx} 
@@ -117,3 +123,4 @@ export default function HowItWorksSection() {
     </section>
   );
 }
+

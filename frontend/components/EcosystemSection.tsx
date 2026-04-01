@@ -5,20 +5,6 @@ import { animate, stagger } from 'animejs';
 
 const products = [
   {
-    name: 'Bring Your Own LLM',
-    subtitle: 'Your Models. Your Control.',
-    description: 'Run any agent on any LLM. Connect your own OpenAI, Anthropic, Claude, Mistral, or other external keys.',
-    plan: 'Pro+',
-    icon: '⚡'
-  },
-  {
-    name: 'OrcaHub Templates',
-    subtitle: 'Start in 1 Click.',
-    description: 'Browse pre-built company templates like SaaS Startup, Agency, E-commerce and more.',
-    plan: 'All Plans',
-    icon: '🏪'
-  },
-  {
     name: 'CyberGuard',
     subtitle: 'Autonomous Code Security',
     description: 'AI-powered vulnerability detection and automatic PR fixes.',
@@ -31,30 +17,19 @@ const products = [
     description: 'Generative video and marketing assets for ads and social.',
     plan: 'Pro+',
     icon: '🎥'
-  },
-  {
-    name: 'Intuition',
-    subtitle: 'Behavioral Truth-Scoring',
-    description: 'Verify background and detect signals for recruitment.',
-    plan: 'Pro+',
-    icon: '👁️'
-  },
-  {
-    name: 'The Summit',
-    subtitle: 'Elite Talent Network',
-    description: 'Source pre-vetted candidates from an exclusive pipeline.',
-    plan: 'Pro+',
-    icon: '🏔️'
   }
 ];
 
 const providers = [
-  { name: 'ORCA-powered AI', label: 'Default', plan: 'All plans' },
-  { name: 'ORCA-powered AI (Turbo)', label: 'Default', plan: 'All plans' },
-  { name: 'OpenAI GPT-4o', label: 'Bring your own key', plan: 'Pro+' },
-  { name: 'Anthropic Claude', label: 'Bring your own key', plan: 'Pro+' },
-  { name: 'Mistral AI', label: 'EU data residency', plan: 'Pro+' },
-  { name: 'Ollama', label: 'Self-hosted', plan: 'Enterprise' }
+  { name: 'ORCA Intelligence', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'OpenAI GPT-4o', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Anthropic Claude', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Google Gemini', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'DeepSeek', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Mistral AI', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Groq Cloud', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'xAI Grok', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Ollama', label: 'Bring your own key', plan: 'All plans' }
 ];
 
 export default function EcosystemSection() {
@@ -101,7 +76,7 @@ export default function EcosystemSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-32">
+        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 mb-32">
           {products.map((product, idx) => (
             <div 
               key={idx} 
@@ -149,11 +124,12 @@ export default function EcosystemSection() {
           </div>
           
           <p className="mt-12 text-center font-dm-mono text-[13px] text-text-muted max-w-2xl mx-auto leading-relaxed">
-            By default, ORCA powers all 6 executives using its own ORCA-powered AI — zero setup. On Pro and Enterprise, connect your own API keys and assign different models to different departments or individual agents.
+            Connect your own API keys for your preferred LLM to power your 6 executives. Assign different models to different departments, or standardise across your entire company. Secure, private, and completely in your control.
           </p>
         </div>
       </div>
     </section>
   );
 }
+
 
