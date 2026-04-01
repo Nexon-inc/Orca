@@ -19,9 +19,7 @@ export default function ChatPage() {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   
-  const [messages, setMessages] = useState<any[]>([
-    { id: 'initial', role: 'assistant', content: 'Welcome back. I am Atlas, your AI CEO. Your executive team is standing by.', sender: 'Atlas' }
-  ]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,11 +36,11 @@ export default function ChatPage() {
   }, []);
 
   const EXECUTIVE_PILLS = [
-    { key: 'marketing', name: 'CMO', title: 'Chief Marketing Officer', icon: '🎙️', agent: 'Aria' },
-    { key: 'sales',     name: 'CSO', title: 'Chief Sales Officer', icon: '💰', agent: 'Rex' },
-    { key: 'cs',        name: 'CCO', title: 'Chief Customer Officer', icon: '🛟', agent: 'Purity' },
-    { key: 'intel',     name: 'CIO', title: 'Chief Intelligence Officer', icon: '🏛️', agent: 'Roman' },
-    { key: 'tech',      name: 'CTO', title: 'Chief Technology Officer', icon: '👻', agent: 'Ghost' },
+    { key: 'marketing', name: 'CMO', title: 'Chief Marketing Officer', icon: 'ðŸŽ™ï¸', agent: 'Aria' },
+    { key: 'sales',     name: 'CSO', title: 'Chief Sales Officer', icon: 'ðŸ’°', agent: 'Rex' },
+    { key: 'cs',        name: 'CCO', title: 'Chief Customer Officer', icon: 'ðŸ›Ÿ', agent: 'Purity' },
+    { key: 'intel',     name: 'CIO', title: 'Chief Intelligence Officer', icon: 'ðŸ›ï¸', agent: 'Roman' },
+    { key: 'tech',      name: 'CTO', title: 'Chief Technology Officer', icon: 'ðŸ‘»', agent: 'Ghost' },
   ];
 
   useEffect(() => {
@@ -105,11 +103,11 @@ export default function ChatPage() {
              </h2>
              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green/5 border border-green/10 dash-anim">
                 <div className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
-                <span className="text-[10px] text-green uppercase tracking-[0.2em]">Full Executive Team Online</span>
+                <span className="text-[9px] text-green uppercase tracking-[0.2em]">Full Executive Team Online</span>
              </div>
           </div>
           <div className="flex items-center gap-6 dash-anim">
-            <div className="flex items-center gap-2 text-white/40 text-[10px] uppercase tracking-[0.2em] leading-none">
+            <div className="flex items-center gap-2 text-white/40 text-[9px] uppercase tracking-[0.2em] leading-none">
                Status: <span className="text-green/60 uppercase">Synchronized</span>
             </div>
           </div>
@@ -119,7 +117,7 @@ export default function ChatPage() {
         <div className="flex-1 flex flex-col p-8 gap-8 overflow-y-auto no-scrollbar max-w-5xl mx-auto w-full">
           
           {/* Chat Section */}
-          <div className="flex-1 flex flex-col bg-surface/30 rounded-2xl border border-white/5 relative overflow-hidden backdrop-blur-sm min-h-[500px] dash-anim">
+          <div className="flex-1 flex flex-col relative min-h-[500px] dash-anim">
             <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
               {messages.map(msg => (
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -146,14 +144,14 @@ export default function ChatPage() {
                   <button 
                     key={exec.key}
                     onClick={() => setPinnedAgent(pinnedAgent === exec.agent ? null : exec.agent)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap group dash-anim ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap group dash-anim ${
                       pinnedAgent === exec.agent 
                         ? 'bg-green border-green text-bg' 
                         : 'bg-white/5 border-white/10 text-white/40 hover:text-green hover:border-green/30'
                     }`}
                   >
-                    <span className="text-sm">{exec.icon}</span>
-                    <span className="font-bold uppercase tracking-widest text-[10px]">{exec.name}</span>
+                    <span className="text-xs">{exec.icon}</span>
+                    <span className="font-bold uppercase tracking-widest text-[9px]">{exec.name}</span>
                     <span className="text-[9px] opacity-20 group-hover:opacity-100 transition-opacity ml-1 hidden sm:inline">{exec.title}</span>
                   </button>
                 ))}
@@ -171,7 +169,7 @@ export default function ChatPage() {
                 </button>
               </form>
               <div className="mt-4 flex justify-between items-center px-2">
-                <span className="text-[10px] text-white/10 uppercase tracking-[0.2em]">Press / to focus chat</span>
+                <span className="text-[9px] text-white/10 uppercase tracking-[0.2em]">Press / to focus chat</span>
                 {pinnedAgent && (
                    <button onClick={() => setPinnedAgent(null)} className="text-[9px] text-green/40 hover:text-green uppercase tracking-widest transition-all">Clear Pin [Esc]</button>
                 )}

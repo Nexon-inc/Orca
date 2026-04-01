@@ -58,12 +58,7 @@ export default function ProjectsPage() {
             <h1 className="font-syne text-2xl font-[900] text-white uppercase tracking-tight">Project Management</h1>
             <p className="font-syne text-white/30 text-[10px] uppercase tracking-[0.2em] font-black">Manage your portfolio of autonomous companies.</p>
           </div>
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-2.5 rounded-xl bg-green text-bg text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(0,255,135,0.2)] hover:scale-[1.02] transition-all"
-          >
-            + Add New Company
-          </button>
+          
         </header>
 
         <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
@@ -97,7 +92,7 @@ export default function ProjectsPage() {
                      Switch Workspace
                    </button>
                    <button className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all">
-                      ⚙️
+                      âš™ï¸
                    </button>
                 </div>
               </div>

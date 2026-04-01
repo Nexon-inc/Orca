@@ -32,32 +32,32 @@ export default function FeaturesPage() {
     {
       icon: '⬡',
       title: '6 AI Executives',
-      description: 'Atlas · Aria · Rex · Purity · Roman · Ghost. Your complete C-suite, activated across 5 departments and ready to work in seconds.',
+      description: 'Atlas, Aria, Rex, Purity, Roman, and Ghost. Your complete C-Suite activated across 5 specialized departments in seconds.',
     },
     {
-      icon: '⇄',
-      title: 'Coordinated Handoffs',
-      description: 'Agents communicate and hand off work across departments automatically. No siloed tools or manual bridging.',
+      icon: '⚡',
+      title: 'Autonomous Mode',
+      description: 'Atlas (AI CEO) coordinates the entire executive team autonomously. Receive weekly briefings and daily performance digests.',
     },
     {
-      icon: '👁',
-      title: 'Total Governance',
-      description: 'You stay in control with 3 operating modes: Autopilot, Approve First, or Suggest Only. Your sign-off is final.',
+      icon: '🤵',
+      title: 'Agent47 Workforce',
+      description: 'Harness the power of 47 specialized employees for full-scale business process automations across your entire company.',
     },
     {
-      icon: '🔐',
-      title: 'CyberGuard Built-in',
-      description: 'Every bit of code generated is scanned for vulnerabilities and compliance automatically before deployment.',
+      icon: '🛡️',
+      title: 'CyberGuard Security',
+      description: 'Enterprise-grade code scanning and automated PR fixes built into your technical department pipeline.',
     },
     {
-      icon: '🧠',
-      title: 'Nexonic Intuition',
-      description: 'Leverage our behavioral truth-scoring for hiring and sourcing the top 0.1% of global talent through agents.',
+      icon: '🎥',
+      title: 'Render.AI Creative',
+      description: 'Neural Creative Production for generating video and marketing assets autonomously for your brand voice.',
     },
     {
-      icon: '📈',
-      title: 'Revenue Distribution',
-      description: 'Track the direct dollar-impact of every agent action and see exactly how your AI workforce scales.',
+      icon: '🔌',
+      title: 'Deep Integrations',
+      description: 'Connect your existing stack — HubSpot, Slack, GitHub, LinkedIn and more — directly to your executive workforce.',
     },
   ];
 
@@ -72,11 +72,11 @@ export default function FeaturesPage() {
             Coordinated <span className="text-green">Capabilities</span>
           </h1>
           <p className="feature-hero-text opacity-0 font-dm-mono text-[16px] sm:text-[18px] text-text-muted max-w-2xl mx-auto mb-12 leading-relaxed">
-            6 AI executives across 5 departments, working 24/7 to automate your entire business — fully coordinated.
+            6 AI executives across 5 departments, working 24/7 to automate your entire business â€” fully coordinated.
           </p>
           <div className="feature-hero-text opacity-0">
             <button className="btn-primary px-10 py-4">
-              Start Your Onboarding →
+              Start Your Onboarding â†’
             </button>
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function FeaturesPage() {
       {/* CTA Section */}
       <section className="py-32 px-4 bg-surface/30">
         <div className="max-w-4xl mx-auto text-center p-12 sm:p-20 rounded-[3rem] border border-white/5 bg-surface/50 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-12 text-9xl opacity-5 rotate-12 group-hover:opacity-10 transition-opacity">▣</div>
+          <div className="absolute top-0 right-0 p-12 text-9xl opacity-5 rotate-12 group-hover:opacity-10 transition-opacity">â–£</div>
           <h2 className="font-syne text-3xl sm:text-5xl font-extrabold text-white mb-6 relative z-10">
             Ready to automate your company?
           </h2>
@@ -117,7 +117,7 @@ export default function FeaturesPage() {
             Join hundreds of founders building their AI workforce today.
           </p>
           <button className="btn-primary px-12 py-5 relative z-10">
-            Deploy Your Org Chart →
+            Deploy Your Org Chart â†’
           </button>
         </div>
       </section>

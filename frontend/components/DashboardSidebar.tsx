@@ -7,11 +7,11 @@ import { useRole } from '@/hooks/useRole';
 import { createClientSupabaseClient } from '@/lib/supabase/client';
 
 const DEPARTMENTS = [
-  { key: 'marketing', name: 'Marketing', icon: '📣' },
-  { key: 'sales',     name: 'Sales & Revenue', icon: '💼' },
-  { key: 'cs',        name: 'Customer Success', icon: '🤝' },
-  { key: 'intel',     name: 'Intelligence & Research', icon: '🔍' },
-  { key: 'tech',      name: 'Tech & Vibe Coding', icon: '🛡️' },
+  { key: 'marketing', name: 'Marketing', icon: 'ðŸ“£' },
+  { key: 'sales',     name: 'Sales & Revenue', icon: 'ðŸ’¼' },
+  { key: 'cs',        name: 'Customer Success', icon: 'ðŸ¤' },
+  { key: 'intel',     name: 'Intelligence & Research', icon: 'ðŸ”' },
+  { key: 'tech',      name: 'Tech & Vibe Coding', icon: 'ðŸ›¡ï¸' },
 ];
 
 interface SidebarProps {
@@ -87,8 +87,8 @@ export default function DashboardSidebar({ active }: SidebarProps) {
 
   // Helper for recent executive emojis
   const getExecEmoji = (agentName: string) => {
-    const map: any = { Aria: '📣', Rex: '💼', Purity: '🛟', Roman: '🏛️', Ghost: '🛡️', Atlas: '⬡' };
-    return map[agentName] || '💬';
+    const map: any = { Aria: 'ðŸ“£', Rex: 'ðŸ’¼', Purity: 'ðŸ›Ÿ', Roman: 'ðŸ›ï¸', Ghost: 'ðŸ›¡ï¸', Atlas: 'â¬¡' };
+    return map[agentName] || 'ðŸ’¬';
   };
 
   return (
@@ -116,7 +116,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
                     <span className="text-[7px] text-white/30 uppercase font-black tracking-widest">Autonomous OS</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-white/20 ml-2">▼</span>
+                <span className="text-[10px] text-white/20 ml-2">â–¼</span>
               </div>
 
               {showOrgDropdown && (
@@ -147,7 +147,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
             onClick={toggleSidebar}
             className={`flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 hover:bg-green hover:text-bg transition-all w-6 h-6 absolute -right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover/sidebar:opacity-100 z-[60]`}
           >
-            {isCollapsed ? '›' : '‹'}
+            {isCollapsed ? 'â€º' : 'â€¹'}
           </button>
         </div>
 
@@ -164,12 +164,12 @@ export default function DashboardSidebar({ active }: SidebarProps) {
       {/* 2. Main Navigation */}
       <nav className={`flex-1 p-2 flex flex-col gap-1 overflow-y-auto no-scrollbar ${isCollapsed ? 'items-center' : ''}`}>
         
-        <SidebarItem href="/dashboard/chat" icon="⬡" label="Chat" active={currentActive === 'chat'} isCollapsed={isCollapsed} />
-        <SidebarItem href="/dashboard/orcahub" icon="🌊" label="OrcaHub" active={currentActive === 'orcahub'} isCollapsed={isCollapsed} />
-        <SidebarItem href="/dashboard/projects" icon="📁" label="Projects" active={currentActive === 'projects'} isCollapsed={isCollapsed} />
-        <SidebarItem href="/dashboard/team" icon="👥" label="Team" active={currentActive === 'team'} isCollapsed={isCollapsed} />
-        <SidebarItem href="/dashboard/upgrade" icon="💎" label="Upgrade" active={currentActive === 'upgrade'} isCollapsed={isCollapsed} />
-        <SidebarItem href="/dashboard/review" icon="👁️" label="Review" active={currentActive === 'review'} isCollapsed={isCollapsed} />
+        <SidebarItem href="/dashboard/chat" icon="â¬¡" label="Chat" active={currentActive === 'chat'} isCollapsed={isCollapsed} />
+        <SidebarItem href="/dashboard/orcahub" icon="ðŸŒŠ" label="OrcaHub" active={currentActive === 'orcahub'} isCollapsed={isCollapsed} />
+        <SidebarItem href="/dashboard/projects" icon="ðŸ“" label="Projects" active={currentActive === 'projects'} isCollapsed={isCollapsed} />
+        <SidebarItem href="/dashboard/team" icon="ðŸ‘¥" label="Team" active={currentActive === 'team'} isCollapsed={isCollapsed} />
+        <SidebarItem href="/dashboard/upgrade" icon="ðŸ’Ž" label="Upgrade" active={currentActive === 'upgrade'} isCollapsed={isCollapsed} />
+        <SidebarItem href="/dashboard/review" icon="ðŸ‘ï¸" label="Review" active={currentActive === 'review'} isCollapsed={isCollapsed} />
 
         {!isCollapsed && recents.length > 0 && (
           <>
@@ -186,7 +186,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
                     {getExecEmoji(conv.agents?.name)}
                   </span>
                   <span className="truncate font-semibold tracking-tight">
-                    {conv.agents?.name ? `${conv.agents.name} — ` : ''}{conv.title || 'Untitled'}
+                    {conv.agents?.name ? `${conv.agents.name} â€” ` : ''}{conv.title || 'Untitled'}
                   </span>
                 </a>
               ))}
@@ -221,16 +221,16 @@ export default function DashboardSidebar({ active }: SidebarProps) {
                 <span className="text-[10px] text-white font-bold block">{profile?.full_name || 'Founder'}</span>
                 <span className="text-[8px] text-white/20 uppercase font-black tracking-widest">{currentOrg?.name || 'ORCA'}</span>
              </div>
-             <PopupLink href="/dashboard/account" icon="👤" label="Account Settings" />
-             <PopupLink href="/dashboard/account?tab=billing" icon="💳" label="Billing & Plan" />
-             <PopupLink href="/dashboard/account?tab=ai-models" icon="⚡" label="AI Models" />
-             <PopupLink href="/dashboard/account?tab=security" icon="🛡️" label="Security & Audit" />
+             <PopupLink href="/dashboard/account" icon="ðŸ‘¤" label="Account Settings" />
+             <PopupLink href="/dashboard/account?tab=billing" icon="ðŸ’³" label="Billing & Plan" />
+             <PopupLink href="/dashboard/account?tab=ai-models" icon="âš¡" label="AI Models" />
+             <PopupLink href="/dashboard/account?tab=security" icon="ðŸ›¡ï¸" label="Security & Audit" />
              <div className="my-2 border-t border-white/5" />
              <button 
               onClick={handleLogout}
               className="w-full text-left px-3 py-2 rounded-xl text-[11px] text-red-400 hover:bg-red-400/5 transition-all flex items-center gap-3 font-bold"
              >
-               <span>🚪</span> Logout
+               <span>ðŸšª</span> Logout
              </button>
           </div>
         )}
@@ -248,7 +248,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
               <span className="text-[8px] text-white/30 uppercase tracking-[0.2em] font-black">{currentOrg?.role || 'Founder'}</span>
             </div>
           )}
-          {!isCollapsed && <span className="text-[10px] text-white/10 shrink-0">⬡</span>}
+          {!isCollapsed && <span className="text-[10px] text-white/10 shrink-0">â¬¡</span>}
         </div>
       </div>
     </aside>
@@ -267,7 +267,7 @@ function SidebarItem({ href, icon, label, active, isCollapsed }: any) {
   return (
     <a
       href={href}
-      className={`side-item flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group ${active ? 'bg-green/10 text-green border border-green/20 shadow-[0_0_20px_rgba(0,255,135,0.05)]' : 'text-white/30 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full'}`}
+      className={`side-item flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 group ${active ? 'bg-green/10 text-green border border-green/20 shadow-[0_0_20px_rgba(0,255,135,0.05)]' : 'text-white/30 hover:text-white hover:bg-white/5 border border-transparent'} ${isCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full'}`}
     >
       <span className={`text-[16px] ${active ? 'text-green drop-shadow-[0_0_8px_rgba(0,255,135,0.5)]' : 'text-white/30 group-hover:text-white'}`}>{icon}</span>
       {!isCollapsed && (

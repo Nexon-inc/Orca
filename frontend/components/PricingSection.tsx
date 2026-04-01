@@ -153,7 +153,7 @@ export default function PricingSection() {
           <div className="max-w-3xl mx-auto mb-16 p-px rounded-[2rem] bg-gradient-to-r from-green/50 via-white/20 to-green/50 animate-pulse">
             <div className="bg-bg/90 backdrop-blur-xl rounded-[2rem] p-6 px-10 flex flex-col sm:flex-row items-center justify-between gap-6 border border-white/10">
               <div className="flex items-center gap-4">
-                <span className="text-3xl">🔥</span>
+                <span className="text-3xl">ðŸ”¥</span>
                 <div className="text-left">
                   <h4 className="font-syne font-black text-white text-[16px] uppercase tracking-widest">Founding Member Offer</h4>
                   <p className="text-white/40 text-[10px] uppercase font-black tracking-widest leading-none mt-1">Get Builder plan at $19/mo locked forever. {foundingStatus.remaining} spots left.</p>
@@ -163,7 +163,7 @@ export default function PricingSection() {
                 onClick={() => handleCheckout('founding')}
                 className="whitespace-nowrap px-6 py-3 bg-green text-bg font-syne font-black text-[12px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,255,135,0.3)]"
               >
-                Claim founding spot →
+                Claim founding spot â†’
               </button>
             </div>
           </div>
@@ -196,7 +196,7 @@ export default function PricingSection() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`pricing-card-anim opacity-0 p-10 rounded-[2.5rem] flex flex-col gap-8 transition-all duration-500 group relative overflow-hidden backdrop-blur-xl border ${plan.highlighted ? 'border-green bg-green/[0.03] shadow-[0_0_40px_rgba(0,255,135,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+              className={`pricing-card-anim opacity-0 p-10 rounded-[2.5rem] flex flex-col gap-8 transition-all duration-500 group relative overflow-visible backdrop-blur-xl border ${plan.highlighted ? 'border-green bg-green/[0.03] shadow-[0_0_40px_rgba(0,255,135,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
             >
               {plan.highlighted && (
                 <div className="absolute top-0 right-10 -translate-y-1/2 py-2 px-4 bg-green rounded-full shadow-[0_4px_20px_rgba(0,255,135,0.2)]">
@@ -208,7 +208,7 @@ export default function PricingSection() {
               <div className="flex flex-col gap-3">
                  <h3 className="font-syne font-[800] text-[28px] text-white tracking-tight uppercase">
                    {plan.name}
-                   {plan.highlighted && <span className="text-green ml-2">⭐</span>}
+                   {plan.highlighted && <span className="text-green ml-2">â­</span>}
                  </h3>
                  <p className="text-[12px] text-white/50 leading-relaxed uppercase tracking-tighter">
                    {plan.tagline}
@@ -241,7 +241,7 @@ export default function PricingSection() {
               <ul className="flex flex-col gap-4 flex-1">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex gap-3 text-[12px] text-white/70 leading-snug">
-                    <span className="text-green text-[14px] shrink-0">✓</span>
+                    <span className="text-green text-[14px] shrink-0">âœ“</span>
                     {feature}
                   </li>
                 ))}

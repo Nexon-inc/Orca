@@ -9,19 +9,26 @@ const products = [
     subtitle: 'Autonomous Code Security',
     description: 'AI-powered vulnerability detection and automatic PR fixes.',
     plan: 'Starter+',
-    icon: 'ðŸ›¡ï¸'
+    icon: 'Ã°Å¸â€ºÂ¡Ã¯Â¸Â'
   },
   {
     name: 'Render.AI',
     subtitle: 'Neural Creative Production',
     description: 'Generative video and marketing assets for ads and social.',
     plan: 'Pro+',
-    icon: 'ðŸŽ¥'
+    icon: 'Ã°Å¸Å½Â¥'
+  },
+  {
+    name: 'Agent47',
+    subtitle: 'Specialized Employee Automation',
+    description: '47 specialized agents for end-to-end business process automations.',
+    plan: '',
+    icon: 'Ã°Å¸Â¤Âµ'
   }
 ];
 
 const providers = [
-  { name: 'ORCA Intelligence', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'ORCA Intelligence', label: 'Default Engine', plan: 'All plans' },
   { name: 'OpenAI GPT-4o', label: 'Bring your own key', plan: 'All plans' },
   { name: 'Anthropic Claude', label: 'Bring your own key', plan: 'All plans' },
   { name: 'Google Gemini', label: 'Bring your own key', plan: 'All plans' },
@@ -76,7 +83,7 @@ export default function EcosystemSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 mb-32">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-32">
           {products.map((product, idx) => (
             <div 
               key={idx} 

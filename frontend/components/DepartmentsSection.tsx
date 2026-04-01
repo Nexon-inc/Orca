@@ -8,50 +8,50 @@ const departments = [
   { 
     id: 'marketing', 
     name: 'Marketing', 
-    emoji: 'ðŸ“£', 
+    emoji: '📣', 
     count: 1, 
     agents: [
-      { id: 'aria', icon: 'ðŸŽ™ï¸', name: 'Aria (CMO)' }
+      { id: 'aria', icon: '🎙️', name: 'Aria (CMO)' }
     ],
-    desc: 'Content, social, SEO, ads, and brand voice â€” managed end-to-end by your AI CMO.'
+    desc: 'Content, social, SEO, ads, and brand voice — managed end-to-end by your AI CMO.'
   },
   { 
     id: 'sales', 
     name: 'Sales & Revenue', 
-    emoji: 'ðŸ’°', 
+    emoji: '💰', 
     count: 1, 
     agents: [
-      { id: 'rex', icon: 'ðŸ’°', name: 'Rex (CSO)' }
+      { id: 'rex', icon: '💰', name: 'Rex (CSO)' }
     ],
     desc: 'Lead prospecting, outreach, CRM management, and deal intelligence by your AI Sales Chief.'
   },
   { 
     id: 'customer', 
     name: 'Customer Success', 
-    emoji: 'ðŸ¤', 
+    emoji: '🤝', 
     count: 1, 
     agents: [
-      { id: 'purity', icon: 'ðŸ›Ÿ', name: 'Purity (CCO)' }
+      { id: 'purity', icon: '🛟', name: 'Purity (CCO)' }
     ],
     desc: 'Support tickets, onboarding, retention, and NPS handled autonomously.'
   },
   { 
     id: 'tech', 
     name: 'Tech & Security', 
-    emoji: 'ðŸ›¡ï¸', 
+    emoji: '🛡️', 
     count: 1, 
     agents: [
-      { id: 'ghost', icon: 'ðŸ‘»', name: 'Ghost (CTO)' }
+      { id: 'ghost', icon: '👻', name: 'Ghost (CTO)' }
     ],
     desc: 'Code scanning, PR reviews, deployments, and infrastructure monitoring.'
   },
   { 
     id: 'intelligence', 
     name: 'Intelligence & Research', 
-    emoji: 'ðŸ”', 
+    emoji: '🔍', 
     count: 1, 
     agents: [
-      { id: 'roman', icon: 'ðŸ›ï¸', name: 'Roman (CIO)' }
+      { id: 'roman', icon: '🏛️', name: 'Roman (CIO)' }
     ],
     desc: 'Competitor research, deep web scraping, market signals, and forecasting.'
   }

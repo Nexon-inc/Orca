@@ -7,38 +7,38 @@ const steps = [
   {
     number: '01',
     title: 'Atlas (AI CEO)',
-    description: 'The overarching intelligence that manages strategy, cross-department coordination, and goal tracking.',
-    icon: 'ðŸ—ºï¸'
+    description: 'System Coordination. Choose Atlas for full autonomous automation, or operate the executive team manually yourself.',
+    icon: '🗺️'
   },
   {
     number: '02',
     title: 'Aria (CMO)',
-    description: 'Drives brand voice, social media publishing, community analytics, and SEO content generation.',
-    icon: 'ðŸŽ™ï¸'
+    description: 'Marketing Department. Drives brand voice, social media publishing, community analytics, and SEO content generation.',
+    icon: '🎙️'
   },
   {
     number: '03',
     title: 'Rex (CSO)',
-    description: 'Handles lead prospecting, CRM management, cold outreach, and revenue pipeline analytics.',
-    icon: 'ðŸ’°'
+    description: 'Sales Department. Handles lead prospecting, CRM management, cold outreach, and revenue pipeline analytics.',
+    icon: '💰'
   },
   {
     number: '04',
     title: 'Purity (CCO)',
-    description: 'Manages incoming support tickets, onboarding flows, user feedback parsing, and retention.',
-    icon: 'ðŸ›Ÿ'
+    description: 'Customer Success. Manages incoming support tickets, onboarding flows, user feedback parsing, and retention.',
+    icon: '🛟'
   },
   {
     number: '05',
     title: 'Ghost (CTO)',
-    description: 'Monitors the codebase, reviews PRs, triggers deployments, and observes system health.',
-    icon: 'ðŸ‘»'
+    description: 'Tech & Security. Monitors the codebase, reviews PRs, triggers deployments, and observes system health.',
+    icon: '👻'
   },
   {
     number: '06',
     title: 'Roman (CIO)',
-    description: 'Performs deep web research, aggregates market signals, scrapes competitor data, and tracks news.',
-    icon: 'ðŸ›ï¸'
+    description: 'Intelligence & Research. Performs deep web research, aggregates market signals, and scrapes competitor data.',
+    icon: '🏛️'
   }
 ];
 
