@@ -9,14 +9,14 @@ const products = [
     subtitle: 'Autonomous Code Security',
     description: 'AI-powered vulnerability detection and automatic PR fixes.',
     plan: 'Starter+',
-    icon: '🛡️'
+    icon: 'ðŸ›¡ï¸'
   },
   {
     name: 'Render.AI',
     subtitle: 'Neural Creative Production',
     description: 'Generative video and marketing assets for ads and social.',
     plan: 'Pro+',
-    icon: '🎥'
+    icon: 'ðŸŽ¥'
   }
 ];
 

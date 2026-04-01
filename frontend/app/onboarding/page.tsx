@@ -21,24 +21,24 @@ const INDUSTRIES = [
 ];
 
 const TEMPLATES = [
-  { slug: 'saas-startup', name: 'SaaS Startup', category: 'Startup', agents: '6', depts: '5', icon: '🚀', description: 'Lean setup for early-stage software companies.' },
-  { slug: 'marketing-agency', name: 'Content Marketing Agency', category: 'Marketing', agents: '6', depts: '5', icon: '📣', description: 'Optimized for high-volume content production.' },
-  { slug: 'ecommerce-operator', name: 'E-commerce Operator', category: 'E-commerce', agents: '6', depts: '5', icon: '🛒', description: 'Full stack management for online stores.' },
-  { slug: 'recruiting-firm', name: 'Recruiting Firm', category: 'Hiring', agents: '6', depts: '5', icon: '💼', description: 'Talent sourcing and verification pipeline.' },
-  { slug: 'dev-agency', name: 'Dev Agency', category: 'Technology', agents: '6', depts: '5', icon: '🛠️', description: 'Agile development and security-first ops.' },
-  { slug: 'intel-desk', name: 'Intelligence & Research Desk', category: 'Research', agents: '6', depts: '5', icon: '🔍', description: 'Deep market research and competitor tracking.' }
+  { slug: 'saas-startup', name: 'SaaS Startup', category: 'Startup', agents: '6', depts: '5', icon: 'ðŸš€', description: 'Lean setup for early-stage software companies.' },
+  { slug: 'marketing-agency', name: 'Content Marketing Agency', category: 'Marketing', agents: '6', depts: '5', icon: 'ðŸ“£', description: 'Optimized for high-volume content production.' },
+  { slug: 'ecommerce-operator', name: 'E-commerce Operator', category: 'E-commerce', agents: '6', depts: '5', icon: 'ðŸ›’', description: 'Full stack management for online stores.' },
+  { slug: 'recruiting-firm', name: 'Recruiting Firm', category: 'Hiring', agents: '6', depts: '5', icon: 'ðŸ’¼', description: 'Talent sourcing and verification pipeline.' },
+  { slug: 'dev-agency', name: 'Dev Agency', category: 'Technology', agents: '6', depts: '5', icon: 'ðŸ› ï¸', description: 'Agile development and security-first ops.' },
+  { slug: 'intel-desk', name: 'Intelligence & Research Desk', category: 'Research', agents: '6', depts: '5', icon: 'ðŸ”', description: 'Deep market research and competitor tracking.' }
 ];
 
 const DEPARTMENTS = [
-  { id: 'marketing', name: 'Marketing', icon: '📣', desc: 'Content, social, SEO, and brand voice.' },
-  { id: 'sales', name: 'Sales & Revenue', icon: '💰', desc: 'Lead prospecting and CRM management.' },
-  { id: 'cs', name: 'Customer Success', icon: '🤝', desc: 'Onboarding, retention, and support.' },
-  { id: 'tech', name: 'Tech & Vibe Coding', icon: '🛡️', desc: 'Code reviews, deployments, and security.' },
-  { id: 'intel', name: 'Intelligence & Research', icon: '🔍', desc: 'Market research and competitor tracking.' },
-  { id: 'hiring', name: 'People & Hiring', icon: '🧠', desc: 'Sourcing, screening, and offer coordination.', comingSoon: true },
-  { id: 'ops', name: 'Operations', icon: '📋', desc: 'Project management and inbox automation.', comingSoon: true },
-  { id: 'finance', name: 'Finance & Legal', icon: '📊', desc: 'Invoicing, contracts, and budgeting.', comingSoon: true },
-  { id: 'community', name: 'Community', icon: '🌐', desc: 'Growth experiments and partnerships.', comingSoon: true }
+  { id: 'marketing', name: 'Marketing', icon: 'ðŸ“£', desc: 'Content, social, SEO, and brand voice.' },
+  { id: 'sales', name: 'Sales & Revenue', icon: 'ðŸ’°', desc: 'Lead prospecting and CRM management.' },
+  { id: 'cs', name: 'Customer Success', icon: 'ðŸ¤', desc: 'Onboarding, retention, and support.' },
+  { id: 'tech', name: 'Tech & Vibe Coding', icon: 'ðŸ›¡ï¸', desc: 'Code reviews, deployments, and security.' },
+  { id: 'intel', name: 'Intelligence & Research', icon: 'ðŸ”', desc: 'Market research and competitor tracking.' },
+  { id: 'hiring', name: 'People & Hiring', icon: 'ðŸ§ ', desc: 'Sourcing, screening, and offer coordination.', comingSoon: true },
+  { id: 'ops', name: 'Operations', icon: 'ðŸ“‹', desc: 'Project management and inbox automation.', comingSoon: true },
+  { id: 'finance', name: 'Finance & Legal', icon: 'ðŸ“Š', desc: 'Invoicing, contracts, and budgeting.', comingSoon: true },
+  { id: 'community', name: 'Community', icon: 'ðŸŒ', desc: 'Growth experiments and partnerships.', comingSoon: true }
 ];
 
 export default function OnboardingPage() {
@@ -79,7 +79,7 @@ export default function OnboardingPage() {
         template_slug: selectedTemplate?.slug || null,
         selected_departments: selectedDepts.length > 0 ? selectedDepts : null,
       },
-      3: { // Step 3: Protocol Alpha — operating mode
+      3: { // Step 3: Protocol Alpha â€” operating mode
         agent_mode: operatingMode === 'Autopilot' ? 'autopilot' :
                    operatingMode === 'Suggest Only' ? 'suggest_only' : 'approve_first',
       },
@@ -94,7 +94,7 @@ export default function OnboardingPage() {
         });
       } catch (err) {
         console.error('Failed to save onboarding step:', err);
-        // Continue anyway — don't block the user
+        // Continue anyway â€” don't block the user
       }
     }
 
@@ -106,7 +106,7 @@ export default function OnboardingPage() {
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Step 4 — complete (Final Sync)
+      // Step 4 â€” complete (Final Sync)
       await fetch('/api/onboarding/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -280,11 +280,11 @@ export default function OnboardingPage() {
                           <div className="p-8 rounded-2xl bg-surface/50 border border-green/20 relative overflow-hidden group backdrop-blur-sm">
                             <div className="absolute inset-0 bg-green/5 opacity-50 pointer-events-none" />
                             <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none">
-                              <span className="text-8xl">🏪</span>
+                              <span className="text-8xl">ðŸª</span>
                             </div>
                             <div className="relative z-10">
                               <div className="flex items-center gap-3 mb-4">
-                                <span className="text-xl">🏪</span>
+                                <span className="text-xl">ðŸª</span>
                                 <h4 className="font-syne text-[15px] text-white font-bold">Template Found</h4>
                               </div>
                               <p className="font-dm-mono text-[13px] text-text-muted leading-relaxed max-w-xl mb-6">
@@ -296,7 +296,7 @@ export default function OnboardingPage() {
                                   onClick={() => selectTemplate(TEMPLATES.find(t => t.slug === suggestedTemplateSlug)!)}
                                   className="w-full sm:w-auto px-6 py-3 rounded-xl btn-primary font-syne text-[13px] font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
                                 >
-                                  Use {TEMPLATES.find(t => t.slug === suggestedTemplateSlug)?.name} →
+                                  Use {TEMPLATES.find(t => t.slug === suggestedTemplateSlug)?.name} â†’
                                 </button>
                                 <button 
                                   onClick={() => setSuggestedTemplateSlug(null)}
@@ -334,7 +334,7 @@ export default function OnboardingPage() {
                                         <p className="font-dm-mono text-[10px] text-text-muted leading-tight line-clamp-2">{isLocked ? 'Protocol Staged (Coming Soon)' : d.desc}</p>
                                       </div>
                                       {isLocked && (
-                                        <div className="absolute top-2 right-2 text-[10px] opacity-40">🔒</div>
+                                        <div className="absolute top-2 right-2 text-[10px] opacity-40">ðŸ”’</div>
                                       )}
                                     </button>
                                   );
@@ -363,7 +363,7 @@ export default function OnboardingPage() {
                                   className="w-full h-full min-h-[200px] rounded-2xl bg-surface/30 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 hover:bg-white/[0.03] hover:border-white/20 transition-all group overflow-hidden relative"
                                 >
                                   <div className="absolute inset-0 bg-green opacity-0 group-hover:opacity-[0.02] transition-opacity" />
-                                  <span className="text-3xl grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-300">🏪</span>
+                                  <span className="text-3xl grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-300">ðŸª</span>
                                   <div className="text-center">
                                     <span className="font-syne text-[14px] text-white font-bold block mb-1">Browse Template Hub</span>
                                     <span className="font-dm-mono text-[10px] text-text-muted uppercase tracking-[0.2em]">Pre-built workflows</span>
@@ -378,7 +378,7 @@ export default function OnboardingPage() {
                         {showTechModePicker && (
                           <div className="mt-8 p-6 rounded-2xl bg-white/[0.03] border border-green/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="flex items-center gap-3 mb-6">
-                              <span className="text-2xl">🛡️</span>
+                              <span className="text-2xl">ðŸ›¡ï¸</span>
                               <div>
                                 <h4 className="font-syne font-bold text-white text-[15px]">Tech Department: Vibe Coding Mode</h4>
                                 <p className="font-dm-mono text-[10px] text-text-muted uppercase tracking-[0.1em]">Configure deployment architecture</p>
@@ -478,7 +478,7 @@ export default function OnboardingPage() {
                     </div>
 
                     <div className="bg-surface/50 border border-white/5 rounded-2xl p-8 space-y-6 relative overflow-hidden backdrop-blur-sm">
-                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-green text-6xl">⚡</div>
+                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-green text-6xl">âš¡</div>
                       <h4 className="font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.3em] border-b border-white/5 pb-4">Final Deployment Manifest</h4>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
@@ -541,7 +541,7 @@ export default function OnboardingPage() {
                         onClick={() => setCurrentStep(currentStep - 1)}
                         className="font-syne text-[13px] font-bold text-text-muted hover:text-white transition-all px-2 py-2"
                       >
-                        ← Back
+                        â† Back
                       </button>
                     )}
                  </div>
@@ -553,7 +553,7 @@ export default function OnboardingPage() {
                    }
                    className={`w-full sm:w-auto px-8 py-3.5 font-syne text-[14px] font-bold rounded-xl transition-all duration-300 ${((currentStep === 2 && selectedDepts.length === 0 && !selectedTemplate)) ? 'opacity-30 cursor-not-allowed bg-white/5 text-white/40' : 'btn-primary hover:scale-[1.02] active:scale-[0.98]'}`}
                  >
-                    {currentStep === 4 ? 'Engage Protocol →' : 'Continue →'}
+                    {currentStep === 4 ? 'Engage Protocol â†’' : 'Continue â†’'}
                  </button>
               </div>
            </div>

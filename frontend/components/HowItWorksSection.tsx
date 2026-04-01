@@ -8,37 +8,37 @@ const steps = [
     number: '01',
     title: 'Atlas (AI CEO)',
     description: 'The overarching intelligence that manages strategy, cross-department coordination, and goal tracking.',
-    icon: '🗺️'
+    icon: 'ðŸ—ºï¸'
   },
   {
     number: '02',
     title: 'Aria (CMO)',
     description: 'Drives brand voice, social media publishing, community analytics, and SEO content generation.',
-    icon: '🎙️'
+    icon: 'ðŸŽ™ï¸'
   },
   {
     number: '03',
     title: 'Rex (CSO)',
     description: 'Handles lead prospecting, CRM management, cold outreach, and revenue pipeline analytics.',
-    icon: '💰'
+    icon: 'ðŸ’°'
   },
   {
     number: '04',
     title: 'Purity (CCO)',
     description: 'Manages incoming support tickets, onboarding flows, user feedback parsing, and retention.',
-    icon: '🛟'
+    icon: 'ðŸ›Ÿ'
   },
   {
     number: '05',
     title: 'Ghost (CTO)',
     description: 'Monitors the codebase, reviews PRs, triggers deployments, and observes system health.',
-    icon: '👻'
+    icon: 'ðŸ‘»'
   },
   {
     number: '06',
     title: 'Roman (CIO)',
     description: 'Performs deep web research, aggregates market signals, scrapes competitor data, and tracks news.',
-    icon: '🏛️'
+    icon: 'ðŸ›ï¸'
   }
 ];
 

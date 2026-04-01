@@ -92,11 +92,11 @@ export default function SignupPage() {
     }
   };
 
-  // ─── INPUT CLASS ─────────────────────────────────────────────────────────────
+  // â”€â”€â”€ INPUT CLASS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const inputCls =
     'w-full bg-surface border border-white/5 rounded-xl px-4 py-3 font-dm-mono text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:bg-white/[0.03] transition-all';
 
-  // ─── EMAIL SENT SCREEN ────────────────────────────────────────────────────────
+  // â”€â”€â”€ EMAIL SENT SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (emailSent) {
     return (
       <main className="min-h-screen bg-bg text-white font-dm-mono flex flex-col">
@@ -106,7 +106,7 @@ export default function SignupPage() {
 
             {/* Icon */}
             <div className="auth-anim opacity-0 w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mx-auto">
-              <span className="text-3xl">✉️</span>
+              <span className="text-3xl">âœ‰ï¸</span>
             </div>
 
             {/* Heading */}
@@ -126,7 +126,7 @@ export default function SignupPage() {
               <div className="group p-5 rounded-2xl border border-white/5 bg-surface/50 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-dm-mono text-[10px] text-green tracking-widest uppercase opacity-60">Step 01</span>
-                  <span className="text-lg text-green/40 group-hover:text-green transition-colors">🔐</span>
+                  <span className="text-lg text-green/40 group-hover:text-green transition-colors">ðŸ”</span>
                 </div>
                 <h3 className="font-syne text-[15px] font-bold text-white mb-1">Verify your email</h3>
                 <p className="font-dm-mono text-[12px] text-text-muted leading-relaxed">
@@ -137,11 +137,11 @@ export default function SignupPage() {
               <div className="group p-5 rounded-2xl border border-white/5 bg-surface/50 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-dm-mono text-[10px] text-white/30 tracking-widest uppercase opacity-60">Step 02</span>
-                  <span className="text-lg text-white/20 group-hover:text-white/50 transition-colors">👋</span>
+                  <span className="text-lg text-white/20 group-hover:text-white/50 transition-colors">ðŸ‘‹</span>
                 </div>
                 <h3 className="font-syne text-[15px] font-bold text-white mb-1">Welcome to ORCA</h3>
                 <p className="font-dm-mono text-[12px] text-text-muted leading-relaxed">
-                  Your second email is from the ORCA team — everything you need to get your AI company OS running.
+                  Your second email is from the ORCA team â€” everything you need to get your AI company OS running.
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export default function SignupPage() {
               onClick={() => { setEmailSent(false); setError(''); }}
               className="auth-anim opacity-0 font-dm-mono text-[11px] text-white/30 hover:text-white/60 transition-colors uppercase tracking-widest underline underline-offset-4"
             >
-              ← Use a different email
+              â† Use a different email
             </button>
           </div>
         </section>
@@ -162,21 +162,21 @@ export default function SignupPage() {
     );
   }
 
-  // ─── SIGNUP FORM ──────────────────────────────────────────────────────────────
+  // â”€â”€â”€ SIGNUP FORM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <main className="min-h-screen bg-bg text-white font-dm-mono flex flex-col overflow-x-hidden">
       <Navigation />
 
-      {/* Subtle background glow — same as landing */}
+      {/* Subtle background glow â€” same as landing */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none opacity-[0.04] bg-green rounded-full blur-[140px]" />
 
       <section className="flex-1 flex flex-col items-center justify-center px-4 pt-32 pb-24 relative z-10">
         <div className="max-w-lg w-full">
 
-          {/* Header — same typescale as HowItWorks section header */}
+          {/* Header â€” same typescale as HowItWorks section header */}
           <div className="auth-anim opacity-0 text-center mb-10">
             <p className="font-dm-mono text-[10px] text-green tracking-[0.3em] uppercase mb-4 opacity-60">
-              AI Company OS — Early Access
+              AI Company OS â€” Early Access
             </p>
             <h1 className="font-syne text-3xl font-bold text-white mb-3">
               Initialize your <span className="text-green">workforce</span>
@@ -186,7 +186,7 @@ export default function SignupPage() {
             </p>
           </div>
 
-          {/* Card — same style as HowItWorks cards */}
+          {/* Card â€” same style as HowItWorks cards */}
           <div className="auth-anim opacity-0 p-8 rounded-2xl border border-white/5 bg-surface/50 backdrop-blur-sm relative overflow-hidden">
 
             {/* Subtle top line like HowItWorks card */}
@@ -255,7 +255,7 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Row 3 — Passwords */}
+              {/* Row 3 â€” Passwords */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-dm-mono text-[10px] text-white/30 uppercase tracking-[0.2em] mb-2">Password</label>
@@ -321,7 +321,7 @@ export default function SignupPage() {
                 </label>
               </div>
 
-              {/* CTA — same as landing primary button */}
+              {/* CTA â€” same as landing primary button */}
               <button
                 type="submit"
                 disabled={loading || !termsAccepted}
@@ -331,7 +331,7 @@ export default function SignupPage() {
                     : 'hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >
-                {loading ? 'Initializing...' : 'Create Account →'}
+                {loading ? 'Initializing...' : 'Create Account â†’'}
               </button>
 
               {/* Divider + login link */}
@@ -348,7 +348,7 @@ export default function SignupPage() {
 
           {/* Footer note */}
           <p className="auth-anim opacity-0 mt-8 text-center font-dm-mono text-[10px] text-white/15 uppercase tracking-[0.4em]">
-            ORCA · AI Company OS · Nexonic Industries
+            ORCA Â· AI Company OS Â· Nexonic Industries
           </p>
         </div>
       </section>
