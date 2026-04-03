@@ -59,17 +59,17 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-8">
             <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">Introduction</h1>
             <p className="text-lg text-white/60 leading-relaxed font-dm-mono uppercase tracking-tighter font-black">
-              ORCA is an AI Company OS built by Nexonic Industries. It gives any company â€” from a solo founder to a 15-person team â€” a full AI workforce across 5 departments and 6 executive agents, all coordinated in one dashboard.
+              ORCA is an AI Company OS built by Nexonic Industries. It gives any company — from a solo founder to a 15-person team — a full AI workforce across 5 departments and 6 executive agents, all coordinated in one dashboard.
             </p>
             <div className="prose prose-invert max-w-none text-white/40 font-dm-mono uppercase tracking-tighter font-black space-y-6">
-              <p>ORCA is not a chatbot. It is not a prompt tool. It is not another automation layer on top of your existing tools. ORCA is an operating system for your company. Agents have roles, memory, and the ability to coordinate with each other across departments â€” just like a real team would.</p>
+              <p>ORCA is not a chatbot. It is not a prompt tool. It is not another automation layer on top of your existing tools. ORCA is an operating system for your company. Agents have roles, memory, and the ability to coordinate with each other across departments — just like a real team would.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 text-white">
                 <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.02]">
                   <h3 className="text-white font-syne text-xl mb-4 italic uppercase">What ORCA replaces</h3>
                   <ul className="list-none space-y-2 text-sm italic text-white/40">
                     <li>- The need to hire a full Marketing, Sales, Ops, Finance, Tech, and Hiring team</li>
-                    <li>- The 8â€“12 disconnected tools you're currently using and manually bridging</li>
+                    <li>- The 8–12 disconnected tools you're currently using and manually bridging</li>
                     <li>- The hours you spend being the bottleneck between departments</li>
                   </ul>
                 </div>
@@ -86,7 +86,7 @@ export default function DocsPage() {
 
               <div className="pt-8">
                 <h3 className="text-white font-syne text-xl mb-4 italic uppercase">Who ORCA is for</h3>
-                <p>Solo founders, co-founders, indie hackers, and early-stage startups with 1â€“15 people who need to operate like a scaled company without the payroll to match.</p>
+                <p>Solo founders, co-founders, indie hackers, and early-stage startups with 1-15 people who need to operate like a scaled company without the payroll to match.</p>
               </div>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function DocsPage() {
                    <h3 className="text-white font-syne text-xl font-black uppercase tracking-tight">Complete onboarding (5 minutes)</h3>
                 </div>
                 <p className="text-sm text-white/40 font-dm-mono uppercase tracking-tighter font-black leading-relaxed pl-12 mb-6">
-                   The onboarding flow collects your company context. This is what your agents use to understand who they're working for. Do not skip it â€” the more context you provide, the better your agents perform.
+                   The onboarding flow collects your company context. This is what your agents use to understand who they're working for. Do not skip it — the more context you provide, the better your agents perform.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-12 text-[10px] font-dm-mono font-black uppercase tracking-widest text-white/20">
                    <div className="p-4 rounded-xl border border-white/5">- Brief your workforce (Mission, Voice, ICP)</div>
@@ -205,22 +205,22 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-8">
              <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">The Org Chart</h1>
              <p className="text-lg text-white/60 leading-relaxed font-dm-mono uppercase tracking-tighter font-black">
-                ORCA is built around a company org chart â€” not a flat list of AI tools. Every element of ORCA maps to how a real company is structured.
+                ORCA is built around a company org chart — not a flat list of AI tools. Every element of ORCA maps to how a real company is structured.
              </p>
              <div className="p-8 rounded-[3rem] bg-surface/30 border border-white/5 font-dm-mono text-xs text-green/60">
                 <pre className="whitespace-pre-wrap">
 {`Owner / CEO
-  â””â”€â”€ Co-founder (optional, same access level)
-      â””â”€â”€ Department Heads (one per department)
-          â””â”€â”€ Department Members
-              â””â”€â”€ Executive AI Agent (1 per department)`}
+  └── Co-founder (optional, same access level)
+      └── Department Heads (one per department)
+          └── Department Members
+              └── Executive AI Agent (1 per department)`}
                 </pre>
              </div>
              <div className="space-y-6 text-white/40 font-dm-mono uppercase tracking-tighter font-black">
                 <div className="space-y-4">
                   <h3 className="text-white text-lg italic uppercase">HOW IT WORKS IN PRACTICE</h3>
                   <ul className="list-none space-y-3">
-                    <li>- The Owner sees everything â€” all departments, all agent activity, all approval queues, all team reports</li>
+                    <li>- The Owner sees everything — all departments, all agent activity, all approval queues, all team reports</li>
                     <li>- Department Heads manage their department, approve agent actions within it, and approve or reject incoming requests</li>
                     <li>- Members brief agents in their assigned department only</li>
                     <li>- AI Agents execute tasks, coordinate with each other, and escalate to humans when required</li>
@@ -250,15 +250,15 @@ export default function DocsPage() {
                    </thead>
                    <tbody className="text-white/60">
                       {[
-                        { dept: 'ðŸ“£ Marketing', covers: 'Content, social, SEO, ads, brand voice', agents: 'Aria, Jackie, Eric, Lucy, Joe' },
-                        { dept: 'ðŸ’¼ Sales & Revenue', covers: 'Lead prospecting, outreach, CRM, follow-up, intel', agents: 'Rex, Clara, Chase, Mark, Teo' },
-                        { dept: 'ðŸ¤ CS', covers: 'Support, onboarding, retention, NPS, health', agents: 'Purity, Bruce, Nadia, John, Beatrice' },
-                        { dept: 'ðŸ›¡ï¸ Tech & Security', covers: 'Security, code review, DevOps, docs, incidents', agents: 'Ghost, Cipher, Wren, Hex, Volt' },
-                        { dept: 'ðŸ§  Hiring', covers: 'Talent sourcing, screening, verification, offers', agents: 'Marcus, Vera, Zara, Eli, Nina' },
-                        { dept: 'ðŸ“‹ Operations', covers: 'Project mgmt, calendar, notes, inbox, coordination', agents: 'Atlas, Cal, Dean, Iris, Owen' },
-                        { dept: 'ðŸ“Š Finance & Legal', covers: 'Invoicing, expenses, contracts, budget, audit', agents: 'Bill, Felix, Lena, Reid, Cora' },
-                        { dept: 'ðŸ” Intelligence', covers: 'Research, market signals, summaries, forecasting', agents: 'Roman, Sage, Nate, Ada, Dex' },
-                        { dept: 'ðŸŒ Community', covers: 'Growth experiments, partnerships, influencers', agents: 'Spike, Milo, Rio, Zoe, Kai' },
+                        { dept: '📣 Marketing', covers: 'Content, social, SEO, ads, brand voice', agents: 'Aria, Jackie, Eric, Lucy, Joe' },
+                        { dept: '💼 Sales & Revenue', covers: 'Lead prospecting, outreach, CRM, follow-up, intel', agents: 'Rex, Clara, Chase, Mark, Teo' },
+                        { dept: '🤝 CS', covers: 'Support, onboarding, retention, NPS, health', agents: 'Purity, Bruce, Nadia, John, Beatrice' },
+                        { dept: '🛡️ Tech & Security', covers: 'Security, code review, DevOps, docs, incidents', agents: 'Ghost, Cipher, Wren, Hex, Volt' },
+                        { dept: '🧠 Hiring', covers: 'Talent sourcing, screening, verification, offers', agents: 'Marcus, Vera, Zara, Eli, Nina' },
+                        { dept: '📋 Operations', covers: 'Project mgmt, calendar, notes, inbox, coordination', agents: 'Atlas, Cal, Dean, Iris, Owen' },
+                        { dept: '📊 Finance & Legal', covers: 'Invoicing, expenses, contracts, budget, audit', agents: 'Bill, Felix, Lena, Reid, Cora' },
+                        { dept: '🔍 Intelligence', covers: 'Research, market signals, summaries, forecasting', agents: 'Roman, Sage, Nate, Ada, Dex' },
+                        { dept: '🌍 Community', covers: 'Growth experiments, partnerships, influencers', agents: 'Spike, Milo, Rio, Zoe, Kai' },
                       ].map((row, i) => (
                         <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                            <td className="py-4 text-white font-black">{row.dept}</td>
@@ -293,13 +293,13 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-12">
             <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">Operating Modes</h1>
             <p className="text-white/40 font-dm-mono uppercase tracking-tighter font-black leading-relaxed">
-               Every department in ORCA can be set to one of three operating modes. You set this globally during onboarding and can adjust per department in Account â†’ Agent Permissions.
+               Every department in ORCA can be set to one of three operating modes. You set this globally during onboarding and can adjust per department in Account → Agent Permissions.
             </p>
             <div className="grid grid-cols-1 gap-6">
               {[
                 { title: 'Autopilot', color: 'blue-500', desc: 'Agents execute tasks automatically without waiting for approval. Everything is logged in the audit trail. Agents notify you of what they did after the fact. Best for: routine tasks you fully trust, like scheduling, meeting notes, daily summaries.' },
                 { title: 'Approve First', color: 'green', desc: 'Agents prepare the full output and wait for your approval before taking any external action. You review the result card, click Approve or Reject. Nothing goes out until you say so. Best for: anything that touches customers, code, or money.' },
-                { title: 'Suggest Only', color: 'yellow-500', desc: 'Agents draft outputs and deliver them to you for review. They do not attempt to execute externally even if approved â€” they hand the suggestion to you and you execute manually. Best for: when you want AI assistance but prefer to handle execution yourself.' },
+                { title: 'Suggest Only', color: 'yellow-500', desc: 'Agents draft outputs and deliver them to you for review. They do not attempt to execute externally even if approved — they hand the suggestion to you and you execute manually. Best for: when you want AI assistance but prefer to handle execution yourself.' },
               ].map(mode => (
                 <div key={mode.title} className="p-8 rounded-3xl border border-white/5 bg-surface/50 hover:border-white/10 transition-all">
                   <h3 className={`text-${mode.color === 'green' ? 'green' : mode.color} font-syne text-xl font-black uppercase tracking-tight mb-2`}>{mode.title}</h3>
@@ -311,7 +311,7 @@ export default function DocsPage() {
             <div className="p-8 rounded-[3rem] bg-red-500/5 border border-red-500/20">
                <h3 className="text-red-500 font-syne text-lg font-black uppercase tracking-tight mb-4 italic">MASTER KILL SWITCH</h3>
                <p className="text-sm text-white/40 font-dm-mono uppercase tracking-tighter font-black leading-relaxed">
-                  In Account â†’ Agent Permissions, there is a Pause All Agents toggle. When activated, all agent activity across all departments stops immediately. Use this if something goes wrong or if you need to step away.
+                  In Account — Agent Permissions, there is a Pause All Agents toggle. When activated, all agent activity across all departments stops immediately. Use this if something goes wrong or if you need to step away.
                </p>
             </div>
           </div>
@@ -346,13 +346,13 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-12">
              <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">Agent Roster</h1>
              <p className="text-lg text-white/60 leading-relaxed font-dm-mono uppercase tracking-tighter font-black">
-                ORCA has 45 specialized agents â€” 5 per department. Each agent has a name, a role, a unique icon, and a specific system prompt injected with your company context.
+                ORCA has 45 specialized agents — 5 per department. Each agent has a name, a role, a unique icon, and a specific system prompt injected with your company context.
              </p>
              
              <div className="space-y-6">
                 <h3 className="text-white font-syne text-lg uppercase italic">HOW AGENTS ARE DISPLAYED</h3>
                 <p className="text-sm text-white/40 font-dm-mono uppercase tracking-tighter font-black leading-relaxed">
-                   Each agent appears as a pill above the input box in their department workspace. The pill shows the agent's icon, name, and role truncated. Click a pill to open that agent's full workspace â€” their hero header, status, task count, and message thread.
+                   Each agent appears as a pill above the input box in their department workspace. The pill shows the agent's icon, name, and role truncated. Click a pill to open that agent's full workspace — their hero header, status, task count, and message thread.
                 </p>
              </div>
 
@@ -366,9 +366,9 @@ export default function DocsPage() {
                 <div className="p-8 rounded-3xl border border-white/5 bg-surface/50 space-y-4">
                    <h3 className="text-white font-syne uppercase tracking-tight italic">AGENT STATUS</h3>
                    <div className="space-y-3 font-dm-mono text-[10px] uppercase tracking-widest font-black">
-                     <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-green" /> ACTIVE â€” EXECUTING TASK</div>
-                     <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> BUSY â€” TASK QUEUED</div>
-                     <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-white/10" /> IDLE â€” AVAILABLE</div>
+                     <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-green" /> ACTIVE — EXECUTING TASK</div>
+                     <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> BUSY — TASK QUEUED</div>
+                     <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-white/10" /> IDLE — AVAILABLE</div>
                    </div>
                 </div>
              </div>
@@ -492,11 +492,11 @@ export default function DocsPage() {
                   </thead>
                   <tbody className="text-white/40">
                      {[
-                       { event: 'Deal closes in CRM', agents: 'Clara â†’ Bruce', action: 'Onboarding sequence triggered' },
-                       { event: 'Marketing lead qualifies', agents: 'Vera â†’ Zara', action: 'Sales outreach initiated' },
-                       { event: 'Vulnerability detected', agents: 'Ghost â†’ Volt', action: 'Incident response triggered' },
-                       { event: 'New lead in pipeline', agents: 'Rex â†’ Chase', action: 'Follow-up sequence queued' },
-                       { event: 'Budget limit reached', agents: 'Reid â†’ Atlas', action: 'Spending alert sent to Owner' },
+                       { event: 'Deal closes in CRM', agents: 'Clara → Bruce', action: 'Onboarding sequence triggered' },
+                       { event: 'Marketing lead qualifies', agents: 'Vera → Zara', action: 'Sales outreach initiated' },
+                       { event: 'Vulnerability detected', agents: 'Ghost → Volt', action: 'Incident response triggered' },
+                       { event: 'New lead in pipeline', agents: 'Rex → Chase', action: 'Follow-up sequence queued' },
+                       { event: 'Budget limit reached', agents: 'Reid → Atlas', action: 'Spending alert sent to Owner' },
                      ].map((row, i) => (
                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
                           <td className="py-4 text-white uppercase font-black">{row.event}</td>
@@ -523,7 +523,7 @@ export default function DocsPage() {
                     <li>- NEW AGENT MESSAGES</li>
                     <li>- COORDINATION FEED EVENTS</li>
                     <li>- APPROVAL BADGES & COUNTS</li>
-                    <li>- TEAM CHAT (HEAD â†” MEMBER)</li>
+                    <li>- TEAM CHAT (HEAD — MEMBER)</li>
                   </ul>
                </div>
                <div className="p-8 rounded-[2rem] bg-surface/30 border border-white/5 space-y-4">
@@ -539,7 +539,7 @@ export default function DocsPage() {
             <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">GitHub Setup</h1>
             <div className="space-y-8">
                <div className="p-8 rounded-3xl bg-surface/50 border border-white/5 space-y-6">
-                  <p>1. GO TO INTEGRATIONS â†’ TECH & SECURITY</p>
+                  <p>1. GO TO INTEGRATIONS — TECH & SECURITY</p>
                   <p>2. AUTHORIZE ORCA VIA OAUTH</p>
                   <p>3. SELECT REPOSITORIES & PERMISSIONS (READ/WRITE)</p>
                </div>
@@ -569,7 +569,7 @@ export default function DocsPage() {
             <div className="space-y-8">
                <h4 className="text-green uppercase italic text-lg font-syne font-black">Restricted Key Setup</h4>
                <ol className="list-decimal list-inside space-y-4 bg-surface/50 p-10 rounded-[3rem] border border-white/5 italic">
-                  <li>Go to Stripe Dashboard â†’ Developers â†’ API Keys</li>
+                  <li>Go to Stripe Dashboard — Developers — API Keys</li>
                   <li>Click "Create restricted key"</li>
                   <li>Enable: Customers (read), Invoices (read+write), Payments (read), Subscriptions (read)</li>
                   <li>Copy the key and paste into ORCA Integrations</li>
@@ -702,7 +702,7 @@ export default function DocsPage() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
                   <div className="p-8 rounded-3xl bg-surface/50 border border-white/5 italic">
                      <h5 className="text-white mb-2 italic font-syne">Access Protocols</h5>
-                     <p className="text-[10px]">Owners/Co-founders only. Access via Account â†’ Security. Retained for 12 months (Pro+).</p>
+                     <p className="text-[10px]">Owners/Co-founders only. Access via Account → Security. Retained for 12 months (Pro+).</p>
                   </div>
                   <div className="p-8 rounded-3xl bg-surface/50 border border-white/5 italic">
                      <h5 className="text-white mb-2 italic font-syne">Compliance Export</h5>
@@ -802,10 +802,10 @@ export default function DocsPage() {
               {/* Internal Pagination */}
               <div className="mt-24 pt-12 border-t border-white/5 flex justify-between">
                  <button className="text-[10px] text-white/20 uppercase font-black tracking-widest hover:text-white transition-colors">
-                    â† Previous Node
+                    ← Previous Node
                  </button>
                  <button className="text-[10px] text-green uppercase font-black tracking-widest hover:underline transition-all">
-                    Next: {sections.flatMap(g => g.items)[sections.flatMap(g => g.items).indexOf(activeSection) + 1] || 'Security Protocols'} â†’
+                    Next: {sections.flatMap(g => g.items)[sections.flatMap(g => g.items).indexOf(activeSection) + 1] || 'Security Protocols'} →
                  </button>
               </div>
            </div>

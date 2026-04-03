@@ -305,7 +305,7 @@ export default function DeptWorkspacePage() {
           {currentDeptIsLocked && (
             <div className="absolute inset-0 z-50 bg-bg/60 backdrop-blur-md flex items-center justify-center p-8">
               <div className="max-w-md w-full p-12 bg-surface/50 border border-white/10 rounded-[3rem] text-center space-y-6">
-                <div className="text-6xl mb-6 grayscale opacity-30">🔒</div>
+                <div className="text-6xl mb-6 grayscale opacity-30 font-syne font-black text-white/20">[ LOCKED ]</div>
                 <h2 className="text-2xl font-bold font-syne text-white tracking-widest uppercase">Coming Soon</h2>
                 <p className="text-white/40 text-sm leading-relaxed italic">
                   The {UI_DEPTS.find(d => d.key === deptKey)?.name} department is currently under development. 
@@ -384,7 +384,7 @@ export default function DeptWorkspacePage() {
                      <div className="absolute bottom-16 right-0 w-72 bg-surface rounded-2xl border border-white/10 shadow-3xl p-3 z-50 text-left animate-in fade-in slide-in-from-bottom-2">
                          {ATTACH_SUGGESTIONS[deptKey?.toLowerCase()]?.map(sug => (<button key={sug} onClick={() => { setDeptInputText(sug); setShowAttachMenu(false); }} className="w-full text-left px-4 py-3 text-[12px] text-white/40 hover:text-white hover:bg-white/5 rounded-xl truncate">{sug}</button>))}
                          <div className="my-2 border-t border-white/5" />
-                         <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-4 px-4 py-3.5 text-[12px] font-bold text-white hover:bg-white/5 rounded-xl">📎 Upload file</button>
+                         <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-4 px-4 py-3.5 text-[12px] font-bold text-white hover:bg-white/5 rounded-xl">Upload file</button>
                      </div>
                    )}
                  </div>
@@ -397,7 +397,7 @@ export default function DeptWorkspacePage() {
             <div className="absolute inset-0 z-[100] bg-bg/95 flex items-center justify-center p-8 backdrop-blur-xl">
               <div className="max-w-4xl w-full p-12 bg-surface/50 border border-white/10 rounded-[4rem] shadow-3xl text-center space-y-12 workspace-anim">
                 <div className="space-y-4">
-                  <h2 className="text-4xl font-bold font-syne text-white tracking-widest uppercase">🛡️ Tech & Vibe Coding</h2>
+                  <h2 className="text-4xl font-bold font-syne text-white tracking-widest uppercase">Tech & Vibe Coding</h2>
                   <p className="text-white/40 text-lg">How do you want to work with your tech team?</p>
                 </div>
 
@@ -406,7 +406,7 @@ export default function DeptWorkspacePage() {
                     onClick={() => handleModeSelect('build_for_me')}
                     className="group p-10 bg-white/5 border border-white/5 rounded-[3rem] text-left space-y-6 hover:bg-green/10 hover:border-green/30 transition-all duration-500"
                   >
-                    <div className="w-16 h-16 rounded-[2rem] bg-white/5 flex items-center justify-center text-3xl group-hover:bg-green/20 group-hover:scale-110 transition-all">🔨</div>
+                    <div className="w-16 h-16 rounded-[2rem] bg-white/5 flex items-center justify-center text-xs font-black text-white/30 uppercase tracking-widest group-hover:bg-green/20 group-hover:text-green group-hover:scale-110 transition-all">BUILD</div>
                     <div className="space-y-2">
                       <h3 className="text-xl font-black uppercase tracking-widest text-white">Build It For Me</h3>
                       <p className="text-sm text-white/40 leading-relaxed">Describe what you want in plain English. Agents build and deploy it for you.</p>
@@ -418,7 +418,7 @@ export default function DeptWorkspacePage() {
                     onClick={() => handleModeSelect('build_with_me')}
                     className="group p-10 bg-white/5 border border-white/5 rounded-[3rem] text-left space-y-6 hover:bg-green/10 hover:border-green/30 transition-all duration-500"
                   >
-                    <div className="w-16 h-16 rounded-[2rem] bg-white/5 flex items-center justify-center text-3xl group-hover:bg-green/20 group-hover:scale-110 transition-all">🤝</div>
+                    <div className="w-16 h-16 rounded-[2rem] bg-white/5 flex items-center justify-center text-xs font-black text-white/30 uppercase tracking-widest group-hover:bg-green/20 group-hover:text-green group-hover:scale-110 transition-all">COLLAB</div>
                     <div className="space-y-2">
                       <h3 className="text-xl font-black uppercase tracking-widest text-white">Build With Me</h3>
                       <p className="text-sm text-white/40 leading-relaxed">You write code. Agents debug, review, suggest, and keep your docs updated.</p>

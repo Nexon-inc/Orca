@@ -72,11 +72,11 @@ export default function FeaturesPage() {
             Coordinated <span className="text-green">Capabilities</span>
           </h1>
           <p className="feature-hero-text opacity-0 font-dm-mono text-[16px] sm:text-[18px] text-text-muted max-w-2xl mx-auto mb-12 leading-relaxed">
-            6 AI executives across 5 departments, working 24/7 to automate your entire business â€” fully coordinated.
+            6 AI executives across 5 departments, working 24/7 to automate your entire business — fully coordinated.
           </p>
           <div className="feature-hero-text opacity-0">
             <button className="btn-primary px-10 py-4">
-              Start Your Onboarding â†’
+              Start Your Onboarding →
             </button>
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function FeaturesPage() {
       {/* CTA Section */}
       <section className="py-32 px-4 bg-surface/30">
         <div className="max-w-4xl mx-auto text-center p-12 sm:p-20 rounded-[3rem] border border-white/5 bg-surface/50 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-12 text-9xl opacity-5 rotate-12 group-hover:opacity-10 transition-opacity">â–£</div>
+          <div className="absolute top-0 right-0 p-12 text-9xl opacity-5 rotate-12 group-hover:opacity-10 transition-opacity">▣</div>
           <h2 className="font-syne text-3xl sm:text-5xl font-extrabold text-white mb-6 relative z-10">
             Ready to automate your company?
           </h2>
@@ -117,7 +117,7 @@ export default function FeaturesPage() {
             Join hundreds of founders building their AI workforce today.
           </p>
           <button className="btn-primary px-12 py-5 relative z-10">
-            Deploy Your Org Chart â†’
+            Deploy Your Org Chart →
           </button>
         </div>
       </section>

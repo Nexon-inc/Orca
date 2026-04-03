@@ -8,26 +8,26 @@
   /* Backgrounds */
   --bg:           #030a06;      /* page background */
   --surface:      #070d08;      /* topbar, sidebar */
-  --card:         rgba(255,255,255,0.03);   /* card bg â€” neutral dark, NOT green-tinted */
+  --card:         rgba(255,255,255,0.03);   /* card bg — neutral dark, NOT green-tinted */
   --card-hover:   rgba(255,255,255,0.055);  /* card hover state */
   --overlay:      rgba(0,0,0,0.75);         /* modal overlay */
 
   /* Borders */
-  --border:       rgba(255,255,255,0.07);   /* default border â€” white, not green */
+  --border:       rgba(255,255,255,0.07);   /* default border — white, not green */
   --border-hover: rgba(255,255,255,0.13);   /* hover border */
-  --border-active:rgba(0,255,135,0.35);     /* active/selected â€” GREEN only here */
+  --border-active:rgba(0,255,135,0.35);     /* active/selected — GREEN only here */
 
   /* Text */
-  --text:         #FFFFFF;      /* primary text â€” pure white */
+  --text:         #FFFFFF;      /* primary text — pure white */
   --text-body:    #E8E8E8;      /* body text */
-  --text-muted:   #6b7280;      /* muted â€” pure grey, not green-grey */
+  --text-muted:   #6b7280;      /* muted — pure grey, not green-grey */
   --text-faint:   #374151;      /* very faint labels */
 
-  /* Green â€” reserved for life, action, success */
+  /* Green — reserved for life, action, success */
   --green:        #00FF87;      /* primary accent */
   --green-mid:    #00C96B;      /* gradient end */
-  --green-dim:    rgba(0,255,135,0.10);  /* green tint bg â€” sparingly */
-  --green-border: rgba(0,255,135,0.25); /* green border â€” active states only */
+  --green-dim:    rgba(0,255,135,0.10);  /* green tint bg — sparingly */
+  --green-border: rgba(0,255,135,0.25); /* green border — active states only */
 
   /* Semantic */
   --warn:         #FFB800;
@@ -269,7 +269,7 @@
 }
 
 @layer components {
-  /* Primary Button (green â€” one per major section) */
+  /* Primary Button (green — one per major section) */
   .btn-primary {
     background: var(--green);
     color: #030a06;

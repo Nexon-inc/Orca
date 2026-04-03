@@ -95,7 +95,7 @@ export default function TeamsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 team-anim opacity-0">
              {/* Email Invite */}
              <div className="p-8 rounded-[2rem] border border-white/5 bg-surface/30 backdrop-blur-md relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-4xl pointer-events-none">✉️</div>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-green/5 rounded-bl-[3rem] pointer-events-none" />
                 <h3 className="font-syne text-lg font-[800] text-white mb-2 uppercase tracking-tight">Invite by Email</h3>
                 <p className="font-syne text-[11px] text-white/40 mb-6 uppercase tracking-widest font-[800]">Add multiple emails separated by commas or lines.</p>
                 
@@ -117,7 +117,7 @@ export default function TeamsPage() {
 
              {/* Link Invite */}
              <div className="p-8 rounded-[2rem] border border-white/5 bg-surface/30 backdrop-blur-md relative overflow-hidden group flex flex-col">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-4xl pointer-events-none">🔗</div>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-green/5 rounded-bl-[3rem] pointer-events-none" />
                 <h3 className="font-syne text-lg font-[800] text-white mb-2 uppercase tracking-tight">Invite Link</h3>
                 <p className="font-syne text-[11px] text-white/40 mb-6 uppercase tracking-widest font-[800]">Anyone with this link can join your organization.</p>
                 
@@ -205,7 +205,7 @@ export default function TeamsPage() {
           </div>
 
           <div className="mt-12 p-12 rounded-[3rem] border border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center max-w-2xl mx-auto team-anim opacity-0">
-             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-2xl mb-6 opacity-40">👥</div>
+             <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 opacity-40"><div className="w-4 h-4 border border-white/20 rounded-sm" /></div>
              <p className="font-syne text-[13px] text-white/40 leading-relaxed uppercase tracking-tighter">
                 {loading ? 'Initializing roster...' : 'Manage your team and their access levels here.'}
              </p>

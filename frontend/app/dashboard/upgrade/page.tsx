@@ -107,7 +107,7 @@ export default function UpgradePage() {
                    <div className="mb-8 text-left">
                       <h2 className={`font-syne text-2xl font-[800] uppercase tracking-tight mb-3 ${plan.highlighted ? 'text-white' : 'text-white/60'}`}>
                         {plan.name}
-                        {plan.highlighted && <span className="text-green ml-2">â­</span>}
+                        {plan.highlighted && <span className="text-green ml-2">⭐</span>}
                       </h2>
                       <p className="font-syne text-[11px] text-white/40 leading-relaxed uppercase tracking-widest mb-6 font-[800]">
                         {plan.tagline}
@@ -120,7 +120,7 @@ export default function UpgradePage() {
                        </div>
                        {billingCycle === 'annual' && (
                          <p className="mt-2 text-[9px] font-syne text-green font-[800] uppercase tracking-widest">
-                           Billed as ${plan.annualPrice * 12}/yr â€” Saves ${ (plan.monthlyPrice - plan.annualPrice) * 12 }
+                           Billed as ${plan.annualPrice * 12}/yr — Saves ${ (plan.monthlyPrice - plan.annualPrice) * 12 }
                          </p>
                        )}
                    </div>
@@ -130,7 +130,7 @@ export default function UpgradePage() {
                     <ul className="flex flex-col gap-4 mb-10 flex-1 font-[800] uppercase tracking-widest">
                        {plan.features.map((f, fIdx) => (
                           <li key={fIdx} className="flex items-start gap-4 text-[10px] text-white/40 leading-snug group-hover:text-white transition-colors">
-                             <span className="text-green text-[14px] shrink-0">âœ“</span>
+                             <span className="text-green text-[14px] shrink-0">✓</span>
                              {f}
                           </li>
                        ))}

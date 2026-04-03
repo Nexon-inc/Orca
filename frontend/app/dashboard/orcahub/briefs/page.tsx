@@ -122,7 +122,7 @@ export default function Day1BriefsPage() {
           ) : briefs.length > 0 ? (
             briefs.map((brief) => {
               const agentName = brief.agents?.name || 'Agent';
-              const agentIcon = brief.agents?.icon || '⬡';
+              const agentIcon = brief.agents?.icon || '—';
               const isActioning = actioningId === brief.id;
 
               return (
@@ -156,7 +156,7 @@ export default function Day1BriefsPage() {
                          </div>
                          
                          <div className="flex gap-4 mb-6">
-                            <span className="text-xl">💡</span>
+                             <span className="text-[10px] text-green font-black uppercase tracking-widest shrink-0">Rationale:</span>
                             <p className="text-white/50 text-[11px] font-dm-mono leading-relaxed italic pr-4">
                               "{brief.rationale}"
                             </p>

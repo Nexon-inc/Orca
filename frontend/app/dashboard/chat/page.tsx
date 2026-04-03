@@ -21,6 +21,9 @@ export default function ChatPage() {
   
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
+  const [agentState, setAgentState] = useState<'planning' | 'automation'>('planning');
+  const [llm, setLlm] = useState('orca');
+  const [showAddMenu, setShowAddMenu] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -35,12 +38,16 @@ export default function ChatPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const EXECUTIVE_PILLS = [
-    { key: 'marketing', name: 'CMO', title: 'Chief Marketing Officer', icon: 'ðŸŽ™ï¸', agent: 'Aria' },
-    { key: 'sales',     name: 'CSO', title: 'Chief Sales Officer', icon: 'ðŸ’°', agent: 'Rex' },
-    { key: 'cs',        name: 'CCO', title: 'Chief Customer Officer', icon: 'ðŸ›Ÿ', agent: 'Purity' },
-    { key: 'intel',     name: 'CIO', title: 'Chief Intelligence Officer', icon: 'ðŸ›ï¸', agent: 'Roman' },
-    { key: 'tech',      name: 'CTO', title: 'Chief Technology Officer', icon: 'ðŸ‘»', agent: 'Ghost' },
+    const LLMS = [
+    { id: 'orca', name: 'ORCA Intelligence' },
+    { id: 'gpt4', name: 'GPT-4o' },
+    { id: 'claude', name: 'Claude 3.5' },
+    { id: 'gemini', name: 'Gemini 1.5' },
+    { id: 'deepseek', name: 'DeepSeek' },
+    { id: 'mistral', name: 'Mistral' },
+    { id: 'groq', name: 'Groq' },
+    { id: 'grok', name: 'Grok' },
+    { id: 'ollama', name: 'Ollama' },
   ];
 
   useEffect(() => {
@@ -89,6 +96,78 @@ export default function ChatPage() {
     // Logic for Chat routing (Phase 3)
   };
 
+  const renderInput = (centered: boolean) => (
+    <div className={`transition-all duration-500 ${centered ? 'w-full' : 'p-8 border-t border-white/5 bg-bg/50'}`}>
+      <div className="max-w-3xl mx-auto space-y-4">
+        {/* Selector Row */}
+        <div className="flex items-center gap-2 mb-2">
+           <div className="flex p-0.5 bg-white/5 rounded-xl border border-white/5">
+              {['planning', 'automation'].map(s => (
+                <button 
+                  key={s} 
+                  onClick={() => setAgentState(s as any)}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${agentState === s ? 'bg-green text-bg shadow-lg' : 'text-white/30 hover:text-white'}`}
+                >
+                  {s}
+                </button>
+              ))}
+           </div>
+           <select 
+             value={llm} 
+             onChange={(e) => setLlm(e.target.value)}
+             className="bg-white/5 border border-white/5 rounded-xl px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-white/40 outline-none focus:border-green/30 cursor-pointer hover:bg-white/10 transition-all"
+           >
+             {LLMS.map(l => <option key={l.id} value={l.id} className="bg-bg text-white">{l.name}</option>)}
+           </select>
+        </div>
+
+        <form onSubmit={handleSendMessage} className="relative flex items-center group">
+          <button 
+            type="button"
+            onClick={() => setShowAddMenu(!showAddMenu)}
+            className="absolute left-4 w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all z-10"
+          >
+            <span className="text-xl font-light hover:rotate-90 transition-transform duration-300">+</span>
+          </button>
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+            placeholder="Ask anything..."
+            className="w-full bg-white/5 border border-white/10 rounded-3xl px-16 py-6 focus:outline-none focus:border-green/50 text-[15px] transition-all placeholder:text-white/10 shadow-2xl resize-none overflow-hidden"
+            rows={1}
+          />
+          <div className="absolute right-4 flex items-center gap-4">
+            <button type="button" className="text-white/20 hover:text-green transition-colors focus:outline-none">
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </button>
+            <button type="submit" className={`p-2 transition-all duration-300 ${input.trim() ? 'text-green scale-110' : 'text-white/10'}`} disabled={!input.trim()}>
+               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+
+          {showAddMenu && (
+            <div className="absolute bottom-full left-4 mb-4 w-56 bg-surface/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[100] animate-in slide-in-from-bottom-2 fade-in divide-y divide-white/5">
+               {['Departments', 'Media', 'Files'].map(item => (
+                 <button 
+                  key={item} 
+                  onClick={() => setShowAddMenu(false)}
+                  className="w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-green/10 hover:text-green transition-all"
+                 >
+                   {item}
+                 </button>
+               ))}
+            </div>
+          )}
+        </form>
+        <div className="flex justify-center">
+           <span className="text-[9px] text-white/5 uppercase tracking-[0.3em] font-black">Powered by ORCA Intelligence</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="h-screen bg-bg flex text-text-body font-syne overflow-hidden">
       <DashboardSidebar active="chat" />
@@ -113,69 +192,51 @@ export default function ChatPage() {
           </div>
         </header>
 
-        {/* Chat-first Grid Layout */}
-        <div className="flex-1 flex flex-col p-8 gap-8 overflow-y-auto no-scrollbar max-w-5xl mx-auto w-full">
-          
-          {/* Chat Section */}
-          <div className="flex-1 flex flex-col relative min-h-[500px] dash-anim">
-            <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
-              {messages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] p-6 rounded-2xl border ${msg.role === 'user' ? 'bg-green/10 border-green/20 text-white' : 'bg-white/5 border-white/10 text-text-muted'} transition-all`}>
-                    {msg.role === 'assistant' && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs font-bold text-green uppercase tracking-widest">{msg.sender}</span>
-                        <div className="w-1 h-1 rounded-full bg-green" />
-                        <span className="text-[9px] text-white/20 uppercase tracking-tighter">Big 6 Executive</span>
-                      </div>
-                    )}
-                    <p className={`${msg.role === 'user' ? 'text-[15px]' : 'text-[14px]'} leading-relaxed whitespace-pre-wrap`}>{msg.content}</p>
+        <div className={`flex-1 flex flex-col transition-all duration-1000 ease-in-out ${messages.length === 0 ? 'justify-center items-center' : 'overflow-hidden'}`}>
+          {messages.length === 0 ? (
+            <div className="w-full max-w-4xl px-8 flex flex-col items-center dash-anim">
+               <div className="mb-8 w-20 h-20 bg-green/10 border border-green/20 rounded-3xl flex items-center justify-center animate-pulse shadow-[0_0_50px_rgba(0,255,135,0.1)]">
+                  <img src="/orca-logo.svg" alt="logo" className="w-10 h-10" />
+               </div>
+               <h1 className="font-syne text-6xl font-black text-white mb-6 uppercase tracking-tighter text-center leading-none">
+                 What should we <br/><span className="text-green">build today?</span>
+               </h1>
+               <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em] mb-16 text-center">Autonomous OS · Synchronized Intelligence</p>
+               {renderInput(true)}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col h-full w-full max-w-5xl mx-auto overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar pb-32">
+                {messages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+                    <div className={`max-w-[80%] p-6 rounded-3xl border transition-all ${
+                      msg.role === 'user' 
+                        ? 'bg-white/5 border-white/10 text-white shadow-xl' 
+                        : 'bg-green/5 border-green/10 text-text-muted shadow-2xl'
+                    }`}>
+                      {msg.role === 'assistant' && (
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-2 h-2 rounded-full bg-green shadow-[0_0_10px_rgba(0,255,135,1)]" />
+                          <span className="text-[10px] font-black text-green uppercase tracking-widest">{msg.sender || 'ORCA'}</span>
+                          <span className="text-[8px] text-white/20 uppercase tracking-widest ml-2">Executive Response</span>
+                        </div>
+                      )}
+                      <p className={`${msg.role === 'user' ? 'text-[15px]' : 'text-[16px]'} leading-relaxed whitespace-pre-wrap font-medium`}>
+                        {msg.content}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Input Area with Executive Pills */}
-            <div className="p-8 border-t border-white/5 bg-bg/50">
-              <div className="flex items-center gap-3 mb-6 overflow-x-auto no-scrollbar pb-2">
-                <span className="text-[9px] text-white/20 font-black uppercase tracking-widest mr-2 shrink-0">Your Team:</span>
-                {EXECUTIVE_PILLS.map(exec => (
-                  <button 
-                    key={exec.key}
-                    onClick={() => setPinnedAgent(pinnedAgent === exec.agent ? null : exec.agent)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap group dash-anim ${
-                      pinnedAgent === exec.agent 
-                        ? 'bg-green border-green text-bg' 
-                        : 'bg-white/5 border-white/10 text-white/40 hover:text-green hover:border-green/30'
-                    }`}
-                  >
-                    <span className="text-xs">{exec.icon}</span>
-                    <span className="font-bold uppercase tracking-widest text-[9px]">{exec.name}</span>
-                    <span className="text-[9px] opacity-20 group-hover:opacity-100 transition-opacity ml-1 hidden sm:inline">{exec.title}</span>
-                  </button>
                 ))}
+                <div ref={chatEndRef} />
               </div>
-              <form onSubmit={handleSendMessage} className="relative flex items-center dash-anim">
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={pinnedAgent ? `Send a brief to ${pinnedAgent}...` : "Ask anything or pick a lead executive above..."}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 focus:outline-none focus:border-green/50 text-[15px] transition-all placeholder:text-white/20 shadow-2xl resize-none"
-                />
-                <button type="submit" className="absolute right-4 p-3 text-green hover:scale-110 transition-transform">
-                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
-              </form>
-              <div className="mt-4 flex justify-between items-center px-2">
-                <span className="text-[9px] text-white/10 uppercase tracking-[0.2em]">Press / to focus chat</span>
-                {pinnedAgent && (
-                   <button onClick={() => setPinnedAgent(null)} className="text-[9px] text-green/40 hover:text-green uppercase tracking-widest transition-all">Clear Pin [Esc]</button>
-                )}
+              
+              <div className="absolute bottom-0 left-0 right-0 p-8 pt-20 bg-gradient-to-t from-bg via-bg/95 to-transparent pointer-events-none">
+                <div className="pointer-events-auto max-w-5xl mx-auto">
+                   {renderInput(false)}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
 

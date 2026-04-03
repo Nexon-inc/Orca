@@ -6,8 +6,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 
 const DEPT_ICONS: Record<string, string> = {
-  saas_startup: 'ðŸš€', marketing_agency: 'ðŸ“£', ecommerce: 'ðŸ›’',
-  recruiting_firm: 'ðŸ§ ', dev_agency: 'âš™ï¸', intelligence: 'ðŸ”',
+  saas_startup: '🚀', marketing_agency: '📣', ecommerce: '🛒',
+  recruiting_firm: '🧠', dev_agency: '⚙️', intelligence: '🔍',
 };
 
 export default function OrcaHubPage() {
@@ -129,7 +129,7 @@ function OrcaHubContent() {
                 ) : filtered.length > 0 ? filtered.map(template => (
                   <div key={template.slug} className="group relative bg-surface/50 border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-green/20 transition-all duration-500 flex flex-col">
                     <div className="h-40 bg-bg/50 flex items-center justify-center text-5xl opacity-20 group-hover:opacity-40 transition-opacity">
-                      {DEPT_ICONS[template.category] || 'â¬¡'}
+                      {DEPT_ICONS[template.category] || '↓'}
                     </div>
 
                     <div className="p-8 flex flex-col flex-1">
@@ -151,10 +151,10 @@ function OrcaHubContent() {
                       <div className="flex items-center justify-between pt-6 border-t border-white/5 mb-6">
                         <div className="flex flex-col gap-1">
                            <span className="text-[10px] text-green font-black uppercase tracking-widest">Full Executive Team</span>
-                           <span className="text-[8px] text-white/20 uppercase font-black tracking-tighter">CMO Â· CSO Â· CCO Â· CIO Â· CTO</span>
+                           <span className="text-[8px] text-white/20 uppercase font-black tracking-tighter">CMO · CSO · CCO · CIO · CTO</span>
                         </div>
                         {template.is_installed && (
-                          <div className="w-6 h-6 rounded-full bg-green/20 flex items-center justify-center text-green text-[10px]">âœ“</div>
+                          <div className="w-6 h-6 rounded-full bg-green/20 flex items-center justify-center text-green text-[10px]">✓</div>
                         )}
                       </div>
 
@@ -198,9 +198,9 @@ function OrcaHubContent() {
                         <div key={exec} className="p-6 rounded-2xl border border-white/5 bg-bg/50 hover:border-green/20 transition-all cursor-pointer group">
                            <div className="flex items-center justify-between mb-2">
                               <span className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                 <span className="text-green group-hover:scale-125 transition-transform">â¬¡</span> {exec} System Prompt
+                                 <span className="text-green group-hover:scale-125 transition-transform">↓</span> {exec} System Prompt
                               </span>
-                              <span className="text-[9px] text-white/20 font-black uppercase tracking-widest">v2.4.1 â€” Consolidated</span>
+                              <span className="text-[9px] text-white/20 font-black uppercase tracking-widest">v2.4.1 — Consolidated</span>
                            </div>
                            <p className="text-[10px] text-white/30 uppercase tracking-tight">Managing department operations and tool coordination...</p>
                         </div>
