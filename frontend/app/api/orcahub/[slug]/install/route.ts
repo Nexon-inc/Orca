@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { writeAuditLog } from '@/lib/security/auditLog';
+import { AGENT_ROSTER } from '@/lib/agents';
 
 export async function POST(
   request: Request,
@@ -34,7 +35,6 @@ export async function POST(
     .from('orcahub_templates')
     .select('*')
     .eq('slug', params.slug)
-    .eq('published', true)
     .single();
 
   if (!template) return NextResponse.json({ error: 'Template not found' }, { status: 404 });
@@ -48,54 +48,61 @@ export async function POST(
 
   const templateData = template.template_data;
 
-  // 1. Activate departments
-  for (const deptConfig of templateData.departments) {
-    await supabase.from('departments').upsert({
+  // 1. Install Departments & Executives
+  for (const deptKey of templateData.departments) {
+    const { data: dept } = await supabase.from('departments').upsert({
       org_id: orgId,
-      key: deptConfig.key,
-      icon: getDeptIcon(deptConfig.key), // Helper to be added
-      agent_mode: deptConfig.agent_mode,
-    }, { onConflict: 'org_id,key' });
-  }
+      key: deptKey,
+      name: deptKey.charAt(0).toUpperCase() + deptKey.slice(1),
+      icon: getDeptIcon(deptKey),
+      agent_mode: 'approve_first',
+    }, { onConflict: 'org_id,key' }).select('id').single();
 
-  // 2. Queue Day 1 Briefs
-  for (const brief of templateData.day1_briefs) {
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('id')
-      .eq('org_id', orgId)
-      .eq('name', brief.agent_name)
-      .single();
-
-    if (agent) {
-      await supabase.from('pending_briefs').insert({
-        org_id: orgId,
-        agent_id: agent.id,
-        brief_text: brief.brief,
-        rationale: brief.rationale,
-        source: 'orcahub',
-        template_slug: params.slug,
-      });
+    if (dept) {
+      // Find respective executive in roster
+      const exec = AGENT_ROSTER.find(a => a.dept === deptKey);
+      if (exec) {
+        await supabase.from('agents').upsert({
+          department_id: dept.id,
+          name: exec.name,
+          icon: exec.icon,
+          acronym: exec.id.substring(0, 2).toUpperCase(),
+          role_description: exec.description,
+          status: 'idle'
+        }, { onConflict: 'department_id,name' });
+      }
     }
   }
 
-  // 3. Mark install & increment
-  await supabase.from('orcahub_installs').insert({
-    org_id: orgId,
-    template_id: template.id,
-    installed_by: user.id,
-  });
+  // 2. Initialisation Check
+  const { data: identity } = await supabase
+    .from('company_identity')
+    .select('mission')
+    .eq('org_id', orgId)
+    .single();
 
-  await supabase.rpc('increment_template_installs', { p_template_id: template.id });
+  const needsOnboarding = !identity || !identity.mission;
+
+  // 3. System Notification
+  await supabase.from('team_messages').insert({
+    org_id: orgId,
+    from_user_id: user.id,
+    to_user_id: user.id,
+    content: `SYSTEM_DEPLOYMENT: ${template.name} has been successfully installed. Core executives are now standing by.`,
+    is_system_notification: true
+  });
 
   await writeAuditLog({
     orgId,
     actorUserId: user.id,
     action: 'orcahub_template_installed',
-    metadata: { template_slug: params.slug, template_name: template.name }
+    metadata: { template_slug: params.slug, needs_onboarding: needsOnboarding }
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ 
+    success: true, 
+    onboarding_required: needsOnboarding 
+  });
 }
 
 function getDeptIcon(key: string): string {
@@ -104,11 +111,8 @@ function getDeptIcon(key: string): string {
     sales: '💼',
     cs: '🤝',
     tech: '🛡️',
-    hiring: '🧠',
     ops: '📋',
-    finance: '📊',
-    intel: '🔍',
-    community: '🌐'
+    intel: '🔍'
   };
   return icons[key] || '⚙️';
 }

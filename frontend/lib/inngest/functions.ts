@@ -165,4 +165,127 @@ export const agentCoordinationFn = inngest.createFunction(
   }
 )
 
-export const functions = [approvalReminderFn, agentDailyResetFn, oauthStateCleanupFn, agentCoordinationFn]
+// Agent Memory Compression Logic
+export const agentMemoryUpdateFn = inngest.createFunction(
+  { id: 'agent-memory-update', name: 'Agent Memory Update' },
+  { event: 'agent/memory.update' },
+  async ({ event, step }) => {
+    const { org_id, agent_id, conversation_id } = event.data
+    const supabase = createServiceSupabaseClient()
+
+    // 1. Fetch last 10 messages for context
+    const { data: messages } = await step.run('fetch-messages', async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('sender_type, content')
+        .eq('conversation_id', conversation_id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      return { messages: data }
+    })
+
+    if (!messages?.messages || messages.messages.length === 0) return { success: false }
+
+    // 2. Fetch current memory
+    const { data: currentMemory } = await step.run('fetch-current-memory', async () => {
+      const { data } = await supabase
+        .from('llm_memories')
+        .select('*')
+        .eq('org_id', org_id)
+        .eq('agent_id', agent_id)
+        .single()
+      return { memory: data }
+    })
+
+    // 3. Summarize/Compress Memory using LLM
+    const newSummary = await step.run('compress-memory', async () => {
+      const { getGemini } = await import('@/lib/ai/client')
+      const ai = getGemini()
+      
+      const historyText = messages.messages.reverse().map(m => `${m.sender_type.toUpperCase()}: ${m.content}`).join('\n')
+      const existingContext = currentMemory?.memory?.memory_data?.context_summary || 'None'
+
+      const prompt = `
+        You are the Memory Management Engine for an Autonomous OS.
+        Your task is to update the long-term context summary for an AI Executive.
+        
+        EXISTING_CONTEXT:
+        ${existingContext}
+        
+        RECENT_MESSAGES:
+        ${historyText}
+        
+        INSTRUCTIONS:
+        1. Extract new key learnings, decisions made, or user preferences.
+        2. Merge them with the existing context to create a concise, high-density summary (max 500 words).
+        3. Maintain specific brand names, project goals, and personal preferences mentioned by the user.
+        4. Focus on "What do I need to remember for the next interaction?"
+        
+        Provide ONLY the updated summary.
+      `
+      const result = await ai.invoke(prompt)
+      return result.content.toString()
+    })
+
+    // 4. Update the DB
+    await step.run('update-db', async () => {
+      await supabase.from('llm_memories').upsert({
+        org_id,
+        agent_id,
+        memory_data: { 
+          context_summary: newSummary,
+          updated_at: new Date().toISOString()
+        },
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'org_id,agent_id' })
+    })
+
+    return { success: true, updated: true }
+  }
+)
+
+// AI Auto-Titling Logic
+export const conversationTitleFn = inngest.createFunction(
+  { id: 'conversation-title-generate', name: 'Generate Conversation Title' },
+  { event: 'agent/conversation.title.generate' },
+  async ({ event, step }) => {
+    const { org_id, conversation_id, first_message } = event.data
+    const supabase = createServiceSupabaseClient()
+
+    const title = await step.run('generate-title', async () => {
+      const { getGemini } = await import('@/lib/ai/client')
+      const ai = getGemini()
+      
+      const prompt = `
+        You are the Brand & Systems Identity Engine for an Autonomous OS.
+        Generate a snappy, professional, and descriptive 3-5 word title for a chat session.
+        The title MUST be in ALL_CAPS with UNDERSCORES.
+        Example: Q4_MARKET_EXPANSION, TECH_AUDIT_PHASE_1, BRAND_OUTREACH_LOG.
+        
+        USER_FIRST_PROMPT: "${first_message}"
+        
+        Provide ONLY the generated title.
+      `
+      const result = await ai.invoke(prompt)
+      return result.content.toString().trim().replace(/['"]/g, '')
+    })
+
+    await step.run('update-conversation', async () => {
+      await supabase
+        .from('conversations')
+        .update({ title })
+        .eq('id', conversation_id)
+    })
+
+    return { title }
+  }
+)
+
+export const functions = [
+  approvalReminderFn, 
+  agentDailyResetFn, 
+  oauthStateCleanupFn, 
+  agentCoordinationFn,
+  agentMemoryUpdateFn,
+  conversationTitleFn
+]

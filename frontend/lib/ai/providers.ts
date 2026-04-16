@@ -117,6 +117,20 @@ export const LLM_PROVIDERS: LLMProvider[] = [
     supportsCustomKey: false,
     planRequired: 'enterprise',
   },
+  {
+    key: 'openrouter',
+    name: 'OpenRouter',
+    models: [
+      { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', contextWindow: 200000, bestFor: 'Elite reasoning and writing' },
+      { id: 'openai/gpt-4o', name: 'GPT-4o', contextWindow: 128000, bestFor: 'Multimodal versatility' },
+      { id: 'meta-llama/llama-3.1-405b', name: 'Llama 3.1 405B', contextWindow: 128000, bestFor: 'Open-weights intelligence' },
+      { id: 'google/gemini-pro-1.5', name: 'Gemini 1.5 Pro (Native)', contextWindow: 1000000, bestFor: 'Massive context' },
+      { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3 (OR)', contextWindow: 64000, bestFor: 'Efficiency' },
+    ],
+    baseUrl: 'https://openrouter.ai/api/v1',
+    supportsCustomKey: true,
+    planRequired: 'pro',
+  },
 ];
 
 export function getProvider(key: string): LLMProvider | undefined {

@@ -1,273 +1,166 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
-import { useRealtimeApprovals } from '@/hooks/useRealtimeApprovals';
+import DashboardHeader from '@/components/DashboardHeader';
 
 export default function ReviewPage() {
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [coordLog, setCoordLog] = useState<any[]>([]);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [editingItem, setEditingItem] = useState<any | null>(null);
-  const [editText, setEditText] = useState('');
+  
+  const stats = [
+    { label: 'PENDING_APPROVALS', value: '4' },
+    { label: 'COORD_EVENTS', value: '12' },
+    { label: 'DEPT_REPORTS', value: '2' },
+    { label: 'TEAM_ONLINE', value: '5/5' }
+  ];
 
-  useEffect(() => {
-    // Fetch org id + approval requests
-    fetch('/api/org')
-      .then(r => r.json())
-      .then(d => setOrgId(d.org?.id || d.id));
-
-    fetch('/api/approvals')
-      .then(r => r.json())
-      .then(d => setReviews(d.approvals || []));
-
-    fetch('/api/org/coordination?limit=10')
-      .then(r => r.json())
-      .then(d => setCoordLog(d.feed || []));
-  }, []);
-
-  // Realtime: push new approval into queue as it arrives
-  useRealtimeApprovals(orgId || '', (newApproval) => {
-    setReviews(prev => [newApproval, ...prev]);
-  });
-
-  useEffect(() => {
-    animate('.review-anim', {
-      opacity: [0, 1],
-      y: [20, 0],
-      delay: stagger(50),
-      duration: 800,
-      ease: 'outExpo'
-    });
-  }, [reviews]);
-
-  const handleAction = async (id: string, decision: 'approved' | 'rejected' | 'edited') => {
-    setActionLoading(id);
-    try {
-      await fetch(`/api/approvals/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          decision: decision === 'approved' ? 'approved' : 'rejected',
-          content: decision === 'edited' ? editText : undefined
-        }),
-      });
-      setEditingItem(null);
-    } catch (err) {
-      console.error('Action failed:', err);
+  const approvals = [
+    {
+      id: 'app_1',
+      agent: 'ARIA',
+      role: 'CMO',
+      time: '10 MIN AGO',
+      description: 'Requesting permission to launch LinkedIn Outreach Sequencing targeting 500 VP-level executives in B2B SaaS for the Q2 Market Expansion.'
+    },
+    {
+      id: 'app_2',
+      agent: 'REX',
+      role: 'CSO',
+      time: '25 MIN AGO',
+      description: 'Automated follow-up sequence drafted for 15 warm leads from last week\'s webinar. Seeking final sign-off before dispatch via HubSpot.'
     }
-    // Animate out and remove from local queue
-    animate(`.review-item-${id}`, {
-      opacity: 0,
-      x: 20,
-      duration: 300,
-      ease: 'inQuad',
-      onComplete: () => {
-        setReviews(prev => prev.filter(r => r.id !== id));
-        setActionLoading(null);
-      }
-    });
-  };
+  ];
 
-  const openFineTune = (item: any) => {
-    setEditingItem(item);
-    setEditText(item.description || item.context || '');
-  };
+  const logEvents = [
+    {
+      id: 'ev_1',
+      from: 'CMO',
+      to: 'CSO',
+      action: 'Passing 15 warm leads with campaign context',
+      type: 'AUTO'
+    },
+    {
+      id: 'ev_2',
+      from: 'CIO',
+      to: 'CTO',
+      action: 'Forwarding detected vulnerability patch from vendor list',
+      type: 'AUTO'
+    },
+    {
+      id: 'ev_3',
+      from: 'ATLAS',
+      to: 'CMO',
+      action: 'Authorized updated brand positioning guidelines',
+      type: 'MANUAL_APPROVAL'
+    }
+  ];
 
   return (
-    <div className="h-screen bg-bg flex text-text-body font-syne overflow-hidden">
-      <DashboardSidebar />
+    <div className="flex h-screen bg-surface">
+      <DashboardSidebar active="review" />
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto no-scrollbar pb-20">
-        <header className="h-16 border-b border-white/5 bg-bg/80 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            <h2 className="font-syne font-[800] text-white text-[18px] uppercase tracking-tight">Review Center</h2>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green/10 border border-green/20">
-              <span className="text-[10px] text-green font-black uppercase tracking-widest">{reviews.length} DECISIONS PENDING</span>
-            </div>
+      {/* Main Content Area */}
+      <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
+        <DashboardHeader />
+
+        <div className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto p-12 no-scrollbar">
+          
+          {/* Header */}
+          <div className="mb-10">
+            <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase inline-block border-b-2 border-primary-container pb-1">
+              REVIEW
+            </h1>
+            <p className="font-body text-sm text-on-secondary-container mt-4">
+              Decisions waiting for your approval.
+            </p>
           </div>
-        </header>
 
-        <div className="p-8 max-w-7xl mx-auto w-full">
-          {/* Header Section */}
-          <div className="mb-12 review-anim opacity-0">
-            <h1 className="font-syne text-3xl font-[800] text-white mb-2 tracking-tight uppercase">Review <span className="text-green">Center</span></h1>
-            <p className="font-syne text-[11px] text-white/40 uppercase tracking-[0.2em] font-black">Your command queue. Approve, reject, or redirect.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12 review-anim opacity-0">
-            {[
-              { label: 'Pending Approvals', val: reviews.length, desc: 'Decisions awaiting action' },
-              { label: 'Coord Events Today', val: coordLog.length, desc: 'Live hand-offs' },
-              { label: 'Dept Reports', val: '—', desc: 'No reports submitted yet.' },
-              { label: 'Team Online', val: '—', desc: 'Invite your team to collaborate.' },
-            ].map((stat, i) => (
-              <div key={i} className="p-6 rounded-2xl border border-white/5 bg-surface/50 backdrop-blur-sm group hover:border-green/20 transition-all">
-                <p className="text-[10px] text-white/40 font-[900] uppercase tracking-widest mb-2 group-hover:text-green transition-colors">{stat.label}</p>
-                <div className="flex items-end gap-3">
-                  <p className="text-2xl font-syne font-[800] text-white">{stat.val}</p>
-                  <p className="text-[9px] text-white/20 font-black uppercase tracking-tight mb-1 truncate">{stat.desc}</p>
+          {/* Top Stats */}
+          <div className="grid grid-cols-4 gap-4 mb-10">
+            {stats.map(stat => (
+              <div key={stat.label} className="bg-surface-container px-5 py-4 rounded-lg border border-outline-variant/10">
+                <div className="text-[9px] font-mono text-on-surface/30 uppercase tracking-widest mb-2 font-black">
+                  {stat.label}
                 </div>
+                <div className="text-3xl font-black font-headline text-on-surface">{stat.value}</div>
               </div>
             ))}
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-8 mt-8">
-            {/* Approval Queue (Main Column) */}
-            <div className="flex-1 space-y-6">
-              <h3 className="font-syne text-[11px] font-black text-white/40 uppercase tracking-[0.3em] mb-4">Command Queue</h3>
-              {reviews.map(item => (
-                <div
-                  key={item.id}
-                  className={`review-item-${item.id} review-anim opacity-0 rounded-[2rem] border border-white/5 bg-surface/30 backdrop-blur-xl overflow-hidden group transition-all`}
-                >
-                  <div className="grid grid-cols-1 lg:grid-cols-2">
-                    {/* Left: The Request */}
-                    <div className="p-8 border-b lg:border-b-0 lg:border-r border-white/5">
-                      <div className="flex items-center gap-3 mb-6">
-                         <span className={`w-2 h-2 rounded-full ${
-                          item.priority === 'urgent' ? 'bg-red-500 animate-pulse' :
-                          item.priority === 'high' ? 'bg-warn' : 'bg-white/20'
-                        }`} />
-                        <span className="text-[10px] text-white/40 font-black uppercase tracking-widest">{item.type || 'Proposal'}</span>
-                        <span className="ml-auto text-[9px] text-white/20 font-black">ID: {item.id.split('-')[0]}</span>
-                      </div>
-                      
-                      <h4 className="font-syne text-xl font-[800] text-white mb-4 uppercase tracking-tight leading-tight">
-                        {item.title || item.action_summary}
-                      </h4>
-                      
-                      <div className="bg-bg/50 rounded-2xl p-6 border border-white/5 mb-6">
-                        <p className="text-[13px] text-white/60 leading-relaxed font-dm-mono italic">
-                           "{item.description || item.context}"
-                        </p>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => handleAction(item.id, 'approved')}
-                          disabled={actionLoading === item.id}
-                          className="flex-1 btn-primary py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(0,255,135,0.15)] hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        >
-                          {actionLoading === item.id ? 'Deploying...' : 'Deploy Decision →'}
-                        </button>
-                        <button
-                          onClick={() => openFineTune(item)}
-                          disabled={actionLoading === item.id}
-                          className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all py-4 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        >
-                          Fine-tune
-                        </button>
-                      </div>
+          <div className="flex gap-8">
+            
+            {/* Left 60%: APPROVAL QUEUE */}
+            <div className="w-[60%] flex flex-col">
+              <div className="text-[10px] font-black font-mono text-on-surface/40 uppercase tracking-[0.2em] mb-4">
+                APPROVAL_QUEUE
+              </div>
+              
+              <div className="flex flex-col">
+                {approvals.map(app => (
+                  <div key={app.id} className="bg-surface-container rounded-lg border border-outline-variant/10 border-l-[3px] border-l-primary-container/60 p-6 mb-4 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-primary-container/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-[11px] font-black font-mono text-primary-container uppercase drop-shadow-[0_0_8px_rgba(0,255,135,0.4)]">
+                        📣 {app.agent} · {app.role}
+                      </span>
+                      <span className="text-[9px] font-mono text-on-surface/30 uppercase ml-auto tracking-widest">
+                        {app.time}
+                      </span>
                     </div>
-
-                    {/* Right: AI Reasoning */}
-                    <div className="p-8 bg-white/[0.02]">
-                       <h5 className="font-syne text-[10px] font-black text-green uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
-                          Autonomous Reasoning
-                       </h5>
-                       
-                       <div className="space-y-6">
-                          <div>
-                             <p className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-2">Intent Analysis</p>
-                             <p className="text-[12px] text-white/40 leading-relaxed italic">
-                                "{item.reasoning || item.meta?.reasoning || 'Agent determined this action fulfills the current strategic mandate based on real-time data analysis.'}"
-                             </p>
-                          </div>
-                          
-                          <div className="pt-6 border-t border-white/5">
-                             <p className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-3">Impact Assessment</p>
-                             <div className="flex flex-wrap gap-2">
-                                <span className="px-2 py-1 rounded bg-green/10 border border-green/20 text-[9px] text-green font-black uppercase tracking-widest">Efficiency +{Math.floor(Math.random() * 20)+5}%</span>
-                                <span className="px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20 text-[9px] text-blue-400 font-black uppercase tracking-widest">Strategic Alignment</span>
-                             </div>
-                          </div>
-                       </div>
+                    
+                    {/* Brief description */}
+                    <div className="text-[13px] font-body text-on-secondary-container mb-5 leading-relaxed tracking-wide">
+                      {app.description}
+                    </div>
+                    
+                    {/* Action buttons */}
+                    <div className="flex gap-3">
+                      <button className="px-5 py-2 text-[9px] font-black uppercase tracking-widest bg-primary-container/10 border border-primary-container/40 text-primary-container rounded-sm hover:bg-primary-container hover:text-on-primary transition-colors flex items-center gap-1.5 shadow-[0_4px_12px_rgba(0,255,135,0.1)]">
+                        <span className="material-symbols-outlined text-xs">check</span>
+                        APPROVE
+                      </button>
+                      <button className="px-5 py-2 text-[9px] font-black uppercase tracking-widest border border-error/30 text-error/60 rounded-sm hover:border-error hover:text-error hover:bg-error/10 transition-colors flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-xs">close</span>
+                        REJECT
+                      </button>
+                      <button className="px-5 py-2 text-[9px] font-black uppercase tracking-widest border border-outline-variant/20 text-on-surface/40 rounded-sm hover:border-outline-variant/40 hover:text-on-surface transition-colors ml-auto">
+                        VIEW FULL
+                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
-
-              {reviews.length === 0 && (
-                <div className="py-20 text-center border border-dashed border-white/5 rounded-[3rem] review-anim opacity-0">
-                  <div className="w-12 h-12 bg-green/10 border border-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-green font-bold">✓</span>
-                  </div>
-                  <h3 className="font-syne font-[800] text-white text-lg uppercase tracking-tight">Queue Clear</h3>
-                  <p className="font-syne text-[10px] text-white/20 font-black uppercase tracking-widest">No decisions pending right now.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Sidebar: Coordination Log */}
-            <div className="w-full lg:w-96 space-y-8">
-              <div className="review-anim opacity-0">
-                <h3 className="font-syne text-[11px] font-black text-white/40 uppercase tracking-[0.3em] mb-6">Coordination Log</h3>
-                <div className="space-y-4">
-                  {coordLog.length > 0 ? coordLog.map((log, i) => (
-                    <div key={i} className="relative pl-6 pb-6 border-l border-white/5 last:pb-0">
-                      <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${log.status === 'pending' ? 'bg-green animate-pulse shadow-[0_0_10px_rgba(0,255,135,0.5)]' : 'bg-white/10'}`} />
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-white font-[800] text-[11px] uppercase tracking-tight">{log.from_agent?.name || 'Agent'}</span>
-                        <span className="text-[10px] text-white/20">→</span>
-                        <span className="text-green font-[800] text-[11px] uppercase tracking-tight">{log.to_agent?.name || 'Agent'}</span>
-                        <span className="ml-auto text-[9px] text-white/20 font-black uppercase tracking-tighter">
-                          {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-white/40 uppercase font-black tracking-widest leading-none">{log.type} | {log.status}</p>
-                    </div>
-                  )) : (
-                    <p className="text-[10px] text-white/10 font-black uppercase tracking-widest">No coordination events yet.</p>
-                  )}
-                </div>
+                ))}
               </div>
             </div>
+
+            {/* Right 40%: COORD LOG */}
+            <div className="w-[40%] flex flex-col">
+               <div className="text-[10px] font-black font-mono text-on-surface/40 uppercase tracking-[0.2em] mb-4">
+                 COORD_LOG
+               </div>
+               
+               <div className="flex flex-col gap-1">
+                 {logEvents.map(ev => (
+                   <div key={ev.id} className="flex items-start gap-3 px-4 py-3 bg-surface-container-low border-l-2 border-primary-container/30 hover:bg-surface-container transition-colors">
+                     <span className="material-symbols-outlined text-xs text-primary-container/60 mt-0.5">
+                       sync_alt
+                     </span>
+                     <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-mono text-on-surface/60 uppercase tracking-widest">
+                          {ev.from} → {ev.to} <span className="text-on-surface/20 mx-1">·</span> <span className={`${ev.type === 'AUTO' ? 'text-primary-container/50' : 'text-on-surface/40'}`}>{ev.type}</span>
+                        </span>
+                        <span className="text-[11px] font-body text-on-surface/40 leading-tight">
+                          {ev.action}
+                        </span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            </div>
+
           </div>
+
         </div>
       </main>
-
-      {/* Fine-tune Modal */}
-      {editingItem && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-bg/80 backdrop-blur-xl animate-in fade-in duration-300">
-           <div className="w-full max-w-2xl bg-surface border border-white/10 rounded-[2.5rem] p-10 shadow-2xl relative">
-              <button 
-                onClick={() => setEditingItem(null)}
-                className="absolute top-8 right-8 text-white/20 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
-              
-              <h3 className="font-syne text-2xl font-[800] text-white mb-2 uppercase tracking-tight">Fine-tune <span className="text-green">Response</span></h3>
-              <p className="font-syne text-[11px] text-white/40 uppercase tracking-widest font-black mb-8 border-b border-white/5 pb-6">Modify the agent's proposed action before deployment.</p>
-              
-              <textarea 
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="w-full h-48 bg-bg/50 border border-white/5 rounded-2xl p-6 font-dm-mono text-sm text-white/80 placeholder:text-white/10 focus:border-green/50 outline-none transition-all resize-none mb-8"
-              />
-              
-              <div className="flex gap-4">
-                 <button 
-                   onClick={() => handleAction(editingItem.id, 'approved')}
-                   className="flex-1 btn-primary py-4 rounded-xl font-syne font-black text-[11px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
-                 >
-                   Deploy Modified Action →
-                 </button>
-                 <button 
-                   onClick={() => setEditingItem(null)}
-                   className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white/40 font-syne font-black text-[11px] uppercase tracking-widest hover:bg-white/10 transition-all"
-                 >
-                   Cancel
-                 </button>
-              </div>
-           </div>
-        </div>
-      )}
     </div>
   );
 }
-

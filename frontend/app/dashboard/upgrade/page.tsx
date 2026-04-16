@@ -1,166 +1,149 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
-
-const plans = [
-  {
-    id: 'free',
-    name: 'Free',
-    tagline: 'Perfect for exploring the OS.',
-    monthlyPrice: 0,
-    annualPrice: 0,
-    features: [
-      '2 executives from your team',
-      'Unified Chat Console',
-      'Daily Briefings',
-      'Basic security'
-    ],
-    cta: 'Current Plan',
-    current: true
-  },
-  {
-    id: 'builder',
-    name: 'BUILDER',
-    tagline: 'Scale your operations with the full team.',
-    monthlyPrice: 29,
-    annualPrice: 24,
-    features: [
-      'Full executive team (CMO, CSO, CCO, CIO, CTO)',
-      'Unlimited tasks',
-      'Vercel & HubSpot Integrations',
-      'Weekly Inngest Intelligence',
-      'Priority support'
-    ],
-    cta: 'Upgrade to Builder',
-    highlighted: true
-  },
-  {
-    id: 'pro',
-    name: 'PRO',
-    tagline: 'Full autonomy for the elite founder.',
-    monthlyPrice: 59,
-    annualPrice: 49,
-    features: [
-      'Full executive team + AI CEO Mode (ATLAS)',
-      'Fully Autonomous Mode',
-      'Custom Workflow Creation',
-      'Advanced Intelligence Reports',
-      '24/7 Concierge'
-    ],
-    cta: 'Get Pro Access'
-  }
-];
+import DashboardHeader from '@/components/DashboardHeader';
 
 export default function UpgradePage() {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
+  
+  const featuresFree = [
+    'Test your first executives',
+    '3 Departments max',
+    '8 Agents limit',
+    'Community support',
+    'Standard execution speed'
+  ];
 
-  useEffect(() => {
-    animate('.up-anim', {
-      opacity: [0, 1],
-      y: [20, 0],
-      delay: stagger(100),
-      duration: 1000,
-      ease: 'outExpo'
-    });
-  }, []);
+  const featuresBuilder = [
+    'FULL_EXECUTIVE_TEAM',
+    'UNLIMITED_DEPARTMENTS',
+    'UNLIMITED_AGENTS',
+    'ATLAS_AI_CEO_MODE',
+    'PRIORITY_EXECUTION',
+    'CUSTOM_LLM_INTEGRATION'
+  ];
 
   return (
-    <div className="h-screen bg-bg flex text-text-body font-syne overflow-hidden">
+    <div className="flex h-screen bg-surface">
       <DashboardSidebar active="upgrade" />
 
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-white/5 bg-bg/80 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            <h2 className="font-syne font-[800] text-white text-[18px] uppercase tracking-tight">Pricing</h2>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green/10 border border-green/20">
-              <span className="text-[10px] text-green font-[800] uppercase tracking-widest">PRO ACTIVE</span>
-            </div>
-          </div>
-        </header>
+      {/* Main Content Area */}
+      <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
+        <DashboardHeader />
 
-        <div className="p-8 max-w-7xl overflow-y-auto no-scrollbar">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 up-anim opacity-0">
+        <div className="flex-1 overflow-y-auto w-full max-w-5xl mx-auto p-12 no-scrollbar">
+          
+          {/* Header */}
+          <div className="mb-10 text-center">
+            <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase inline-block border-b-2 border-primary-container pb-1">
+              LICENSE_UPGRADE
+            </h1>
+            <p className="font-body text-sm text-on-secondary-container mt-4">
+              Scale your autonomous workforce.
+            </p>
+          </div>
+
+          {/* Founding Member Banner */}
+          <div className="flex items-center justify-between px-6 py-5 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg mb-12 shadow-[0_4px_24px_rgba(245,158,11,0.05)] mx-auto max-w-4xl">
             <div>
-              <h1 className="font-syne text-3xl font-[800] text-white mb-2 tracking-tight uppercase">Scale Your <span className="text-green">Business</span></h1>
-              <p className="font-syne text-[11px] text-white/40 uppercase tracking-widest font-[800]">Upgrade your agents and power up your organization.</p>
+              <div className="text-[11px] font-black font-mono text-[#F59E0B] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                <span>🔥</span> FOUNDING_MEMBER_OFFER
+              </div>
+              <div className="text-[12px] font-body text-on-secondary-container leading-relaxed">
+                First 50 founders get Builder at <span className="text-on-surface font-black">$19/mo</span> locked forever. 
+                <span className="text-[#F59E0B] font-black ml-1">14 spots remaining.</span>
+              </div>
             </div>
+            <button className="px-5 py-2.5 bg-[#F59E0B] text-[#2d1a00] text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 hover:scale-105 transition-all whitespace-nowrap shadow-[0_4px_16px_rgba(245,158,11,0.2)]">
+              CLAIM_SPOT →
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 up-anim opacity-0">
-             {plans.map((plan) => (
-                <div 
-                  key={plan.id} 
-                  className={`p-10 rounded-[2.5rem] border flex flex-col transition-all duration-500 relative overflow-visible group backdrop-blur-xl ${
-                     plan.highlighted 
-                     ? 'bg-green/[0.03] border-green shadow-[0_20px_50px_rgba(0,255,135,0.05)]' 
-                     : 'bg-surface/30 border-white/5 hover:border-white/20'
-                  }`}
-                >
-                   {plan.highlighted && (
-                     <div className="absolute top-0 right-10 -translate-y-1/2 py-2 px-4 bg-green rounded-full shadow-[0_4px_20px_rgba(0,255,135,0.2)]">
-                        <span className="font-syne text-[9px] font-[800] text-bg uppercase tracking-widest">MOST POPULAR</span>
-                     </div>
-                   )}
-                   
-                   <div className="mb-8 text-left">
-                      <h2 className={`font-syne text-2xl font-[800] uppercase tracking-tight mb-3 ${plan.highlighted ? 'text-white' : 'text-white/60'}`}>
-                        {plan.name}
-                        {plan.highlighted && <span className="text-green ml-2">⭐</span>}
-                      </h2>
-                      <p className="font-syne text-[11px] text-white/40 leading-relaxed uppercase tracking-widest mb-6 font-[800]">
-                        {plan.tagline}
-                      </p>
-                       <div className="flex items-baseline gap-2">
-                          <span className="font-syne text-[48px] font-[800] text-white tracking-tighter leading-none">
-                            ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
-                          </span>
-                          <span className="font-syne text-white/20 text-[12px] font-[800] uppercase tracking-widest">/mo</span>
-                       </div>
-                       {billingCycle === 'annual' && (
-                         <p className="mt-2 text-[9px] font-syne text-green font-[800] uppercase tracking-widest">
-                           Billed as ${plan.annualPrice * 12}/yr — Saves ${ (plan.monthlyPrice - plan.annualPrice) * 12 }
-                         </p>
-                       )}
-                   </div>
-
-                   <div className="h-[1px] w-full bg-white/5 mb-8" />
-
-                    <ul className="flex flex-col gap-4 mb-10 flex-1 font-[800] uppercase tracking-widest">
-                       {plan.features.map((f, fIdx) => (
-                          <li key={fIdx} className="flex items-start gap-4 text-[10px] text-white/40 leading-snug group-hover:text-white transition-colors">
-                             <span className="text-green text-[14px] shrink-0">✓</span>
-                             {f}
-                          </li>
-                       ))}
-                    </ul>
-                   
-                   <button className={`w-full py-5 rounded-2xl font-syne font-[800] text-[15px] uppercase tracking-widest transition-all duration-300 ${
-                      plan.current 
-                      ? 'bg-white/5 text-white/20 border border-white/10 cursor-not-allowed' 
-                      : plan.highlighted
-                        ? 'bg-green text-bg shadow-[0_4px_25px_rgba(0,255,135,0.2)] hover:scale-[1.02] active:scale-[0.98]'
-                        : 'bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95'
-                   }`}>
-                      {plan.current ? 'Current Plan' : plan.cta}
-                   </button>
-                </div>
-             ))}
+          {/* Billing Toggle */}
+          <div className="flex items-center gap-4 justify-center mb-12">
+            <span className="text-[10px] font-mono text-on-surface/40 uppercase tracking-widest font-black">MONTHLY</span>
+            <div className="relative">
+              <input type="checkbox" id="billing-toggle" className="sr-only peer" defaultChecked />
+              <label 
+                htmlFor="billing-toggle" 
+                className="w-11 h-6 bg-surface-container-high border border-primary-container/30 rounded-sm cursor-pointer peer-checked:bg-primary-container/20 block transition-all relative"
+              >
+                <span className="absolute top-1 left-1 w-4 h-4 bg-on-surface/30 peer-checked:bg-primary-container rounded-sm transition-all pointer-events-none peer-checked:translate-x-5"></span>
+              </label>
+            </div>
+            <span className="text-[10px] font-mono text-primary-container uppercase tracking-widest font-black">ANNUAL</span>
+            <span className="px-2 py-0.5 bg-primary-container/10 border border-primary-container/30 text-[8px] font-black text-primary-container uppercase tracking-widest rounded-sm inline-block shadow-[0_0_8px_rgba(0,255,135,0.2)]">
+              SAVE 15%
+            </span>
           </div>
 
-          <div className="mt-24 up-anim opacity-0">
-             <div className="text-left mb-12">
-                <h2 className="font-syne text-3xl font-[800] text-white uppercase tracking-tight mb-2">More <span className="text-green">Capabilities</span></h2>
-                <p className="font-syne text-[11px] text-white/40 uppercase tracking-widest font-[800]">Coordinated intelligence across every business layer.</p>
-             </div>
-             
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                <div className="col-span-full py-16 text-center border border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-                   <p className="font-syne text-[11px] text-white/10 font-[800] uppercase tracking-[0.2em]">Searching for upcoming features...</p>
-                </div>
-             </div>
+          {/* Pricing Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            
+            {/* FREE TIER */}
+            <div className="bg-surface-container p-8 rounded-lg border border-outline-variant/10 flex flex-col h-full hover:border-outline-variant/30 transition-all">
+              <div className="text-[10px] font-black font-mono text-on-surface/40 uppercase tracking-widest mb-3">
+                FREE
+              </div>
+              <div className="text-[40px] leading-none font-black font-headline text-on-surface mb-2">
+                $0
+              </div>
+              <div className="text-[10px] font-mono text-on-surface/30 uppercase tracking-widest mb-6">
+                FOREVER
+              </div>
+              <div className="text-[11px] font-body text-on-secondary-container mb-8 leading-relaxed max-w-[200px]">
+                Test your first executives and build foundational workflows.
+              </div>
+              
+              <div className="space-y-4 mb-10 flex-1">
+                {featuresFree.map((feat, i) => (
+                  <div key={i} className="flex items-center gap-3 text-[11px] font-mono text-on-secondary-container tracking-wide">
+                    <span className="text-on-surface/30 material-symbols-outlined text-xs">done</span>
+                    {feat}
+                  </div>
+                ))}
+              </div>
+              
+              <button className="w-full py-3 text-[10px] font-black uppercase tracking-widest border border-outline-variant/20 text-on-surface/40 rounded-sm hover:border-primary-container/40 hover:text-on-surface transition-colors cursor-default mt-auto">
+                CURRENT_PLAN
+              </button>
+            </div>
+
+            {/* BUILDER TIER */}
+            <div className="bg-surface-container p-8 rounded-lg border border-primary-container/40 flex flex-col h-full transform relative shadow-[0_8px_40px_rgba(0,255,135,0.05)] neon-glow mt-[-16px]">
+              {/* Badge */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-primary-container text-on-primary text-[9px] font-black uppercase tracking-widest rounded-sm shadow-[0_0_12px_rgba(0,255,135,0.4)]">
+                MOST_POPULAR ⭐
+              </div>
+              
+              <div className="text-[10px] font-black font-mono text-primary-container/60 uppercase tracking-widest mb-3 mt-2">
+                BUILDER
+              </div>
+              <div className="text-[40px] leading-none font-black font-headline text-on-surface mb-2 flex items-end gap-2">
+                $19 <span className="text-[14px] text-on-surface/40 mb-1 line-through">$49</span>
+              </div>
+              <div className="text-[10px] font-mono text-primary-container/60 uppercase tracking-widest mb-6">
+                PER MONTH / BILLED ANNUALLY
+              </div>
+              <div className="text-[11px] font-body text-on-surface mb-8 leading-relaxed max-w-[200px]">
+                Full autonomous operating system for founders and teams.
+              </div>
+              
+              <div className="space-y-4 mb-10 flex-1">
+                {featuresBuilder.map((feat, i) => (
+                  <div key={i} className="flex items-center gap-3 text-[11px] font-black font-mono text-on-surface tracking-wider">
+                    <span className="text-primary-container material-symbols-outlined text-[14px]">done</span>
+                    {feat}
+                  </div>
+                ))}
+              </div>
+              
+              <button className="w-full py-3 text-[10px] font-black uppercase tracking-widest bg-primary-container text-on-primary rounded-sm hover:opacity-90 transition-all mt-auto shadow-[0_0_20px_rgba(0,255,135,0.3)]">
+                UPGRADE_NOW
+              </button>
+            </div>
+
           </div>
+
         </div>
       </main>
     </div>

@@ -4,7 +4,8 @@ import { AGENT_INSTRUCTIONS } from './agentInstructions'
 export function buildAgentSystemPrompt(
   agent: Agent,
   company: CompanyIdentity,
-  member: OrgMember
+  member: OrgMember,
+  memory?: string
 ): string {
   const specializedInstructions = AGENT_INSTRUCTIONS[agent.name] || ''
 
@@ -120,8 +121,16 @@ You have access to Firecrawl web tools. Use them proactively:
 `
   }
 
+  const memoryBlock = memory ? `
+CORE_MEMORY_RECALL:
+The following are key context points, past decisions, and learnings from your previous interactions with the user for this specific department. Adhere to these:
+${memory}
+` : '';
+
   return `
 You are ${agent.name} (${agent.acronym}), the ${agent.role_description} at ${company.company_name}.
+
+${memoryBlock}
 
 ${specializedInstructions}
 

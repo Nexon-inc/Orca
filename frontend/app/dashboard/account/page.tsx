@@ -115,8 +115,8 @@ export default function AccountPage() {
                 {activeTab === 'profile' && (
                   <div className="space-y-16">
                     <div className="flex items-center gap-8 mb-12">
-                       <div className="w-24 h-24 rounded-[2.5rem] bg-white/5 border border-white/10 flex items-center justify-center font-syne font-black text-3xl text-green">
-                          {profile.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                       <div className="w-24 h-24 rounded-[2.5rem] bg-white/5 border border-white/10 flex items-center justify-center text-4xl text-white/10 font-black">
+                          👤
                        </div>
                        <div>
                           <h3 className="font-syne text-2xl font-[900] text-white mb-2 uppercase tracking-tight">{profile.full_name || 'Your Account'}</h3>
@@ -265,7 +265,7 @@ export default function AccountPage() {
 
                         <div className="p-6 rounded-2xl border border-white/5 bg-bg/50 flex items-center justify-between">
                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-white/30 uppercase">KEY</div>
+                              <div className="text-2xl">🔑</div>
                               <div>
                                  <p className="text-white font-black text-[13px] uppercase tracking-tight">Private API Access</p>
                                  <p className="text-[9px] text-white/20 uppercase tracking-widest font-black">Bring your own credentials for full data isolation</p>

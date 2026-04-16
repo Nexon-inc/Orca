@@ -19,7 +19,7 @@ export async function POST(
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { content: rawContent, attachments } = await request.json()
+  const { content: rawContent, attachments, mode, model: modelOverride } = await request.json()
   const supabase = await createServerSupabaseClient()
 
   // 1a. Security: Sanitize Input
@@ -83,10 +83,21 @@ export async function POST(
     .update({ status: 'busy' })
     .eq('id', agent.id)
 
-  // 7. Build system prompt
-  let systemPrompt = buildAgentSystemPrompt(agent, company, member)
+  // 7. Get Agent Memory
+  const { data: memoryRow } = await supabase
+    .from('llm_memories')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('agent_id', agent.id)
+    .single()
+
+  const messageCount = (memoryRow?.message_count || 0) + 1
+  const memoryContext = memoryRow?.memory_data?.context_summary || ''
+
+  // 8. Build system prompt with memory
+  let systemPrompt = buildAgentSystemPrompt(agent, company, member, memoryContext)
   
-  // 7b. Append document attachments text to system prompt
+  // 8b. Append document attachments text to system prompt
   if (attachments && attachments.length > 0) {
     for (const file of attachments) {
       if (file.type !== 'image') {
@@ -121,20 +132,58 @@ export async function POST(
     langchainMessages.push(new HumanMessage(content))
   }
 
-  // 9. Call AI (Gemini 1.5 Pro is primary; Groq is secondary for fast responses)
-  const useHighSpeed = content.length < 50 // Only use Groq for extremely short queries
-  const ai = useHighSpeed ? getGroq() : getGemini()
+  // 9. Call AI (Conditional Model Selection with Fallback)
+  let agentResponse = ''
+  let finalModelUsed = ''
 
-  // Thinking Steps simulation
-  const thinkingSteps = [
-    `Analyzing requirements for ${agent.name}...`,
-    `Retrieving ${company.company_name} brand context...`,
-    `Cross-referencing with ${member.role}'s brief...`,
-    `Generating structured output...`
-  ]
+  try {
+    if (!modelOverride || modelOverride === 'orca-intel') {
+      // Primary: Gemini
+      const gemini = getGemini()
+      const result = await gemini.invoke(langchainMessages)
+      agentResponse = result.content as string
+      finalModelUsed = 'gemini'
+    } else {
+      // Specific Model Selection (OpenRouter or others)
+      const { buildDynamicLLMClient } = await import('@/lib/ai/dynamicClient')
+      const [provider, ...modelParts] = modelOverride.split('/')
+      
+      const ai = buildDynamicLLMClient({
+        provider: provider === 'anthropic' || provider === 'openai' || provider === 'meta-llama' || provider === 'google' || provider === 'deepseek' ? 'openrouter' : provider,
+        model: modelOverride,
+        apiKey: process.env.OPENROUTER_API_KEY!,
+        temperature: 0.7,
+        maxTokens: 4000
+      })
+      const result = await ai.invoke(langchainMessages)
+      agentResponse = result.content as string
+      finalModelUsed = modelOverride
+    }
+  } catch (error) {
+    console.error('AI Primary Call Failed:', error)
+    
+    // Fallback logic for ORCA Intelligence
+    if (!modelOverride || modelOverride === 'orca-intel') {
+      console.log('Falling back to Groq...')
+      try {
+        const groq = getGroq()
+        const result = await groq.invoke(langchainMessages)
+        agentResponse = result.content as string
+        finalModelUsed = 'groq'
+      } catch (fallbackError) {
+        console.error('Groq Fallback also failed:', fallbackError)
+        return NextResponse.json({ error: 'All AI models are currently unavailable.' }, { status: 503 })
+      }
+    } else {
+      // If a specific model was requested and failed, we don't fallback to maintain deterministic choice
+      return NextResponse.json({ error: `Request for ${modelOverride} failed.` }, { status: 500 })
+    }
+  }
 
-  const result = await ai.invoke(langchainMessages)
-  let agentResponse = result.content as string
+  // Thinking Steps simulation (Adjust based on mode)
+  const thinkingSteps = mode === 'planning' 
+    ? [`Initiating Deep Planning Mode...`, `Architecting multi-step solution...`, `Validating constraints...`]
+    : [`Executing ${agent.name} protocol...`, `Synthesizing response...`]
 
   // 9b. Security: Output Filtering
   agentResponse = filterAgentOutput(agentResponse)
@@ -149,31 +198,60 @@ export async function POST(
   const coordMatch = agentResponse.match(/COORDINATION_NEEDED:\s*dept=(\w+),\s*agent=(\w+),\s*reason=(.+?)(?:\n|$)/)
   const visualMatch = agentResponse.match(/request visual for (.+)/i)
 
-  // 12. Save agent message
-  const { data: org } = await supabase.from('organizations').select('autonomous_mode').eq('id', orgId).single()
-  const isAutonomous = org?.autonomous_mode || false
-  const mode = agent.departments ? agent.departments.agent_mode : 'approve_first'
-  
-  const { data: agentMessage } = await supabase.from('messages').insert({
-    conversation_id: conversationId,
-    sender_type: 'agent',
-    content: agentResponse,
-    result_items: resultItems,
-    status: (isAutonomous || mode === 'autopilot') ? 'approved' : 'pending',
-    metadata: {
-      thinking_steps: thinkingSteps,
-      has_visual_request: !!visualMatch,
-      visual_prompt: visualMatch ? visualMatch[1].trim() : null
-    }
-  }).select().single()
-
-  // 13. Update agent status
+  // 12. Update agent status & Increment Memory Counter
   await supabase.from('agents').update({
     status: 'active',
     tasks_today: (agent.tasks_today || 0) + 1,
     last_action: content.slice(0, 80),
     last_active_at: new Date().toISOString(),
   }).eq('id', agent.id)
+
+  // 13. Message Counter & Memory Update Trigger
+  await supabase.from('llm_memories').upsert({
+    org_id: orgId,
+    agent_id: agent.id,
+    message_count: messageCount,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'org_id,agent_id' })
+
+  if (messageCount === 1) {
+    // Trigger AI Auto-Titling for new conversations
+    await inngest.send({
+      name: 'agent/conversation.title.generate',
+      data: {
+        org_id: orgId,
+        conversation_id: conversationId,
+        first_message: content
+      }
+    })
+  }
+
+  if (messageCount % 10 === 0) {
+    // Trigger memory compression via Inngest or inline
+    await inngest.send({
+      name: 'agent/memory.update',
+      data: {
+        org_id: orgId,
+        agent_id: agent.id,
+        conversation_id: conversationId,
+      }
+    })
+  }
+
+  // Save agent message
+  const mode = agent.departments ? agent.departments.agent_mode : 'approve_first'
+  const { data: agentMessage } = await supabase.from('messages').insert({
+    conversation_id: conversationId,
+    sender_type: 'agent',
+    content: agentResponse,
+    result_items: resultItems,
+    status: mode === 'autopilot' ? 'approved' : 'pending',
+    metadata: {
+      thinking_steps: thinkingSteps,
+      has_visual_request: !!visualMatch,
+      visual_prompt: visualMatch ? visualMatch[1].trim() : null
+    }
+  }).select().single()
 
   // Audit Log
   await writeAuditLog({
@@ -182,7 +260,7 @@ export async function POST(
     action: 'agent_interaction',
     resourceType: 'agent',
     resourceId: agent.id,
-    metadata: { conversation_id: conversationId }
+    metadata: { conversation_id: conversationId, message_count: messageCount }
   })
 
   // 14. Handle coordination
@@ -202,7 +280,7 @@ export async function POST(
     })
   }
 
-  // 14b. Handle Tech Code Generation & PRs (Ghost)
+  // 14b. Handle Wren Code Generation & PRs
   const prMatch = agentResponse.match(/\[OPEN_PR: title="(.+?)" branch="(.+?)"\]/)
   const githubConnected = !!member.github_access_token // Assuming this exists in member context
 
@@ -223,17 +301,17 @@ export async function POST(
     })
   }
 
-  // 14c. Handle Tech Fixes / Code Scans (Ghost)
-  const ghostFixMatch = agentResponse.match(/\[GHOST_FIX_NEEDED: file=(.+?), line=(\d+), issue=(.+?)\]/)
-  if (ghostFixMatch) {
-    const [, file, line, issue] = ghostFixMatch
+  // 14c. Handle Ghost -> Wren coordination
+  const wrenFixMatch = agentResponse.match(/\[WREN_FIX_NEEDED: file=(.+?), line=(\d+), issue=(.+?)\]/)
+  if (wrenFixMatch) {
+    const [, file, line, issue] = wrenFixMatch
     await inngest.send({
       name: 'agent/coordination.requested',
       data: {
         org_id: orgId,
         from_agent_id: agent.id,
         target_department_key: 'tech',
-        target_agent_name: 'Ghost',
+        target_agent_name: 'Wren',
         reason: `Security fix needed in ${file} line ${line}: ${issue}`,
         context: agentResponse,
         conversation_id: conversationId,

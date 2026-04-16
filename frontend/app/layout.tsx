@@ -1,8 +1,12 @@
 import type { Metadata } from 'next'
-import { Syne, DM_Mono } from 'next/font/google'
+import { Space_Grotesk, Inter, JetBrains_Mono, Syne, DM_Mono } from 'next/font/google'
 import Providers from './Providers'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
 
 const syne = Syne({ subsets: ["latin"], variable: "--font-syne", weight: ['400', '700', '800'] });
 const dmMono = DM_Mono({ subsets: ["latin"], weight: '400', variable: "--font-dm-mono" });
@@ -22,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${dmMono.variable} dark`}>
-      <body className="font-sans antialiased bg-bg text-text-body">
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} ${syne.variable} ${dmMono.variable} dark`}>
+      <body className="font-body antialiased bg-surface text-on-surface">
         <Providers>
           {children}
         </Providers>
@@ -32,4 +36,3 @@ export default function RootLayout({
     </html>
   )
 }
-

@@ -47,19 +47,6 @@ export default function ChatPage() {
   const [isOnboarding, setIsOnboarding] = useState(false);
 
   useEffect(() => {
-    // Detect Orca Hub Installation Redirect
-    const searchParams = new URLSearchParams(window.location.search);
-    const installedTemplate = searchParams.get('installed');
-    
-    if (installedTemplate && messages.length === 0) {
-      setMessages([{
-        id: 'deploy-init',
-        role: 'assistant',
-        content: `SYSTEM_DEPLOYMENT: ${installedTemplate.toUpperCase()}_OS has been successfully initialized. All core executives are now online and standing by. Atlas is ready to begin operations.`,
-        agent: EXECUTIVE_PILLS[0]
-      }]);
-    }
-
     // 1. Initial Loading
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) setGreeting('GOOD MORNING,');
@@ -73,26 +60,19 @@ export default function ChatPage() {
         if (userData?.user) {
           setUser(userData.user);
           
-          if (params.id) {
-             // Fetch existing messages
-             const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
-             const msgData = await msgRes.json();
-             if (msgData.messages) setMessages(msgData.messages);
-          } else {
-            // Check Onboarding status only if new chat
-            const identityRes = await fetch('/api/company'); 
-            const identityData = await identityRes.json();
-            
-            if (!identityData?.mission) {
-              setIsOnboarding(true);
-              setPinnedAgent('CEO');
-              setMessages([{
-                id: 'onboarding-init',
-                role: 'assistant',
-                content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?",
-                agent: EXECUTIVE_PILLS[0]
-              }]);
-            }
+          // Check Onboarding status
+          const identityRes = await fetch('/api/company'); 
+          const identityData = await identityRes.json();
+          
+          if (!identityData?.mission) {
+            setIsOnboarding(true);
+            setPinnedAgent('CEO');
+            setMessages([{
+              id: 'onboarding-init',
+              role: 'assistant',
+              content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?",
+              agent: EXECUTIVE_PILLS[0]
+            }]);
           }
         }
       } catch (err) {}
@@ -109,37 +89,12 @@ export default function ChatPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [params.id]);
+  }, []);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim()) return;
     
-    let currentId = params.id as string;
-    
-    // 1. Auto-Create Conversation if on "New Chat" route
-    if (!currentId) {
-      try {
-        const createRes = await fetch('/api/conversations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            agent_id: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.key || 'ceo',
-            department_key: (pinnedAgent || 'ceo').toLowerCase()
-          })
-        });
-        const createData = await createRes.json();
-        if (createData.conversation) {
-          currentId = createData.conversation.id;
-          // Silently push the new route while continuing our execution
-          window.history.pushState({}, '', `/dashboard/chat/${currentId}`);
-        }
-      } catch (err) {
-        console.error('Failed to create conversation:', err);
-        return;
-      }
-    }
-
     const userMsg = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -148,7 +103,7 @@ export default function ChatPage() {
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
     try {
-      const res = await fetch(`/api/conversations/${currentId}/messages`, {
+      const res = await fetch(`/api/conversations/${params.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

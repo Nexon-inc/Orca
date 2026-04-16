@@ -1,214 +1,243 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import IntegrationsVault from '@/components/IntegrationsVault';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import DashboardSidebar from '@/components/DashboardSidebar';
-
-const DEPT_ICONS: Record<string, string> = {
-  saas_startup: '🚀', marketing_agency: '📣', ecommerce: '🛒',
-  recruiting_firm: '🧠', dev_agency: '⚙️', intelligence: '🔍',
-};
+import DashboardHeader from '@/components/DashboardHeader';
 
 export default function OrcaHubPage() {
-  return (
-    <Suspense fallback={null}>
-      <OrcaHubContent />
-    </Suspense>
-  );
-}
+  const [activeTab, setActiveTab] = useState<'templates' | 'integrations'>('templates');
+  const [activeFilter, setActiveFilter] = useState('ALL');
 
-function OrcaHubContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const tabParam = searchParams.get('tab') || 'templates';
-  const [activeTab, setActiveTab] = useState(tabParam === 'integrations' ? 'integrations' : 'templates');
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
-  const [installing, setInstalling] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const filters = ['ALL', 'STARTUP', 'MARKETING', 'E-COMMERCE', 'DEV_STUDIO', 'CREATOR'];
 
-  useEffect(() => {
-    setActiveTab(tabParam === 'integrations' ? 'integrations' : 'templates');
-  }, [tabParam]);
-
-  useEffect(() => {
-    fetch('/api/orcahub')
-      .then(res => res.json())
-      .then(data => {
-        setTemplates(data.templates || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const categories = ['all', ...Array.from(new Set(templates.map(t => t.category)))];
-
-  const filtered = templates.filter(t =>
-    (category === 'all' || t.category === category) &&
-    (t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.description.toLowerCase().includes(search.toLowerCase()))
-  );
+  const templates = [
+    {
+      id: 'startup',
+      icon: '🚀',
+      name: 'STARTUP_OS',
+      category: 'STARTUP',
+      description: 'The complete Autonomous OS for early-stage software companies. Deploys all 6 Core Executives.',
+      stats: '6 DEPTS · 6 AGENTS · 1.2K INSTALL'
+    },
+    {
+      id: 'marketing',
+      icon: '📣',
+      name: 'MARKETING_OS',
+      category: 'MARKETING',
+      description: 'High-performance marketing engine with full executive oversight.',
+      stats: '4 DEPTS · 4 AGENTS · 942 INSTALL'
+    },
+    {
+      id: 'e-commerce',
+      icon: '🛒',
+      name: 'E-COMMERCE_OS',
+      category: 'E-COMMERCE',
+      description: 'DTC retail powerhouse for scaling physical and digital brands.',
+      stats: '4 DEPTS · 4 AGENTS · 522 INSTALL'
+    },
+    {
+      id: 'dev-studio',
+      icon: '🛠️',
+      name: 'DEV_STUDIO_OS',
+      category: 'DEV_STUDIO',
+      description: 'Technical-first OS for shipping and maintaining high security standards.',
+      stats: '3 DEPTS · 3 AGENTS · 312 INSTALL'
+    },
+    {
+      id: 'creator',
+      icon: '🎬',
+      name: 'CREATOR_OS',
+      category: 'CREATOR',
+      description: 'Personal brand and audience growth engine for modern creators.',
+      stats: '3 DEPTS · 3 AGENTS · 847 INSTALL'
+    }
+  ];
 
   const handleInstall = async (slug: string) => {
-    setInstalling(slug);
     try {
       const res = await fetch(`/api/orcahub/${slug}/install`, { method: 'POST' });
-      if (res.ok) {
-        setTemplates(prev => prev.map(t => t.slug === slug ? { ...t, is_installed: true } : t));
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = `/dashboard/chat?installed=${slug}`;
       } else {
-        const err = await res.json();
-        alert(`Error: ${err.error}`);
+        alert(data.error || 'Installation failed');
       }
-    } catch {
-      alert('Installation failed.');
-    } finally {
-      setInstalling(null);
+    } catch (err) {
+      alert('Network error during installation');
     }
   };
 
+  const integrations = [
+    {
+      role: 'CMO_INTEGRATIONS',
+      icon: '📣',
+      items: [
+        { id: 'linkedin', name: 'LINKEDIN', type: 'SOCIAL_OUTREACH', connected: true },
+        { id: 'twitter', name: 'TWITTER / X', type: 'BRAND_PRESENCE', connected: false },
+        { id: 'hubspot', name: 'HUBSPOT', type: 'CRM_SYNC', connected: false }
+      ]
+    },
+    {
+      role: 'CSO_INTEGRATIONS',
+      icon: '💼',
+      items: [
+        { id: 'salesforce', name: 'SALESFORCE', type: 'PIPELINE_MANAGEMENT', connected: true },
+        { id: 'close', name: 'CLOSE.IO', type: 'CRM_SYNC', connected: false }
+      ]
+    }
+  ];
+
   return (
-    <div className="flex h-screen bg-bg font-syne overflow-hidden">
+    <div className="flex h-screen bg-surface">
       <DashboardSidebar active="orcahub" />
 
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 border-b border-white/5 bg-bg/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="font-syne text-2xl font-[900] text-white uppercase tracking-tight">OrcaHub</h1>
-            <p className="font-syne text-white/30 text-[10px] uppercase tracking-[0.2em] font-black">Coordinated intelligence marketplace.</p>
-          </div>
-          
-          <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
-             <button 
-              onClick={() => setActiveTab('prompts')}
-              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'prompts' ? 'bg-green text-bg shadow-lg' : 'text-white/40 hover:text-white'}`}
-             >
-               Executive Prompts
-             </button>
-             <button 
-              onClick={() => setActiveTab('system')}
-              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'system' ? 'bg-green text-bg shadow-lg' : 'text-white/40 hover:text-white'}`}
-             >
-               System Templates
-             </button>
-          </div>
-        </header>
+      {/* Main Content Area */}
+      <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
+        <DashboardHeader />
 
-        <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
-          {activeTab === 'system' ? (
+        <div className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto p-12 no-scrollbar">
+          
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase">
+              ORCA_HUB
+            </h1>
+            <p className="font-body text-sm text-on-secondary-container mt-2">
+              Templates and integrations for your executive team.
+            </p>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1 mb-8 border-b border-outline-variant/10 pb-0">
+            <button 
+              onClick={() => setActiveTab('templates')}
+              className={`px-4 py-3 text-[11px] font-black font-label uppercase tracking-widest transition-colors -mb-px border-b-2 ${
+                activeTab === 'templates' 
+                  ? 'text-primary-container border-primary-container' 
+                  : 'text-on-surface/40 border-transparent hover:text-on-surface'
+              }`}
+            >
+              TEMPLATES
+            </button>
+            <button 
+              onClick={() => setActiveTab('integrations')}
+              className={`px-4 py-3 text-[11px] font-black font-label uppercase tracking-widest transition-colors -mb-px border-b-2 ${
+                activeTab === 'integrations'
+                  ? 'text-primary-container border-primary-container' 
+                  : 'text-on-surface/40 border-transparent hover:text-on-surface'
+              }`}
+            >
+              INTEGRATIONS
+            </button>
+          </div>
+
+          {activeTab === 'templates' ? (
             <>
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                  {categories.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setCategory(cat)}
-                      className={`px-4 py-2 rounded-full font-syne text-[10px] uppercase tracking-[0.15em] border transition-all whitespace-nowrap font-black ${category === cat ? 'bg-green text-bg border-green' : 'bg-surface/50 text-white/30 border-white/5 hover:border-white/20 hover:text-white'}`}
-                    >
-                      {cat === 'all' ? 'All' : cat.replace(/_/g, ' ')}
-                    </button>
-                  ))}
-                </div>
-                <div className="relative w-full md:w-80">
-                  <input
-                    type="text"
-                    placeholder="Search systems..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 font-syne text-xs text-white focus:border-green/50 outline-none transition-all placeholder:text-white/10"
-                  />
-                </div>
+              {/* Filter Pills */}
+              <div className="flex flex-wrap gap-2 mb-8">
+                {filters.map(f => (
+                  <button 
+                    key={f}
+                    onClick={() => setActiveFilter(f)}
+                    className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-colors border ${
+                      activeFilter === f
+                        ? 'bg-primary-container/10 border-primary-container/40 text-primary-container'
+                        : 'bg-surface-container-high border-outline-variant/20 text-on-surface/40 hover:border-primary-container/40 hover:text-on-surface'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {loading ? (
-                  Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="bg-surface/50 border border-white/5 rounded-3xl overflow-hidden animate-pulse h-[400px]" />
-                  ))
-                ) : filtered.length > 0 ? filtered.map(template => (
-                  <div key={template.slug} className="group relative bg-surface/50 border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-green/20 transition-all duration-500 flex flex-col">
-                    <div className="h-40 bg-bg/50 flex items-center justify-center text-5xl opacity-20 group-hover:opacity-40 transition-opacity">
-                      {DEPT_ICONS[template.category] || '↓'}
-                    </div>
-
-                    <div className="p-8 flex flex-col flex-1">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="px-2 py-1 rounded bg-green/10 border border-green/20 text-green text-[9px] font-black uppercase tracking-widest">
-                          {template.category.replace(/_/g, ' ')}
-                        </span>
-                        <span className="text-[8px] text-white/20 font-black uppercase tracking-widest">5 EXECUTIVE ENGINE</span>
-                      </div>
-
-                      <h3 className="font-syne text-xl font-[900] text-white group-hover:text-green transition-colors uppercase tracking-tight mb-2">
-                        {template.name}
-                      </h3>
-                      
-                      <p className="font-syne text-[12px] text-white/40 mb-6 leading-relaxed uppercase tracking-tight flex-1">
-                        {template.description}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-6 border-t border-white/5 mb-6">
-                        <div className="flex flex-col gap-1">
-                           <span className="text-[10px] text-green font-black uppercase tracking-widest">Full Executive Team</span>
-                           <span className="text-[8px] text-white/20 uppercase font-black tracking-tighter">CMO · CSO · CCO · CIO · CTO</span>
+              {/* Template Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {templates.map(tpl => (
+                  <div key={tpl.id} className="bg-surface-container p-6 rounded-lg border border-outline-variant/10 hover:bg-surface-bright hover:border-outline-variant/20 transition-all cursor-pointer group flex flex-col">
+                    
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="text-2xl mb-1">{tpl.icon}</div>
+                        <div className="text-[13px] font-black font-headline text-on-surface uppercase tracking-wide">
+                          {tpl.name}
                         </div>
-                        {template.is_installed && (
-                          <div className="w-6 h-6 rounded-full bg-green/20 flex items-center justify-center text-green text-[10px]">✓</div>
-                        )}
                       </div>
-
-                      <button
-                        onClick={() => !template.is_installed && template.is_accessible && handleInstall(template.slug)}
-                        disabled={!!installing || template.is_installed || !template.is_accessible}
-                        className={`w-full py-4 rounded-xl font-syne font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
-                          template.is_installed
-                            ? 'bg-green/10 text-green cursor-default border border-green/20 shadow-none'
-                            : !template.is_accessible
-                            ? 'bg-white/5 text-white/20 cursor-not-allowed border border-transparent shadow-none'
-                            : installing === template.slug
-                            ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                            : 'bg-green text-bg shadow-[0_4px_20px_rgba(0,255,135,0.2)] hover:scale-[1.02]'
-                        }`}
+                      <span className="text-[8px] font-black font-mono uppercase tracking-[0.2em] text-primary-container/60">
+                        {tpl.category}
+                      </span>
+                    </div>
+                    
+                    <p className="text-[11px] font-body text-on-secondary-container leading-relaxed mb-6 flex-1">
+                      {tpl.description}
+                    </p>
+                    
+                    <div className="flex items-center gap-2 text-[9px] font-mono text-on-surface/30 uppercase tracking-widest mb-6 whitespace-nowrap overflow-hidden text-ellipsis">
+                      {tpl.stats}
+                    </div>
+                    
+                    <div className="flex gap-2 shrink-0">
+                      <button className="flex-1 py-2 text-[9px] font-black uppercase tracking-widest border border-outline-variant/20 text-on-surface/40 rounded-sm hover:border-primary-container/40 hover:text-on-surface transition-colors">
+                        PREVIEW
+                      </button>
+                      <button 
+                        onClick={() => handleInstall(tpl.id)}
+                        className="flex-1 py-2 text-[9px] font-black uppercase tracking-widest bg-primary-container/10 border border-primary-container/40 text-primary-container rounded-sm hover:bg-primary-container hover:text-on-primary transition-colors"
                       >
-                        {installing === template.slug ? 'SYNCHRONIZING...' : template.is_installed ? 'INSTALLED' : 'PURCHASE & SYNC'}
+                        INSTALL
                       </button>
                     </div>
                   </div>
-                )) : (
-                  <div className="col-span-full py-20 text-center font-syne border border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-                    <p className="text-white/20 text-[10px] uppercase tracking-[0.2em] font-black">No matching systems found.</p>
-                  </div>
-                )}
+                ))}
               </div>
             </>
           ) : (
-            <div className="max-w-4xl mx-auto space-y-8">
-               <div className="p-8 rounded-[2rem] border border-white/5 bg-surface/50 backdrop-blur-sm">
-                  <header className="flex items-center justify-between mb-8">
-                     <div className="flex flex-col">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tight">Executive Prompt Lab</h3>
-                        <span className="text-[10px] text-white/20 uppercase font-black tracking-widest">Tune the core intelligence of your leaders.</span>
-                     </div>
-                     <button className="px-6 py-2 rounded-xl bg-green text-bg text-[10px] font-black uppercase tracking-widest shadow-xl">Deploy Changes</button>
-                  </header>
-
-                  <div className="space-y-4">
-                     {['ATLAS', 'ARIA', 'REX', 'PURITY', 'ROMAN', 'GHOST'].map(exec => (
-                        <div key={exec} className="p-6 rounded-2xl border border-white/5 bg-bg/50 hover:border-green/20 transition-all cursor-pointer group">
-                           <div className="flex items-center justify-between mb-2">
-                              <span className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                 <span className="text-green group-hover:scale-125 transition-transform">↓</span> {exec} System Prompt
-                              </span>
-                              <span className="text-[9px] text-white/20 font-black uppercase tracking-widest">v2.4.1 — Consolidated</span>
-                           </div>
-                           <p className="text-[10px] text-white/30 uppercase tracking-tight">Managing department operations and tool coordination...</p>
-                        </div>
-                     ))}
+            <div className="flex flex-col gap-8 max-w-3xl">
+              {integrations.map(group => (
+                <div key={group.role}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-[10px] font-black font-mono text-primary-container/60 uppercase tracking-[0.2em] flex items-center gap-2">
+                       <span>{group.icon}</span> {group.role}
+                    </span>
+                    <div className="flex-1 h-px bg-outline-variant/10"></div>
                   </div>
-               </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    {group.items.map(item => (
+                      <div key={item.id} className="flex items-center justify-between px-5 py-4 bg-surface-container rounded-lg border border-outline-variant/10 hover:bg-surface-bright transition-all">
+                        
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-sm bg-surface-container-high flex items-center justify-center text-sm border border-outline-variant/20">
+                            ✨
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-black font-label text-on-surface uppercase tracking-wide">
+                              {item.name}
+                            </div>
+                            <div className="text-[9px] font-mono text-on-surface/30 uppercase mt-0.5">
+                              {item.type}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {item.connected ? (
+                          <button className="text-[9px] font-black font-mono text-primary-container uppercase tracking-widest flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                            CONNECTED
+                          </button>
+                        ) : (
+                          <button className="text-[9px] font-black font-mono text-on-surface/30 uppercase tracking-widest hover:text-primary-container transition-colors">
+                            CONNECT →
+                          </button>
+                        )}
+                        
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
+
         </div>
       </main>
     </div>
