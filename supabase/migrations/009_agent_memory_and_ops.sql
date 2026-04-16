@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.llm_memories (
 );
 
 -- 2. Consolidate and Update OrcaHub Templates
-TRUNCATE TABLE public.orcahub_templates;
+TRUNCATE TABLE public.orcahub_templates CASCADE;
 
 INSERT INTO public.orcahub_templates (slug, name, description, category, plan_required, template_data)
 VALUES 

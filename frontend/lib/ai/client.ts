@@ -13,21 +13,31 @@ function asHybrid(langchainModel: any): HybridAIClient {
   };
 }
 
-// Langchain Legacy Exports
-export const gemini = asHybrid(new ChatGoogleGenerativeAI({
-  modelName: 'gemini-1.5-pro',
-  apiKey: process.env.GEMINI_API_KEY || '',
-  temperature: 0.7,
-}));
+// Langchain Lazy Helpers
+let _gemini: any = null;
+let _groq: any = null;
 
-export const groq = asHybrid(new ChatGroq({
-  modelName: 'llama-3.3-70b-versatile',
-  apiKey: process.env.GROQ_API_KEY || '',
-  temperature: 0.5,
-}));
+export const getGemini = () => {
+  if (!_gemini) {
+    _gemini = asHybrid(new ChatGoogleGenerativeAI({
+      modelName: 'gemini-1.5-pro',
+      apiKey: process.env.GEMINI_API_KEY || '',
+      temperature: 0.7,
+    }));
+  }
+  return _gemini;
+};
 
-export const getGemini = () => gemini;
-export const getGroq = () => groq;
+export const getGroq = () => {
+  if (!_groq) {
+    _groq = asHybrid(new ChatGroq({
+      modelName: 'llama-3.3-70b-versatile',
+      apiKey: process.env.GROQ_API_KEY || '',
+      temperature: 0.5,
+    }));
+  }
+  return _groq;
+};
 
 // New OpenRouter Hybrid Export
 export const getOpenRouter = (modelSlug: string): HybridAIClient => {

@@ -16,6 +16,12 @@ export default function DashboardSidebar({ active }: SidebarProps) {
   const router = useRouter();
   const supabase = createClientSupabaseClient();
   
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.refresh();
+    router.push('/login');
+  };
+
   const [recents, setRecents] = useState<any[]>([]);
 
   // Calculate current active route if not explicitly passed
