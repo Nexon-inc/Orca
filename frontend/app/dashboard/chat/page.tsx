@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
 
-export default function ChatPage() {
+function ChatContent() {
   const router = useRouter();
   const params = useParams();
   const [org, setOrg] = useState<any>(null);
@@ -473,5 +473,17 @@ export default function ChatPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen bg-surface items-center justify-center">
+        <span className="text-[10px] font-mono text-on-surface/20 uppercase animate-pulse">Initializing_Neural_Link...</span>
+      </div>
+    }>
+      <ChatContent />
+    </Suspense>
   );
 }
