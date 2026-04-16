@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   // Build templates query
   let query = supabase
     .from('orcahub_templates')
-    .select('id, slug, name, description, category, tags, plan_required, installs, preview_image_url, author')
+    .select('id, slug, name, description, category, tags, plan_required, installs, preview_image_url, author, template_data')
     .eq('published', true)
     .order('installs', { ascending: false }) // most popular first
 
