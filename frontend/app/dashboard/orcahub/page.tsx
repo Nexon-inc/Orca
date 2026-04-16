@@ -293,11 +293,13 @@ export default function OrcaHubPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-[11px] font-black text-on-surface uppercase tracking-widest">{dept.key}</span>
                         <span className="h-px flex-1 bg-outline-variant/5"></span>
-                        <span className="text-[8px] font-mono text-primary-container/60 uppercase">{dept.agent_mode}</span>
+                        <span className="text-[8px] font-mono text-primary-container/60 uppercase">{dept.agent_mode || 'AUTOPILOT'}</span>
                       </div>
-                      <p className="text-[12px] font-body text-on-surface/40 italic">{dept.description}</p>
-                      <div className="flex gap-2 mt-3">
-                        {dept.active_agents?.map((agent: string) => (
+                      <p className="text-[12px] font-body text-on-surface/40 italic">
+                        {dept.description || 'Optimized agent handoff protocols active for this department.'}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {(dept.active_agents || ['Atlas']).map((agent: string) => (
                           <span key={agent} className="px-2 py-0.5 bg-primary-container/5 border border-primary-container/20 rounded text-[8px] font-black text-primary-container uppercase">{agent}</span>
                         ))}
                       </div>

@@ -2,22 +2,22 @@
   {
     "slug": "saas-startup",
     "name": "SaaS Startup",
-    "description": "For solo founders and early-stage SaaS teams. Activates Marketing, Sales, Tech, and Ops with recommended agent modes and Day 1 briefs ready to go.",
+    "description": "For solo founders and early-stage SaaS teams. Activates Marketing, Sales, Tech, and Ops with core executive protocols ready to go.",
     "category": "saas_startup",
     "tags": ["startup","saas","founders"],
     "template_data": {
       "departments": [
-        {"key":"marketing","agent_mode":"approve_first","priority":"high","description":"Content, social, SEO","active_agents":["Aria","Jackie","Lucy"]},
-        {"key":"sales","agent_mode":"approve_first","priority":"high","description":"Leads and outreach","active_agents":["Rex","Clara","Chase"]},
-        {"key":"tech","agent_mode":"autopilot","priority":"medium","description":"Code security and DevOps","active_agents":["Ghost","Wren","Hex"]},
-        {"key":"ops","agent_mode":"autopilot","priority":"medium","description":"Project management","active_agents":["Atlas","Cal","Dean"]}
+        {"key":"marketing","agent_mode":"approve_first","priority":"high","description":"Brand voice, social media, and SEO generation","active_agents":["Aria"]},
+        {"key":"sales","agent_mode":"approve_first","priority":"high","description":"Lead prospecting and outreach pipelines","active_agents":["Rex"]},
+        {"key":"tech","agent_mode":"autopilot","priority":"medium","description":"Codebase security and system health monitoring","active_agents":["Ghost"]},
+        {"key":"ops","agent_mode":"autopilot","priority":"medium","description":"Executive coordination and project management","active_agents":["Atlas"]}
       ],
       "suggested_integrations": ["github","notion","slack","google_calendar","linkedin","hubspot"],
       "day1_briefs": [
-        {"agent_name":"Aria","brief":"Write 5 LinkedIn posts introducing our product. Founder tone. Include our waitlist link.","rationale":"Aria gets your social presence started immediately with content that attracts your ICP."},
+        {"agent_name":"Aria","brief":"Write 5 LinkedIn posts introducing our product with a founder tone. Generate 10 SEO keywords for our landing page.","rationale":"Aria establishes your brand voice and search visibility immediately."},
         {"agent_name":"Rex","brief":"Find 20 founders in our ICP who have posted about operational challenges in the last 30 days.","rationale":"Rex builds your first lead pipeline with warm, high-intent prospects."},
-        {"agent_name":"Ghost","brief":"Scan our main repository for security vulnerabilities. Report any critical issues immediately.","rationale":"Ghost catches security issues before they become production problems."},
-        {"agent_name":"Atlas","brief":"Create a launch week project plan with daily tasks for the next 7 days.","rationale":"Atlas gives structure to your first week so nothing falls through the cracks."}
+        {"agent_name":"Ghost","brief":"Scan our main repository for security vulnerabilities and monitor system health hooks.","rationale":"Ghost ensures your code is secure and your servers are healthy from day one."},
+        {"agent_name":"Atlas","brief":"Coordinate the launch week project plan and synchronize all executive assignments.","rationale":"Atlas provides the high-level coordination to keep the team moving."}
       ]
     },
     "author": "orca_official",
@@ -25,24 +25,22 @@
     "published": true
   },
   {
-    "slug": "content-marketing-agency",
+    "slug": "marketing-agency",
     "name": "Content Marketing Agency",
-    "description": "For agencies running content, SEO, and social for multiple clients. Activates Marketing, Intelligence, Community, and Ops.",
+    "description": "For agencies running high-volume content and social for clients. Activates Marketing, Intelligence, and Ops.",
     "category": "marketing_agency",
     "tags": ["agency","marketing","content","seo"],
     "template_data": {
       "departments": [
-        {"key":"marketing","agent_mode":"approve_first","priority":"high","description":"Content, social, SEO, ads","active_agents":["Aria","Jackie","Eric","Lucy"]},
-        {"key":"intel","agent_mode":"autopilot","priority":"medium","description":"Competitor and market research","active_agents":["Roman","Sage","Nate"]},
-        {"key":"community","agent_mode":"approve_first","priority":"medium","description":"Partnerships and growth","active_agents":["Milo","Rio","Spike"]},
-        {"key":"ops","agent_mode":"autopilot","priority":"low","description":"Project and task management","active_agents":["Atlas","Dean","Iris"]}
+        {"key":"marketing","agent_mode":"approve_first","priority":"high","description":"Social media publishing and brand voice consistency","active_agents":["Aria"]},
+        {"key":"intel","agent_mode":"autopilot","priority":"medium","description":"Deep web market and competitor research","active_agents":["Roman"]},
+        {"key":"ops","agent_mode":"autopilot","priority":"low","description":"Client project and task management coordination","active_agents":["Atlas"]}
       ],
       "suggested_integrations": ["linkedin","twitter","wordpress","google_analytics","ahrefs","notion","slack"],
       "day1_briefs": [
-        {"agent_name":"Jackie","brief":"Write a 1,200-word blog post about the top 5 AI tools for small business owners. SEO-optimised, professional tone.","rationale":"Jackie produces your first piece of content immediately — sets the quality bar."},
-        {"agent_name":"Lucy","brief":"Run an SEO audit of our main website. Report the top 10 on-page issues to fix this week.","rationale":"Lucy identifies quick wins that improve organic visibility without new content."},
-        {"agent_name":"Roman","brief":"Research our top 5 competitors. Summarise their content strategy, publishing frequency, and top performing topics.","rationale":"Roman builds the competitive intelligence your whole team will reference."},
-        {"agent_name":"Sage","brief":"Monitor our brand name and top 3 competitors on LinkedIn, X, and Reddit for the next 30 days.","rationale":"Sage keeps you informed of market movements without manual searching."}
+        {"agent_name":"Aria","brief":"Generate a 1,200-word blog post about the top 5 AI tools for small business. SEO-optimised for client review.","rationale":"Aria produces high-quality content that sets the bar for the agency."},
+        {"agent_name":"Roman","brief":"Perform deep web research on our top 5 competitors. Summarise their content strategy and technology stack.","rationale":"Roman builds the competitive intelligence report for your strategy."},
+        {"agent_name":"Atlas","brief":"Construct a client onboarding workflow and assign first tasks to the marketing team.","rationale":"Atlas streamlines the agency operations for new client intake."}
       ]
     },
     "author": "orca_official",
@@ -52,22 +50,22 @@
   {
     "slug": "ecommerce-operator",
     "name": "E-commerce Operator",
-    "description": "For DTC brands and online stores. Activates Marketing, Sales, Customer Success, and Finance with an e-commerce focus.",
+    "description": "For DTC brands and online stores. Activates Marketing, Sales, Customer Success, and Ops.",
     "category": "ecommerce",
     "tags": ["ecommerce","dtc","retail","shopify"],
     "template_data": {
       "departments": [
-        {"key":"marketing","agent_mode":"approve_first","priority":"high","description":"Ads, social, email","active_agents":["Aria","Eric","Jackie"]},
-        {"key":"sales","agent_mode":"autopilot","priority":"high","description":"Lead gen and pipeline","active_agents":["Rex","Clara","Chase"]},
-        {"key":"cs","agent_mode":"autopilot","priority":"high","description":"Support and retention","active_agents":["Purity","Bruce","Nadia"]},
-        {"key":"finance","agent_mode":"approve_first","priority":"medium","description":"Invoicing and expenses","active_agents":["Bill","Felix","Reid"]}
+        {"key":"marketing","agent_mode":"approve_first","priority":"high","description":"Ad copy generation and social media campaigns","active_agents":["Aria"]},
+        {"key":"sales","agent_mode":"autopilot","priority":"high","description":"Revenue pipeline and outreach analytics","active_agents":["Rex"]},
+        {"key":"cs","agent_mode":"autopilot","priority":"high","description":"Customer support tickets and retention flows","active_agents":["Purity"]},
+        {"key":"ops","agent_mode":"approve_first","priority":"medium","description":"Operational coordinating and logistics setup","active_agents":["Atlas"]}
       ],
       "suggested_integrations": ["meta","mailchimp","stripe_revenue","intercom","google_analytics"],
       "day1_briefs": [
-        {"agent_name":"Aria","brief":"Write 5 Instagram captions for our product launch campaign. Bold, energetic tone. Include a call to action.","rationale":"Aria kick-starts your social presence for the launch."},
-        {"agent_name":"Eric","brief":"Write 3 Facebook ad copy variants for our best-selling product. Pain-solution format. Audience: 25-40, online shoppers.","rationale":"Eric creates ad copy variants ready to test immediately."},
-        {"agent_name":"Purity","brief":"Create an FAQ document for our 10 most common customer support questions.","rationale":"Purity builds a knowledge base that reduces support volume from day one."},
-        {"agent_name":"Bill","brief":"Set up an invoice template for our standard product orders including terms and payment details.","rationale":"Bill creates a professional invoice template you can use immediately."}
+        {"agent_name":"Aria","brief":"Draft 3 Facebook ad copy variants and 5 Instagram captions for the product launch.","rationale":"Aria kick-starts the marketing engine for immediate traffic."},
+        {"agent_name":"Rex","brief":"Analyze current revenue pipeline and identify the top 10 highest-value leads for outreach.","rationale":"Rex focuses on direct revenue generation from your first hour."},
+        {"agent_name":"Purity","brief":"Initialize the customer onboarding flow and parse latest user feedback for retention signals.","rationale":"Purity ensures your first customers have an elite experience."},
+        {"agent_name":"Atlas","brief":"Establish the logistics coordination plan and sync all revenue hooks for tracking.","rationale":"Atlas ensures the entire machine is synchronized for scaling."}
       ]
     },
     "author": "orca_official",
@@ -77,22 +75,20 @@
   {
     "slug": "recruiting-firm",
     "name": "Recruiting Firm",
-    "description": "For boutique recruitment agencies. Activates People & Hiring, Sales, Intelligence, and Ops with a hiring-first setup.",
+    "description": "For boutique recruitment agencies. Activates Sales, Intelligence, and Ops with a hiring-first setup.",
     "category": "recruiting_firm",
     "tags": ["recruiting","hiring","hr","talent"],
     "template_data": {
       "departments": [
-        {"key":"hiring","agent_mode":"approve_first","priority":"high","description":"Sourcing, screening, verification","active_agents":["Marcus","Vera","Zara","Eli"]},
-        {"key":"sales","agent_mode":"approve_first","priority":"high","description":"Client prospecting and outreach","active_agents":["Rex","Mark","Clara"]},
-        {"key":"intel","agent_mode":"autopilot","priority":"medium","description":"Market and company research","active_agents":["Roman","Sage","Nate"]},
-        {"key":"ops","agent_mode":"autopilot","priority":"low","description":"Task and calendar management","active_agents":["Atlas","Cal","Dean"]}
+        {"key":"sales","agent_mode":"approve_first","priority":"high","description":"Client prospecting and candidate outreach","active_agents":["Rex"]},
+        {"key":"intel","agent_mode":"autopilot","priority":"medium","description":"Market analysis and deep talent research","active_agents":["Roman"]},
+        {"key":"ops","agent_mode":"autopilot","priority":"low","description":"Candidate coordination and hiring workflow management","active_agents":["Atlas"]}
       ],
       "suggested_integrations": ["linkedin_hiring","workable","gmail_outreach","hubspot","notion"],
       "day1_briefs": [
-        {"agent_name":"Marcus","brief":"Source 10 senior software engineering candidates who are open to work and based in East Africa. Include LinkedIn profile links and contact info.","rationale":"Marcus fills your first candidate pipeline immediately."},
-        {"agent_name":"Vera","brief":"Create a screening scorecard for senior software engineers. Include technical skills, culture fit, and red flag criteria.","rationale":"Vera standardises your screening process from day one."},
-        {"agent_name":"Rex","brief":"Find 10 fast-growing startups in East Africa that are likely hiring engineers in the next 90 days. Include funding info and team size.","rationale":"Rex builds your client prospect list with companies actively in hiring mode."},
-        {"agent_name":"Zara","brief":"Create a background verification checklist for candidates we plan to hire. Include employment history, references, and identity verification steps.","rationale":"Zara creates a repeatable verification process before your first placement."}
+        {"agent_name":"Rex","brief":"Find 10 fast-growing startups in our ICP and initiate outreach to their HR leads.","rationale":"Rex builds your client prospect list with high-growth targets."},
+        {"agent_name":"Roman","brief":"Perform deep web research on the senior engineering talent pool in East Africa.","rationale":"Roman builds the intelligence base for your sourcing team."},
+        {"agent_name":"Atlas","brief":"Create a standard screening scorecard and candidate onboarding workflow.","rationale":"Atlas standardises the hiring process for consistent results."}
       ]
     },
     "author": "orca_official",
@@ -102,22 +98,20 @@
   {
     "slug": "dev-agency",
     "name": "Dev Agency",
-    "description": "For software development agencies. Activates Tech, Ops, Sales, and Finance with a developer-first configuration.",
+    "description": "For software development agencies. Activates Tech, Ops, and Sales with a developer-first configuration.",
     "category": "dev_agency",
     "tags": ["dev","agency","software","engineering"],
     "template_data": {
       "departments": [
-        {"key":"tech","agent_mode":"approve_first","priority":"high","description":"Code reviews, security, DevOps, docs","active_agents":["Ghost","Cipher","Wren","Hex"]},
-        {"key":"ops","agent_mode":"autopilot","priority":"high","description":"Project management and coordination","active_agents":["Atlas","Dean","Iris","Owen"]},
-        {"key":"sales","agent_mode":"approve_first","priority":"medium","description":"Client prospecting and pipeline","active_agents":["Rex","Clara","Mark"]},
-        {"key":"finance","agent_mode":"approve_first","priority":"medium","description":"Invoicing and contracts","active_agents":["Bill","Lena","Reid"]}
+        {"key":"tech","agent_mode":"approve_first","priority":"high","description":"Code reviews, system health, and security monitors","active_agents":["Ghost"]},
+        {"key":"ops","agent_mode":"autopilot","priority":"high","description":"Project management and dev workflow coordination","active_agents":["Atlas"]},
+        {"key":"sales","agent_mode":"approve_first","priority":"medium","description":"Lead gen and client outreach analytics","active_agents":["Rex"]}
       ],
       "suggested_integrations": ["github","linear","vercel","hubspot","notion","stripe_revenue","docusign"],
       "day1_briefs": [
-        {"agent_name":"Cipher","brief":"Review our GitHub repository structure and suggest improvements to our code review and PR approval process.","rationale":"Cipher establishes code quality standards before the next PR."},
-        {"agent_name":"Hex","brief":"Create a README template for our client project repositories. Include setup instructions, architecture overview, and contribution guidelines.","rationale":"Hex creates a professional documentation standard your whole team uses."},
-        {"agent_name":"Rex","brief":"Find 10 funded startups that recently announced a product launch and likely need development support. Include funding stage and tech stack if visible.","rationale":"Rex builds a warm prospect list of companies in active build mode."},
-        {"agent_name":"Lena","brief":"Draft a standard software development contract template for client projects. Include scope, payment terms, IP ownership, and termination clauses.","rationale":"Lena creates a legally sound contract template you can customise per client."}
+        {"agent_name":"Ghost","brief":"Scan the client repository for vulnerabilities and establish system health monitoring.","rationale":"Ghost ensures technical excellence and security from the start."},
+        {"agent_name":"Atlas","brief":"Set up the development project board and coordinate first sprint task assignments.","rationale":"Atlas provides the structure needed for high-velocity shipping."},
+        {"agent_name":"Rex","brief":"Lead prospecting for companies that recently announced funding and need development support.","rationale":"Rex keeps the project pipeline full of high-value clients."}
       ]
     },
     "author": "orca_official",
@@ -127,21 +121,18 @@
   {
     "slug": "intelligence-research-desk",
     "name": "Intelligence & Research Desk",
-    "description": "For research teams and think tanks. Activates Intelligence, Community, and Ops for deep market and competitive research.",
+    "description": "For research teams and think tanks. Activates Intelligence and Ops for deep market and competitive research.",
     "category": "intelligence",
     "tags": ["research","intelligence","competitive","analysis"],
     "template_data": {
       "departments": [
-        {"key":"intel","agent_mode":"autopilot","priority":"high","description":"Research, signals, summaries, forecasting","active_agents":["Roman","Sage","Nate","Ada","Dex"]},
-        {"key":"community","agent_mode":"approve_first","priority":"medium","description":"Community and partnerships","active_agents":["Milo","Rio","Spike"]},
-        {"key":"ops","agent_mode":"autopilot","priority":"low","description":"Project management and documentation","active_agents":["Atlas","Dean","Iris"]}
+        {"key":"intel","agent_mode":"autopilot","priority":"high","description":"Research, signals, summaries, and forecasting","active_agents":["Roman"]},
+        {"key":"ops","agent_mode":"autopilot","priority":"low","description":"Project management and documentation coordination","active_agents":["Atlas"]}
       ],
       "suggested_integrations": ["perplexity","semrush","ahrefs","notion","slack"],
       "day1_briefs": [
-        {"agent_name":"Roman","brief":"Research the AI Company OS and AI agent management market. Identify all key players, their positioning, pricing models, and target customers. Deliver a structured competitive landscape report.","rationale":"Roman builds the foundational competitive intelligence your whole team will reference."},
-        {"agent_name":"Sage","brief":"Set up monitoring for these keywords: AI agents, AI company OS, autonomous company, multi-agent systems — on LinkedIn, X, and Reddit. Alert me to significant activity.","rationale":"Sage keeps continuous watch on the market so you never miss a signal."},
-        {"agent_name":"Nate","brief":"Create a weekly intelligence brief template. Include sections for: market movements, competitor updates, technology signals, funding news, and key takeaways.","rationale":"Nate builds the brief format your team will use every week."},
-        {"agent_name":"Ada","brief":"Build a 6-month growth forecast model for the AI tools market segment. Include TAM estimate, growth rate assumptions, and key risk factors.","rationale":"Ada gives your research a quantitative foundation for strategic planning."}
+        {"agent_name":"Roman","brief":"Perform deep web research on the AI agent management market and identify key competitors.","rationale":"Roman builds the foundational intelligence for your entire operation."},
+        {"agent_name":"Atlas","brief":"Organize the research project timeline and manage the final report documentation flow.","rationale":"Atlas ensures your research is structured and delivered on time."}
       ]
     },
     "author": "orca_official",
