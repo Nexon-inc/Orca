@@ -12,6 +12,7 @@ export default function ProjectsPage() {
   const [ideationInput, setIdeationInput] = useState('');
   const [ideationResult, setIdeationResult] = useState<string | null>(null);
   const [isIdeating, setIsIdeating] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,6 +26,17 @@ export default function ProjectsPage() {
         
         setProjects(projData.projects || []);
         setUserPlan(orgData.member?.organizations?.plan || 'free');
+
+        // Automatically select the active organization as the "Main Project"
+        if (orgData.member?.organizations) {
+          setSelectedProject({
+            id: orgData.member.organizations.id,
+            name: orgData.member.organizations.name,
+            plan: orgData.member.organizations.plan,
+            deptCount: projData.projects?.[0]?.deptCount || 9,
+            agentCount: projData.projects?.[0]?.agentCount || 45
+          });
+        }
       } catch (err) {
         console.error('Failed to fetch projects:', err);
       } finally {
@@ -68,31 +80,126 @@ export default function ProjectsPage() {
           <div className="flex items-center justify-between mb-12">
             <div>
               <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase border-b-2 border-primary-container inline-block pb-1">
-                PROJECTS
+                {selectedProject ? selectedProject.name : 'PROJECTS'}
               </h1>
               <p className="font-body text-sm text-on-secondary-container mt-4">
-                Manage your organizations and launch new business ventures.
+                {selectedProject 
+                  ? `Control center for ${selectedProject.name}. Track assignments and roadblocks.`
+                  : "Manage your organizations and launch new business ventures."}
               </p>
             </div>
             
-            <button 
-              onClick={() => setShowIdeation(true)}
-              className="px-6 py-2.5 bg-primary-container text-on-primary font-black uppercase text-[10px] tracking-widest rounded-sm neon-glow flex items-center gap-2 hover:bg-primary-fixed transition-all"
-            >
-              <span className="material-symbols-outlined text-sm">psychology</span>
-              AI_IDEATION_ENGINE
-            </button>
+            <div className="flex gap-4">
+              {selectedProject && (
+                <button 
+                  onClick={() => setSelectedProject(null)}
+                  className="px-6 py-2.5 border border-outline-variant/20 text-on-surface/40 font-black uppercase text-[10px] tracking-widest rounded-sm hover:border-on-surface hover:text-on-surface transition-all"
+                >
+                  BACK_TO_LIST
+                </button>
+              )}
+              <button 
+                onClick={() => setShowIdeation(true)}
+                className="px-6 py-2.5 bg-primary-container text-on-primary font-black uppercase text-[10px] tracking-widest rounded-sm neon-glow flex items-center gap-2 hover:bg-primary-fixed transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">psychology</span>
+                {selectedProject ? 'STRATEGIZE' : 'AI_IDEATION_ENGINE'}
+              </button>
+            </div>
           </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <span className="text-[10px] font-mono text-on-surface/20 uppercase animate-pulse">Initializing_Sync...</span>
             </div>
+          ) : selectedProject ? (
+            /* PROJECT CONTROL CENTER VIEW */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Assignments / In-Flight Tasks */}
+              <div className="lg:col-span-2 flex flex-col gap-6">
+                <div className="p-1 px-3 bg-surface-container-high border-l-2 border-primary-container inline-block self-start">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary-container">ACTIVE_ASSIGNMENTS</span>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { agent: 'Aria', role: 'CMO', task: 'Market Opportunity Analysis for Lagos expansion', status: '85%' },
+                    { agent: 'Ghost', role: 'CTO', task: 'Architecture design for high-throughput node clusters', status: '40%' },
+                    { agent: 'Rex', role: 'CSO', task: 'Security audit of smart contract entry points', status: 'PENDING' }
+                  ].map((item, idx) => (
+                    <div key={idx} className="p-5 bg-surface-container rounded-lg border border-outline-variant/10 flex items-center justify-between group hover:border-primary-container/20 transition-all shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded bg-[#131513] border border-outline-variant/20 flex items-center justify-center text-primary-container">
+                          <span className="material-symbols-outlined">{item.agent === 'Aria' ? 'campaign' : item.agent === 'Ghost' ? 'memory' : 'security'}</span>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black uppercase text-on-surface tracking-tight">{item.agent} ({item.role})</p>
+                          <p className="text-[13px] font-body text-on-surface/50 mt-1">{item.task}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] font-mono text-primary-container font-black">{item.status}</span>
+                        <div className="h-1 w-16 bg-surface-container-high rounded-full mt-2 overflow-hidden">
+                          <div className="h-full bg-primary-container shadow-[0_0_8px_rgba(0,195,103,0.5)]" style={{ width: item.status.includes('%') ? item.status : '5%' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Research Questions / Roadblocks */}
+              <div className="flex flex-col gap-6">
+                <div className="p-1 px-3 bg-error/10 border-l-2 border-error inline-block self-start">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-error">ROADBLOCKS_DISCOVERED</span>
+                </div>
+
+                <div className="p-6 bg-[#1a1c1a] border border-error/20 rounded-xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <span className="material-symbols-outlined text-6xl text-error">warning</span>
+                  </div>
+                  
+                  <h3 className="text-[11px] font-black text-on-surface uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm text-error">help</span>
+                    Atlas Requires Input
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="p-4 bg-surface/50 rounded-lg border border-outline-variant/5">
+                      <p className="text-[12px] font-body text-on-surface/70 leading-relaxed italic">
+                        "Regarding the logistics platform, what is the specific regulatory hurdle in the West African market we are prioritizing?"
+                      </p>
+                      <button className="mt-3 w-full py-2 bg-error/10 border border-error/30 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-on-error transition-all">
+                        ANSWER_NOW
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-surface-container-high rounded-xl border border-outline-variant/10">
+                  <h3 className="text-[11px] font-black text-on-surface/40 uppercase tracking-widest mb-4">MILESTONES</h3>
+                  <div className="space-y-4">
+                    {['Identity Definition', 'ICP Mapping', 'Market Sizing', 'Agent Handoffs'].map((m, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className={`material-symbols-outlined text-sm ${i < 2 ? 'text-primary-container' : 'text-on-surface/10'}`}>
+                          {i < 2 ? 'check_circle' : 'radio_button_unchecked'}
+                        </span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${i < 2 ? 'text-on-surface/80' : 'text-on-surface/20'}`}>{m}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+            </div>
           ) : (
+            /* PROJECT LIST VIEW */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map(project => (
                 <div 
                   key={project.id} 
+                  onClick={() => setSelectedProject(project)}
                   className="p-6 bg-surface-container rounded-lg border border-outline-variant/10 hover:bg-surface-bright hover:border-primary-container/20 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-2 mb-4">
@@ -111,7 +218,7 @@ export default function ProjectsPage() {
                   </div>
                   
                   <div className="flex gap-2 mt-4 pt-4 border-t border-outline-variant/10">
-                    <button className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest bg-primary-container/10 border border-primary-container/40 text-primary-container rounded-sm hover:bg-primary-container hover:text-on-primary transition-colors">
+                    <button className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest bg-primary-container/10 border border-primary-container/40 text-primary-container rounded-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
                       OPEN →
                     </button>
                     <button className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest border border-outline-variant/20 text-on-surface/40 rounded-sm hover:border-outline-variant/40 hover:text-on-surface transition-colors">
@@ -121,9 +228,9 @@ export default function ProjectsPage() {
                 </div>
               ))}
 
-              <div className="p-6 bg-surface-container-low rounded-lg border border-outline-variant/10 border-dashed hover:border-primary-container/30 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px] gap-3">
-                <span className="material-symbols-outlined text-2xl text-on-surface/20">add</span>
-                <span className="text-[10px] font-black font-label uppercase tracking-widest text-on-surface/30">
+              <div className="p-6 bg-surface-container-low rounded-lg border border-outline-variant/10 border-dashed hover:border-primary-container/30 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px] gap-3 group">
+                <span className="material-symbols-outlined text-2xl text-on-surface/20 group-hover:text-primary-container transition-colors">add</span>
+                <span className="text-[10px] font-black font-label uppercase tracking-widest text-on-surface/30 group-hover:text-on-surface transition-colors">
                   NEW_PROJECT
                 </span>
               </div>

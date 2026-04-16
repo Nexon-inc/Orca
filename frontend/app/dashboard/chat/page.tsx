@@ -44,6 +44,10 @@ export default function ChatPage() {
     { key: 'cto', role: 'CTO', icon: 'memory', name: 'Ghost' },
   ];
 
+  const [isIdeating, setIsIdeating] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
   const [isOnboarding, setIsOnboarding] = useState(false);
 
   useEffect(() => {
@@ -178,6 +182,16 @@ export default function ChatPage() {
     }
   };
 
+  const handleVoiceInput = () => {
+    alert("In a real browser, this would trigger Google Speech Recognition via webkitSpeechRecognition. Initializing microphone...");
+    setIsListening(true);
+    // Mock transcription after 2s
+    setTimeout(() => {
+      setIsListening(false);
+      // setInput("This is a voice transcription placeholder.");
+    }, 2000);
+  };
+
   useEffect(() => {
     adjustTextareaHeight();
   }, [input]);
@@ -263,7 +277,7 @@ export default function ChatPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-[12px] font-black font-headline text-on-surface uppercase tracking-wider">
-                            {msg.agent?.name || 'Aria'} ({msg.agent?.role || 'CMO'})
+                            ([{msg.agent?.name || 'Aria'}] ([{msg.agent?.role || 'CMO'}]))
                           </span>
                           <span className="text-[8px] font-mono text-on-surface/20 uppercase ml-auto">
                             JUST NOW
@@ -318,7 +332,7 @@ export default function ChatPage() {
               ))}
             </div>
 
-            <div className="bg-[#121412] border border-[#262a26] rounded-2xl overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary-container/20">
+            <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary-container/20">
               <div className="px-6 py-4">
                 <textarea
                   ref={inputRef}
@@ -338,9 +352,27 @@ export default function ChatPage() {
 
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40">
                 <div className="flex items-center gap-2">
-                  <button className="h-8 w-8 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5">
-                    <span className="material-symbols-outlined text-[22px]">add</span>
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowAddMenu(!showAddMenu)}
+                      className="h-8 w-8 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5"
+                    >
+                      <span className="material-symbols-outlined text-[22px]">add</span>
+                    </button>
+                    {showAddMenu && (
+                      <div className="absolute bottom-full mb-3 left-0 bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 min-w-[180px] z-50">
+                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">upload_file</span> Upload Document
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">image</span> Upload Image
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">link</span> Link Source
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="h-4 w-[1px] bg-[#262a26] mx-1" />
                   
@@ -352,7 +384,10 @@ export default function ChatPage() {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <button className="h-8 w-8 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5">
+                  <button 
+                    onClick={handleVoiceInput}
+                    className={`h-8 w-8 flex items-center justify-center transition-colors rounded-lg hover:bg-white/5 ${isListening ? 'text-error animate-pulse' : 'text-on-surface/40 hover:text-primary-container'}`}
+                  >
                     <span className="material-symbols-outlined text-[22px]">mic</span>
                   </button>
                   <button 
