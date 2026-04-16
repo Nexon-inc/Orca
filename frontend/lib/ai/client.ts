@@ -1,6 +1,6 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatGroq } from '@langchain/groq';
-import OpenRouter from '@openrouter/sdk';
+import { OpenRouter } from '@openrouter/sdk';
 import type { HybridAIClient } from './HybridClient';
 
 // Helper to coerce Langchain models into our Hybrid interface natively

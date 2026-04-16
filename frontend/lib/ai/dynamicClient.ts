@@ -5,7 +5,7 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatMistralAI } from '@langchain/mistralai';
 import { ChatOllama } from '@langchain/community/chat_models/ollama';
 
-import OpenRouter from '@openrouter/sdk';
+import { OpenRouter } from '@openrouter/sdk';
 import type { ResolvedLLM } from './resolveModel';
 import type { HybridAIClient } from './HybridClient';
 

@@ -239,13 +239,13 @@ export async function POST(
   }
 
   // Save agent message
-  const mode = agent.departments ? agent.departments.agent_mode : 'approve_first'
+  const agentMode = agent.departments ? agent.departments.agent_mode : 'approve_first'
   const { data: agentMessage } = await supabase.from('messages').insert({
     conversation_id: conversationId,
     sender_type: 'agent',
     content: agentResponse,
     result_items: resultItems,
-    status: mode === 'autopilot' ? 'approved' : 'pending',
+    status: agentMode === 'autopilot' ? 'approved' : 'pending',
     metadata: {
       thinking_steps: thinkingSteps,
       has_visual_request: !!visualMatch,
