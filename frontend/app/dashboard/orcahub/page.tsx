@@ -201,7 +201,10 @@ export default function OrcaHubPage() {
                       </div>
                       
                       <div className="flex gap-2 shrink-0">
-                        <button className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest border border-outline-variant/20 text-on-surface/40 rounded-sm hover:border-on-surface hover:text-on-surface transition-colors">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setActiveDrawerTemplate(tpl); }}
+                          className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest border border-outline-variant/20 text-on-surface/40 rounded-sm hover:border-on-surface hover:text-on-surface transition-all"
+                        >
                           PREVIEW
                         </button>
                         <button 
