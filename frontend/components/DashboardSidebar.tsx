@@ -36,15 +36,22 @@ export default function DashboardSidebar({ active }: SidebarProps) {
 
   const navItems = [
     { id: 'chat', label: 'Chat', icon: 'terminal', href: '/dashboard/chat' },
-    { id: 'orcahub', label: 'Orca Hub', icon: 'hub', href: '/dashboard/orcahub' },
-    { id: 'archives', label: 'Archives', icon: 'database', href: '/dashboard/archives' },
     { id: 'projects', label: 'Projects', icon: 'layers', href: '/dashboard/projects' },
+    { id: 'archives', label: 'Archives', icon: 'database', href: '/dashboard/archives' },
+    { id: 'orcahub', label: 'Orca Hub', icon: 'hub', href: '/dashboard/orcahub' },
     { id: 'settings', label: 'Settings', icon: 'settings', href: '/dashboard/settings' },
   ];
 
   const getExecIcon = (agentName?: string) => {
     if (!agentName) return 'chat_bubble';
-    const map: any = { Aria: 'campaign', Rex: 'work', Purity: 'monitoring', Roman: 'terminal', Ghost: 'security', Atlas: 'account_balance' };
+    const map: any = { 
+      Aria: 'campaign', 
+      Rex: 'payments', 
+      Purity: 'support_agent', 
+      Roman: 'hub', 
+      Ghost: 'memory', 
+      Atlas: 'leaderboard' 
+    };
     return map[agentName] || 'chat_bubble';
   };
 

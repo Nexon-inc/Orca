@@ -36,12 +36,12 @@ export default function ChatPage() {
   ];
 
   const EXECUTIVE_PILLS = [
-    { key: 'ceo', role: 'CEO', icon: 'account_balance', title: 'Atlas (CEO/Ops)' },
-    { key: 'cmo', role: 'CMO', icon: 'campaign', title: 'Aria (Marketing)' },
-    { key: 'cso', role: 'CSO', icon: 'work', title: 'Rex (Sales)' },
-    { key: 'cco', role: 'CCO', icon: 'monitoring', title: 'Purity (Customer)' },
-    { key: 'cio', role: 'CIO', icon: 'terminal', title: 'Roman (Intel)' },
-    { key: 'cto', role: 'CTO', icon: 'security', title: 'Ghost (Tech)' },
+    { key: 'ceo', role: 'CEO', icon: 'leaderboard', name: 'Atlas' },
+    { key: 'cmo', role: 'CMO', icon: 'campaign', name: 'Aria' },
+    { key: 'cso', role: 'CSO', icon: 'payments', name: 'Rex' },
+    { key: 'cco', role: 'CCO', icon: 'support_agent', name: 'Purity' },
+    { key: 'cio', role: 'CIO', icon: 'hub', name: 'Roman' },
+    { key: 'cto', role: 'CTO', icon: 'memory', name: 'Ghost' },
   ];
 
   const [isOnboarding, setIsOnboarding] = useState(false);
@@ -191,10 +191,15 @@ export default function ChatPage() {
       <div className="relative">
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 text-on-surface/30 hover:text-primary-container transition-colors group pointer-events-auto"
+          className="flex items-center gap-1.5 text-on-surface/40 hover:text-primary-container transition-colors group pointer-events-auto px-2 py-1 rounded-md hover:bg-white/5"
         >
-          <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-primary-container font-label">{displayValue}</span>
-          <span className="material-symbols-outlined text-[16px]">{isOpen ? 'expand_less' : 'expand_more'}</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.15em] group-hover:text-primary-container font-label">{displayValue}</span>
+          <svg 
+            className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
         </button>
         {isOpen && (
           <div className="absolute bottom-full mb-2 left-0 min-w-[140px] bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 z-50 pointer-events-auto overflow-hidden">
@@ -207,7 +212,7 @@ export default function ChatPage() {
                 <button
                   key={optId}
                   onClick={() => { onChange(opt); setIsOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-primary-container/10 transition-colors ${activeId === optId ? 'text-primary-container' : 'text-on-surface/60'}`}
+                  className={`w-full text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.2em] hover:bg-white/5 transition-colors ${activeId === optId ? 'text-primary-container' : 'text-on-surface/50'}`}
                 >
                   {optLabel}
                 </button>
@@ -247,17 +252,18 @@ export default function ChatPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-4 mb-6">
+                    <div className="flex gap-4 mb-8">
                       <div className="flex-shrink-0 pt-1">
-                        <div className="text-[9px] font-black font-mono text-primary-container/60 uppercase tracking-widest">
-                          📣 {msg.agent?.role || 'CMO'}
+                        <div className="w-8 h-8 rounded bg-primary-container/10 border border-primary-container/20 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-[18px] text-primary-container">
+                            {EXECUTIVE_PILLS.find(p => p.role === msg.agent?.role)?.icon || 'smart_toy'}
+                          </span>
                         </div>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider">{msg.agent?.role || 'ARIA'}</span>
-                          <span className="text-[9px] font-mono text-primary-container/60 uppercase">
-                            {msg.agent?.title || 'CHIEF MARKETING OFFICER'}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[12px] font-black font-headline text-on-surface uppercase tracking-wider">
+                            {msg.agent?.name || 'Aria'} ({msg.agent?.role || 'CMO'})
                           </span>
                           <span className="text-[8px] font-mono text-on-surface/20 uppercase ml-auto">
                             JUST NOW
@@ -302,17 +308,17 @@ export default function ChatPage() {
                   onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
                   className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-colors ${
                     pinnedAgent === exec.role
-                      ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container'
-                      : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/40 hover:border-primary-container/40 hover:text-on-surface'
+                      ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.1)]'
+                      : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'
                   } ${isOnboarding && exec.role !== 'CEO' ? 'opacity-30 cursor-not-allowed' : ''}`}
                 >
-                  <span className="material-symbols-outlined text-xs">{exec.icon}</span>
-                  {exec.role}
+                  <span className="material-symbols-outlined text-sm">{exec.icon}</span>
+                  {exec.name}
                 </button>
               ))}
             </div>
 
-            <div className="bg-[#1a1c1a] border border-[#2d312d] rounded-xl overflow-hidden chat-container-shadow transition-all focus-within:border-primary-container/30">
+            <div className="bg-[#121412] border border-[#262a26] rounded-2xl overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary-container/20">
               <div className="px-6 py-4">
                 <textarea
                   ref={inputRef}
@@ -324,36 +330,40 @@ export default function ChatPage() {
                       handleSendMessage();
                     }
                   }}
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-sm font-body resize-none overflow-y-auto min-h-[40px] max-h-[120px] no-scrollbar"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h-[44px] max-h-[160px] no-scrollbar py-1"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows"}
                   rows={1}
                 />
               </div>
 
-              <div className="flex items-center justify-between px-4 py-3 bg-[#131513]/50 border-t border-[#2d312d]/50">
-                <div className="flex items-center gap-4">
-                  <button className="text-on-surface/30 hover:text-primary-container transition-colors">
-                    <span className="material-symbols-outlined text-[20px]">add</span>
+              <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40">
+                <div className="flex items-center gap-2">
+                  <button className="h-8 w-8 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5">
+                    <span className="material-symbols-outlined text-[22px]">add</span>
                   </button>
                   
+                  <div className="h-4 w-[1px] bg-[#262a26] mx-1" />
+                  
                   <Dropdown value={chatMode} options={MODES} onChange={setChatMode} />
+                  
+                  <div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" />
+                  
                   <Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} />
-
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <button className="text-on-surface/30 hover:text-primary-container transition-colors">
-                    <span className="material-symbols-outlined text-[20px]">mic</span>
+                  <button className="h-8 w-8 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5">
+                    <span className="material-symbols-outlined text-[22px]">mic</span>
                   </button>
                   <button 
                     onClick={() => handleSendMessage()}
-                    className={`h-8 w-8 flex items-center justify-center rounded-lg transition-all ${
+                    className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${
                       input.trim() 
-                        ? 'bg-primary-container text-on-primary neon-glow hover:bg-primary-fixed'
-                        : 'bg-[#242924] text-on-surface/40 cursor-not-allowed'
+                        ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95'
+                        : 'bg-[#212421] text-on-surface/20 cursor-not-allowed opacity-50'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                    <span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
                   </button>
                 </div>
               </div>
