@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -47,6 +48,57 @@ export default function ChatPage() {
   const [isIdeating, setIsIdeating] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isBriefing, setIsBriefing] = useState(false);
+  
+  const searchParams = useSearchParams();
+  const installedSlug = searchParams.get('installed');
+
+  useEffect(() => {
+    if (installedSlug) {
+      handleMasterBriefing(installedSlug);
+    }
+  }, [installedSlug]);
+
+  const handleMasterBriefing = async (slug: string) => {
+    setIsBriefing(true);
+    try {
+      const res = await fetch(`/api/orcahub/${slug}`);
+      const tpl = await res.json();
+      
+      if (!tpl.template_data?.day1_briefs) return;
+
+      // System Message
+      const systemId = Date.now().toString();
+      setMessages([{
+        id: systemId,
+        role: 'agent',
+        agent: { name: 'ATLAS', role: 'COO' },
+        content: `MASTER BRIEFING INITIALIZED: ${tpl.name.toUpperCase()} OS PROTOCOLS DEPLOYED. STAND BY FOR AGENT HANDOFFS...`,
+        created_at: new Date().toISOString()
+      }]);
+
+      // Sequence the briefs
+      for (const brief of tpl.template_data.day1_briefs) {
+        await new Promise(r => setTimeout(r, 2000)); // Handoff delay
+        
+        const msgId = Math.random().toString(36).substring(7);
+        setMessages(prev => [...prev, {
+          id: msgId,
+          role: 'agent',
+          agent: { 
+            name: brief.agent_name.toUpperCase(), 
+            role: EXECUTIVE_PILLS.find(p => p.name.toUpperCase() === brief.agent_name.toUpperCase())?.role || 'AGENT' 
+          },
+          content: brief.brief,
+          created_at: new Date().toISOString()
+        }]);
+      }
+    } catch (err) {
+      console.error('Master Briefing failed:', err);
+    } finally {
+      setIsBriefing(false);
+    }
+  };
 
   const [isOnboarding, setIsOnboarding] = useState(false);
 
@@ -345,13 +397,14 @@ export default function ChatPage() {
                     }
                   }}
                   className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h-[44px] max-h-[160px] no-scrollbar py-1"
-                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows"}
+                  placeholder={isBriefing ? "Master Briefing in progress..." : (pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows")}
                   rows={1}
+                  disabled={isBriefing}
                 />
               </div>
 
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40">
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${isBriefing ? 'opacity-20 pointer-events-none' : ''}`}>
                   <div className="relative">
                     <button 
                       onClick={() => setShowAddMenu(!showAddMenu)}
