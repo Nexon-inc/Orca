@@ -52,8 +52,6 @@ export default function DashboardSidebar({ active }: SidebarProps) {
       Ghost: 'memory', 
       Atlas: 'leaderboard' 
     };
-    return map[agentName] || 'chat_bubble';
-  };
   };
 
   return (
