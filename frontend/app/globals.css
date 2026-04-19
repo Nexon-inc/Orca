@@ -122,3 +122,7 @@ textarea:focus {
   outline: none;
   box-shadow: none;
 }
+
+/* Sidebar Collapse Overrides */
+.sidebar-collapsed main.ml-64 { margin-left: 5rem !important; transition: margin-left 0.3s ease-in-out; }
+.sidebar-collapsed div.left-64 { left: 5rem !important; transition: left 0.3s ease-in-out; }
