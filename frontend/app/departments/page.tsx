@@ -75,7 +75,7 @@ export default function DepartmentsPage() {
             Ready to deploy your workforce?
           </h2>
           <button className="btn-primary px-12 py-5 uppercase tracking-widest font-black text-[14px]">
-            Join the Waitlist Today â†’
+            Join the Waitlist Today →
           </button>
         </div>
       </section>

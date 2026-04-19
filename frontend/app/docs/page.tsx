@@ -293,7 +293,7 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-12">
             <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">Operating Modes</h1>
             <p className="text-white/40 font-dm-mono uppercase tracking-tighter font-black leading-relaxed">
-               Every department in ORCA can be set to one of three operating modes. You set this globally during onboarding and can adjust per department in Account â†’ Agent Permissions.
+               Every department in ORCA can be set to one of three operating modes. You set this globally during onboarding and can adjust per department in Account → Agent Permissions.
             </p>
             <div className="grid grid-cols-1 gap-6">
               {[
@@ -311,7 +311,7 @@ export default function DocsPage() {
             <div className="p-8 rounded-[3rem] bg-red-500/5 border border-red-500/20">
                <h3 className="text-red-500 font-syne text-lg font-black uppercase tracking-tight mb-4 italic">MASTER KILL SWITCH</h3>
                <p className="text-sm text-white/40 font-dm-mono uppercase tracking-tighter font-black leading-relaxed">
-                  In Account â†’ Agent Permissions, there is a Pause All Agents toggle. When activated, all agent activity across all departments stops immediately. Use this if something goes wrong or if you need to step away.
+                  In Account → Agent Permissions, there is a Pause All Agents toggle. When activated, all agent activity across all departments stops immediately. Use this if something goes wrong or if you need to step away.
                </p>
             </div>
           </div>
@@ -492,11 +492,11 @@ export default function DocsPage() {
                   </thead>
                   <tbody className="text-white/40">
                      {[
-                       { event: 'Deal closes in CRM', agents: 'Clara â†’ Bruce', action: 'Onboarding sequence triggered' },
-                       { event: 'Marketing lead qualifies', agents: 'Vera â†’ Zara', action: 'Sales outreach initiated' },
-                       { event: 'Vulnerability detected', agents: 'Ghost â†’ Volt', action: 'Incident response triggered' },
-                       { event: 'New lead in pipeline', agents: 'Rex â†’ Chase', action: 'Follow-up sequence queued' },
-                       { event: 'Budget limit reached', agents: 'Reid â†’ Atlas', action: 'Spending alert sent to Owner' },
+                       { event: 'Deal closes in CRM', agents: 'Clara → Bruce', action: 'Onboarding sequence triggered' },
+                       { event: 'Marketing lead qualifies', agents: 'Vera → Zara', action: 'Sales outreach initiated' },
+                       { event: 'Vulnerability detected', agents: 'Ghost → Volt', action: 'Incident response triggered' },
+                       { event: 'New lead in pipeline', agents: 'Rex → Chase', action: 'Follow-up sequence queued' },
+                       { event: 'Budget limit reached', agents: 'Reid → Atlas', action: 'Spending alert sent to Owner' },
                      ].map((row, i) => (
                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
                           <td className="py-4 text-white uppercase font-black">{row.event}</td>
@@ -539,7 +539,7 @@ export default function DocsPage() {
             <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">GitHub Setup</h1>
             <div className="space-y-8">
                <div className="p-8 rounded-3xl bg-surface/50 border border-white/5 space-y-6">
-                  <p>1. GO TO INTEGRATIONS â†’ TECH & SECURITY</p>
+                  <p>1. GO TO INTEGRATIONS → TECH & SECURITY</p>
                   <p>2. AUTHORIZE ORCA VIA OAUTH</p>
                   <p>3. SELECT REPOSITORIES & PERMISSIONS (READ/WRITE)</p>
                </div>
@@ -569,7 +569,7 @@ export default function DocsPage() {
             <div className="space-y-8">
                <h4 className="text-green uppercase italic text-lg font-syne font-black">Restricted Key Setup</h4>
                <ol className="list-decimal list-inside space-y-4 bg-surface/50 p-10 rounded-[3rem] border border-white/5 italic">
-                  <li>Go to Stripe Dashboard â†’ Developers â†’ API Keys</li>
+                  <li>Go to Stripe Dashboard → Developers → API Keys</li>
                   <li>Click "Create restricted key"</li>
                   <li>Enable: Customers (read), Invoices (read+write), Payments (read), Subscriptions (read)</li>
                   <li>Copy the key and paste into ORCA Integrations</li>
@@ -702,7 +702,7 @@ export default function DocsPage() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
                   <div className="p-8 rounded-3xl bg-surface/50 border border-white/5 italic">
                      <h5 className="text-white mb-2 italic font-syne">Access Protocols</h5>
-                     <p className="text-[10px]">Owners/Co-founders only. Access via Account â†’ Security. Retained for 12 months (Pro+).</p>
+                     <p className="text-[10px]">Owners/Co-founders only. Access via Account → Security. Retained for 12 months (Pro+).</p>
                   </div>
                   <div className="p-8 rounded-3xl bg-surface/50 border border-white/5 italic">
                      <h5 className="text-white mb-2 italic font-syne">Compliance Export</h5>
@@ -805,7 +805,7 @@ export default function DocsPage() {
                     â† Previous Node
                  </button>
                  <button className="text-[10px] text-green uppercase font-black tracking-widest hover:underline transition-all">
-                    Next: {sections.flatMap(g => g.items)[sections.flatMap(g => g.items).indexOf(activeSection) + 1] || 'Security Protocols'} â†’
+                    Next: {sections.flatMap(g => g.items)[sections.flatMap(g => g.items).indexOf(activeSection) + 1] || 'Security Protocols'} →
                  </button>
               </div>
            </div>

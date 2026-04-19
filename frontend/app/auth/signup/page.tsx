@@ -331,7 +331,7 @@ export default function SignupPage() {
                     : 'hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >
-                {loading ? 'Initializing...' : 'Create Account â†’'}
+                {loading ? 'Initializing...' : 'Create Account →'}
               </button>
 
               {/* Divider + login link */}

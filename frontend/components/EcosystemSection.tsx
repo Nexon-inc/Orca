@@ -9,21 +9,21 @@ const products = [
     subtitle: 'Autonomous Code Security',
     description: 'AI-powered vulnerability detection and automatic PR fixes.',
     plan: 'Starter+',
-    icon: 'Ã°Å¸â€ºÂ¡Ã¯Â¸Â'
+    icon: '🛡️'
   },
   {
     name: 'Render.AI',
     subtitle: 'Neural Creative Production',
     description: 'Generative video and marketing assets for ads and social.',
     plan: 'Pro+',
-    icon: 'Ã°Å¸Å½Â¥'
+    icon: '🎥'
   },
   {
     name: 'Agent47',
     subtitle: 'Specialized Employee Automation',
     description: '47 specialized agents for end-to-end business process automations.',
     plan: '',
-    icon: 'Ã°Å¸Â¤Âµ'
+    icon: '🤵'
   }
 ];
 

@@ -43,7 +43,7 @@ create table public.org_members (
   user_id uuid references public.profiles(id) on delete cascade not null,
   role text not null check (role in ('owner','cofounder','head','member','advisor')),
   department_key text check (department_key in (
-    'marketing','sales','cs','tech','hiring','ops','finance','intel','community'
+    'ops','marketing','sales','cs','tech','intel'
   )),
   invited_by uuid references public.profiles(id),
   joined_at timestamptz default now(),
@@ -79,7 +79,7 @@ create table public.departments (
   id uuid primary key default gen_random_uuid(),
   org_id uuid references public.organizations(id) on delete cascade not null,
   key text not null check (key in (
-    'marketing','sales','cs','tech','hiring','ops','finance','intel','community'
+    'ops','marketing','sales','cs','tech','intel'
   )),
   name text not null,
   icon text not null,

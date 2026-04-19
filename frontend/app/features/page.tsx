@@ -76,7 +76,7 @@ export default function FeaturesPage() {
           </p>
           <div className="feature-hero-text opacity-0">
             <button className="btn-primary px-10 py-4">
-              Start Your Onboarding â†’
+              Start Your Onboarding →
             </button>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function FeaturesPage() {
             Join hundreds of founders building their AI workforce today.
           </p>
           <button className="btn-primary px-12 py-5 relative z-10">
-            Deploy Your Org Chart â†’
+            Deploy Your Org Chart →
           </button>
         </div>
       </section>
