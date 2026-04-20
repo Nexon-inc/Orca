@@ -160,6 +160,9 @@ export default function DashboardSidebar({ active }: SidebarProps) {
           <Link href="/dashboard/settings" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
             <span className="material-symbols-outlined text-[14px]">settings</span> Setup & Env
           </Link>
+          <Link href="/dashboard/settings#billing" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
+            <span className="material-symbols-outlined text-[14px]">credit_card</span> Billing
+          </Link>
           <Link href="/dashboard/account" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3">
             <span className="material-symbols-outlined text-[14px]">manage_accounts</span> Account
           </Link>

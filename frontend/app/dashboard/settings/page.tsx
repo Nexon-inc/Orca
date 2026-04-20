@@ -2,10 +2,58 @@
 
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
-import { useState } from 'react';
+import PricingModal from '@/components/PricingModal';
+import { useState, useEffect } from 'react';
+import { createClientSupabaseClient } from '@/lib/supabase/client';
 
 export default function SettingsPage() {
   const [aiCeoMode, setAiCeoMode] = useState(false);
+  const [org, setOrg] = useState<any>(null);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const supabase = createClientSupabaseClient();
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from('org_members')
+          .select('org_id, organizations(id, plan)')
+          .eq('user_id', user.id)
+          .single()
+          .then(({ data }) => {
+             if (data && data.organizations) {
+               const orgData = Array.isArray(data.organizations) ? data.organizations[0] : data.organizations;
+               setOrg(orgData);
+             }
+          });
+      }
+    });
+
+    // Check URL hash to open billing section by scrolling
+    if (window.location.hash === '#billing') {
+      setTimeout(() => {
+         const el = document.getElementById('billing');
+         if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+    }
+  }, []);
+
+  const handleCancelSubscription = async () => {
+    const isConfirmed = window.confirm("Are you sure you want to cancel your subscription? Your agents will be downgraded to the FREE tier at the end of the billing cycle.");
+    if (isConfirmed) {
+       try {
+          const res = await fetch('/api/billing/cancel', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok) {
+            alert(data.message || "Cancellation request sent successfully.");
+          } else {
+            alert(data.error || "Failed to cancel subscription.");
+          }
+       } catch (err) {
+          alert("A network error occurred.");
+       }
+    }
+  };
 
   return (
     <div className="flex h-screen bg-surface">
@@ -125,6 +173,45 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* BILLING AND SUBSCRIPTION */}
+            <div id="billing" className="text-[9px] font-black font-mono text-on-surface/30 uppercase tracking-[0.2em] mb-4 mt-12 scroll-mt-24">
+              BILLING_AND_SUBSCRIPTION
+            </div>
+
+            <div className="flex items-center justify-between py-4 border-b border-outline-variant/10">
+              <div>
+                <div className="text-[13px] font-black font-label text-on-surface uppercase tracking-wide">
+                  CURRENT_PLAN
+                </div>
+                <div className="text-[11px] font-body text-on-surface/40 mt-0.5">
+                  Your active executive tier: <span className="font-black text-primary-container uppercase ml-1">{org?.plan || 'FREE'}</span>
+                </div>
+              </div>
+              <button 
+                 onClick={() => setShowPricingModal(true)}
+                 className="px-4 py-1.5 border border-outline-variant/30 text-[9px] font-black text-on-surface uppercase tracking-widest rounded-sm hover:border-primary-container/40 hover:text-primary-container hover:bg-primary-container/5 transition-colors pointer"
+              >
+                 UPGRADE →
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-4 border-b border-outline-variant/10">
+              <div>
+                <div className="text-[13px] font-black font-label text-on-surface uppercase tracking-wide">
+                  CANCEL_SUBSCRIPTION
+                </div>
+                <div className="text-[11px] font-body text-on-surface/40 mt-0.5 max-w-sm">
+                  Cancel your active plan. Your agents will be downgraded to the FREE tier at the end of the billing cycle.
+                </div>
+              </div>
+              <button 
+                onClick={handleCancelSubscription}
+                className="px-4 py-1.5 border border-error/30 text-[9px] font-black text-error uppercase tracking-widest rounded-sm hover:border-error hover:bg-error/10 transition-colors pointer"
+              >
+                CANCEL_PLAN
+              </button>
+            </div>
+
             {/* DANGER ZONE */}
             <div className="text-[9px] font-black font-mono text-error/40 uppercase tracking-[0.2em] mb-4 mt-12">
               DANGER_ZONE
@@ -147,6 +234,15 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+
+      {showPricingModal && (
+        <PricingModal 
+          isOpen={showPricingModal} 
+          onClose={() => setShowPricingModal(false)} 
+          isLocked={false}
+          currentPlan={org?.plan}
+        />
+      )}
     </div>
   );
 }

@@ -26,7 +26,8 @@ export async function POST(request: Request) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { plan, billing_cycle } = await request.json()
+  const { plan: rawPlan, billing_cycle } = await request.json()
+  const plan = rawPlan?.toLowerCase() === 'builder' ? 'starter' : rawPlan?.toLowerCase()
   const supabase = await createServerSupabaseClient()
 
   const { data: member } = await supabase
