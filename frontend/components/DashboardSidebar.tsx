@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRole } from '@/hooks/useRole';
@@ -17,7 +17,9 @@ export default function DashboardSidebar({ active }: SidebarProps) {
   const supabase = createClientSupabaseClient();
   
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -29,9 +31,19 @@ export default function DashboardSidebar({ active }: SidebarProps) {
     } else {
       document.body.classList.remove('sidebar-collapsed');
     }
-    // Cleanup incase component unmounts
     return () => document.body.classList.remove('sidebar-collapsed');
   }, [isCollapsed]);
+
+  // Click outside to close user menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -55,8 +67,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
     { id: 'chat', label: 'Chat', icon: 'terminal', href: '/dashboard/chat' },
     { id: 'projects', label: 'Projects', icon: 'layers', href: '/dashboard/projects' },
     { id: 'archives', label: 'Archives', icon: 'database', href: '/dashboard/archives' },
-    { id: 'orcahub', label: 'Orca Hub', icon: 'hub', href: '/dashboard/orcahub' },
-    { id: 'settings', label: 'Settings', icon: 'settings', href: '/dashboard/settings' },
+    { id: 'orcahub', label: 'Orca Hub', icon: 'hub', href: '/dashboard/orcahub' }
   ];
 
   const getExecIcon = (agentName?: string) => {
@@ -72,15 +83,15 @@ export default function DashboardSidebar({ active }: SidebarProps) {
     return map[agentName] || 'chat_bubble';
   };
 
-  if (!mounted) return null; // Avoid hydration mismatch on initial body class sync needed
+  if (!mounted) return null;
 
   return (
     <aside className={`fixed left-0 top-0 h-screen transition-all duration-300 ease-in-out bg-surface-container-lowest border-r border-outline-variant/10 py-8 px-4 flex flex-col z-50 overflow-y-auto no-scrollbar ${isCollapsed ? 'w-20 items-center' : 'w-64'}`}>
       
       {/* 1. Logo */}
       <div className={`flex w-full mb-8 ${isCollapsed ? 'justify-center cursor-pointer px-0' : 'items-center justify-between px-2 cursor-pointer'}`} onClick={() => setIsCollapsed(!isCollapsed)}>
-        <img src="/favicon.ico" alt="ORCA" className="w-8 h-8 rounded shrink-0 brightness-150 hover:opacity-80 transition-opacity" />
-        {!isCollapsed && <span className="material-symbols-outlined text-sm text-primary-container/40">unfold_more</span>}
+        <img src="/logo.png" alt="ORCA" className="w-8 h-8 rounded shrink-0 hover:opacity-80 transition-opacity" />
+        {!isCollapsed && <span className="material-symbols-outlined text-lg text-on-surface/40 hover:text-on-surface transition-colors">menu_open</span>}
       </div>
 
       {/* 2. Main Navigation */}
@@ -136,18 +147,37 @@ export default function DashboardSidebar({ active }: SidebarProps) {
         </div>
       )}
 
+      {/* Spacer to push profile to bottom if recents is small */}
+      <div className="mt-auto"></div>
+
+      {/* Popover Settings Menu */}
+      {showUserMenu && (
+        <div className={`mb-4 w-full bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 z-50 flex flex-col`} style={{ minWidth: isCollapsed ? '160px' : 'auto' }}>
+          <div className="px-4 py-2 border-b border-[#2d312d]/50 mb-1">
+            <div className="text-[9px] text-on-surface/50 font-mono tracking-widest uppercase">Signed In As</div>
+            <div className="text-[10px] font-black text-on-surface truncate">{user?.email || 'user@nexonic.ai'}</div>
+          </div>
+          <Link href="/dashboard/settings" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
+            <span className="material-symbols-outlined text-[14px]">settings</span> Setup & Env
+          </Link>
+          <Link href="/dashboard/account" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3">
+            <span className="material-symbols-outlined text-[14px]">manage_accounts</span> Account
+          </Link>
+          <button onClick={handleLogout} className="w-full text-left px-4 py-2 mt-1 text-[10px] font-black text-error/80 hover:text-error hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
+            <span className="material-symbols-outlined text-[14px]">logout</span> Disconnect
+          </button>
+        </div>
+      )}
+
       {/* 4. User Profile */}
       <div 
-        className={`mt-auto pt-6 border-t border-outline-variant/10 flex items-center group relative cursor-pointer w-full ${isCollapsed ? 'justify-center' : 'gap-3 px-2'}`} 
-        onClick={handleLogout}
-        title={isCollapsed ? "Logout" : undefined}
+        ref={menuRef}
+        className={`pt-6 border-t border-outline-variant/10 flex items-center group relative cursor-pointer w-full transition-colors hover:bg-white/5 rounded-lg py-2 ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-2'}`} 
+        onClick={() => setShowUserMenu(!showUserMenu)}
+        title={isCollapsed ? "Profile & Settings" : undefined}
       >
         <div className="w-8 h-8 rounded-sm bg-primary-container/20 border border-primary-container/30 text-primary-container font-black flex items-center justify-center font-headline relative flex-shrink-0">
           {profile?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'K'}
-          {/* Hover state for logout icon */}
-          <div className="absolute inset-0 bg-error/90 flex items-center justify-center rounded-sm opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="material-symbols-outlined text-[14px] text-on-surface">logout</span>
-          </div>
         </div>
         
         {!isCollapsed && (
@@ -162,7 +192,9 @@ export default function DashboardSidebar({ active }: SidebarProps) {
             </div>
             
             <button className="ml-auto text-on-surface/30 hover:text-on-surface transition-colors">
-              <span className="material-symbols-outlined text-lg">more_vert</span>
+              <span className={`material-symbols-outlined text-lg transition-transform ${showUserMenu ? 'rotate-180 text-primary-container' : ''}`}>
+                expand_less
+              </span>
             </button>
           </>
         )}
