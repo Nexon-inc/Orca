@@ -29,10 +29,10 @@ export default function SettingsPage() {
       }
     });
 
-    // Check URL hash to open billing section by scrolling
-    if (window.location.hash === '#billing') {
+    // Check URL hash to open section by scrolling
+    if (window.location.hash) {
       setTimeout(() => {
-         const el = document.getElementById('billing');
+         const el = document.getElementById(window.location.hash.substring(1));
          if (el) el.scrollIntoView({ behavior: 'smooth' });
       }, 500);
     }
@@ -76,8 +76,8 @@ export default function SettingsPage() {
           </div>
 
           <div className="max-w-2xl">
-            {/* COMPANY SETTINGS */}
-            <div className="text-[9px] font-black font-mono text-on-surface/30 uppercase tracking-[0.2em] mb-4 mt-10">
+            {/* SETUP & ENV */}
+            <div id="setup" className="text-[9px] font-black font-mono text-on-surface/30 uppercase tracking-[0.2em] mb-4 mt-10 scroll-mt-24">
               COMPANY_CONTEXT
             </div>
             
@@ -212,8 +212,8 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            {/* DANGER ZONE */}
-            <div className="text-[9px] font-black font-mono text-error/40 uppercase tracking-[0.2em] mb-4 mt-12">
+            {/* ACCOUNT & DANGER ZONE */}
+            <div id="account" className="text-[9px] font-black font-mono text-error/40 uppercase tracking-[0.2em] mb-4 mt-12 scroll-mt-24">
               DANGER_ZONE
             </div>
             

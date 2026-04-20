@@ -89,9 +89,9 @@ export default function DashboardSidebar({ active }: SidebarProps) {
     <aside className={`fixed left-0 top-0 h-screen transition-all duration-300 ease-in-out bg-surface-container-lowest border-r border-outline-variant/10 py-8 px-4 flex flex-col z-50 overflow-y-auto no-scrollbar ${isCollapsed ? 'w-20 items-center' : 'w-64'}`}>
       
       {/* 1. Logo */}
-      <div className={`flex w-full mb-8 ${isCollapsed ? 'justify-center cursor-pointer px-0' : 'items-center justify-between px-2 cursor-pointer'}`} onClick={() => setIsCollapsed(!isCollapsed)}>
-        <img src="/logo.png" alt="ORCA" className="w-8 h-8 rounded shrink-0 hover:opacity-80 transition-opacity" />
-        {!isCollapsed && <span className="material-symbols-outlined text-lg text-on-surface/40 hover:text-on-surface transition-colors">menu_open</span>}
+      <div className="relative flex w-full mb-8 items-center justify-center cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
+        <img src="/logo.png" alt="ORCA" className={`rounded shrink-0 hover:opacity-80 transition-all ${isCollapsed ? 'w-10 h-10' : 'w-14 h-14'}`} />
+        {!isCollapsed && <span className="absolute right-0 material-symbols-outlined text-lg text-on-surface/40 hover:text-on-surface transition-colors">menu_open</span>}
       </div>
 
       {/* 2. Main Navigation */}
@@ -157,13 +157,13 @@ export default function DashboardSidebar({ active }: SidebarProps) {
             <div className="text-[9px] text-on-surface/50 font-mono tracking-widest uppercase">Signed In As</div>
             <div className="text-[10px] font-black text-on-surface truncate">{user?.email || 'user@nexonic.ai'}</div>
           </div>
-          <Link href="/dashboard/settings" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
+          <Link href="/dashboard/settings#setup" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
             <span className="material-symbols-outlined text-[14px]">settings</span> Setup & Env
           </Link>
           <Link href="/dashboard/settings#billing" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
             <span className="material-symbols-outlined text-[14px]">credit_card</span> Billing
           </Link>
-          <Link href="/dashboard/account" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3">
+          <Link href="/dashboard/settings#account" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3">
             <span className="material-symbols-outlined text-[14px]">manage_accounts</span> Account
           </Link>
           <button onClick={handleLogout} className="w-full text-left px-4 py-2 mt-1 text-[10px] font-black text-error/80 hover:text-error hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
@@ -185,7 +185,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
         
         {!isCollapsed && (
           <>
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 flex-1 ml-1">
               <span className="text-[10px] font-black text-on-surface uppercase tracking-wider truncate font-headline pb-[2px]">
                 {profile?.full_name?.replace(' ', '_') || 'KALE_FRANCIS'}
               </span>
@@ -193,12 +193,6 @@ export default function DashboardSidebar({ active }: SidebarProps) {
                 SESSION: 042
               </span>
             </div>
-            
-            <button className="ml-auto text-on-surface/30 hover:text-on-surface transition-colors">
-              <span className={`material-symbols-outlined text-lg transition-transform ${showUserMenu ? 'rotate-180 text-primary-container' : ''}`}>
-                expand_less
-              </span>
-            </button>
           </>
         )}
       </div>
