@@ -20,7 +20,7 @@ let _groq: any = null;
 export const getGemini = () => {
   if (!_gemini) {
     _gemini = asHybrid(new ChatGoogleGenerativeAI({
-      modelName: 'gemini-1.5-pro',
+      model: 'gemini-3.1-flash-lite-preview',
       apiKey: process.env.GEMINI_API_KEY || '',
       temperature: 0.7,
     }));
