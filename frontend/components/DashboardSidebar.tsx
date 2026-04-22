@@ -51,19 +51,6 @@ export default function DashboardSidebar({ active }: SidebarProps) {
     router.push('/login');
   };
 
-  const navigateToSettings = (hash: string) => {
-    setShowUserMenu(false);
-    if (pathname === '/dashboard/settings') {
-      window.location.hash = hash;
-      const el = document.getElementById(hash);
-      if (el) {
-         el.scrollIntoView({ behavior: 'smooth' });
-      }
-    } else {
-      router.push(`/dashboard/settings#${hash}`);
-    }
-  };
-
   const [recents, setRecents] = useState<any[]>([]);
 
   // Calculate current active route if not explicitly passed
@@ -170,15 +157,15 @@ export default function DashboardSidebar({ active }: SidebarProps) {
             <div className="text-[9px] text-on-surface/50 font-mono tracking-widest uppercase">Signed In As</div>
             <div className="text-[10px] font-black text-on-surface truncate">{user?.email || 'user@nexonic.ai'}</div>
           </div>
-          <button onClick={() => navigateToSettings('setup')} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer">
+          <a href="/dashboard/settings#setup" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer block">
             <span className="material-symbols-outlined text-[14px]">settings</span> Setup & Env
-          </button>
-          <button onClick={() => navigateToSettings('billing')} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer">
+          </a>
+          <a href="/dashboard/settings#billing" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer block">
             <span className="material-symbols-outlined text-[14px]">credit_card</span> Billing
-          </button>
-          <button onClick={() => navigateToSettings('account')} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3 cursor-pointer">
+          </a>
+          <a href="/dashboard/settings#account" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3 cursor-pointer block">
             <span className="material-symbols-outlined text-[14px]">manage_accounts</span> Account
-          </button>
+          </a>
           <button onClick={handleLogout} className="w-full text-left px-4 py-2 mt-1 text-[10px] font-black text-error/80 hover:text-error hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
             <span className="material-symbols-outlined text-[14px]">logout</span> Disconnect
           </button>

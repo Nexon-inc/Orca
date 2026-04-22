@@ -5,9 +5,9 @@ import { useState } from 'react';
 export default function DashboardHeader() {
   return (
     <header className="h-16 flex items-center justify-end px-8 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-6">
-      <button className="bg-primary-container text-on-primary px-4 py-1.5 text-[10px] font-black uppercase rounded-sm hover:opacity-90 transition-all font-headline tracking-widest">
+      <a href="/dashboard/settings#billing" className="bg-primary-container text-on-primary px-4 py-1.5 text-[10px] font-black uppercase rounded-sm hover:opacity-90 transition-all font-headline tracking-widest block flex items-center justify-center cursor-pointer">
         Upgrade License
-      </button>
+      </a>
       
       <button className="text-on-surface/40 hover:text-primary-container transition-colors relative">
         <span className="material-symbols-outlined text-xl">notifications</span>
