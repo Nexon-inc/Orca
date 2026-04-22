@@ -180,8 +180,8 @@ function ChatContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            agent_id: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.key || 'ceo',
-            department_key: (pinnedAgent || 'ceo').toLowerCase()
+            agent_name: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.name || 'Atlas',
+            department_key: pinnedAgent?.toLowerCase() || 'ceo'
           })
         });
         const createData = await createRes.json();

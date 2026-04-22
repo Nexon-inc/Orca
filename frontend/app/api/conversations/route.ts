@@ -22,25 +22,68 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { agent_id, department_key } = await request.json()
-  const supabase = await createServerSupabaseClient()
+  const body = await request.json();
+  const rawAgentId = body.agent_id;
+  const agentName = body.agent_name;
+  const departmentKey = body.department_key;
+  
+  const supabase = await createServerSupabaseClient();
 
   const { data: member } = await supabase
     .from('org_members')
     .select('org_id')
     .eq('user_id', user.id)
-    .single()
+    .single();
 
-  if (!member) return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
+  if (!member) return NextResponse.json({ error: 'No organisation found' }, { status: 404 });
+
+  // Intelligent Agent Resolution (Bypassing UUID errors)
+  let resolvedAgentId = null;
+  const isGenericString = typeof rawAgentId === 'string' && rawAgentId.length < 32 && !rawAgentId.includes('-');
+
+  if (!rawAgentId || isGenericString || agentName) {
+    let query = supabase.from('agents').select('id').eq('org_id', member.org_id);
+    
+    if (agentName) {
+      query = query.ilike('name', agentName);
+    } else if (rawAgentId && typeof rawAgentId === 'string') {
+      // Map 'cmo', 'ceo' etc to the explicit column acronyms if possible
+      query = query.ilike('name', rawAgentId);
+    }
+    
+    const { data: foundAgent } = await query.limit(1).single();
+    resolvedAgentId = foundAgent?.id || null;
+  } else {
+    // If it's explicitly a UUID format, trust it
+    resolvedAgentId = rawAgentId;
+  }
+
+  // Pure fallback: Just grab any primary agent (typically ATLAS) so it never fails
+  if (!resolvedAgentId) {
+    const { data: defaultAgent } = await supabase
+      .from('agents')
+      .select('id')
+      .eq('org_id', member.org_id)
+      .eq('is_department_head', true)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single();
+    resolvedAgentId = defaultAgent?.id || null;
+  }
 
   const { data: conversation, error } = await supabase
     .from('conversations')
-    .insert({ org_id: member.org_id, user_id: user.id, agent_id, department_key })
+    .insert({ 
+      org_id: member.org_id, 
+      user_id: user.id, 
+      agent_id: resolvedAgentId, 
+      department_key: departmentKey || 'ops' 
+    })
     .select()
-    .single()
+    .single();
 
    if (error) {
      console.error('CONVERSATION_CREATE_ERROR:', error);
@@ -49,8 +92,8 @@ export async function POST(request: Request) {
        details: error.details,
        hint: error.hint,
        code: error.code 
-     }, { status: 400 })
+     }, { status: 400 });
    }
 
-  return NextResponse.json({ conversation })
+  return NextResponse.json({ conversation });
 }
