@@ -185,6 +185,16 @@ function ChatContent() {
           })
         });
         const createData = await createRes.json();
+        if (createData.error) {
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `ERROR: Failed to initialize. ${createData.error || createData.hint || createData.details}`,
+            agent: { name: 'SYSTEM', role: 'CORE', icon: 'warning' }
+          }]);
+          return;
+        }
+
         if (createData.conversation) {
           currentId = createData.conversation.id;
           // Silently push the new route while continuing our execution

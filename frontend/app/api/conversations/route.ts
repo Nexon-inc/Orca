@@ -51,9 +51,18 @@ export async function POST(request: Request) {
       .eq('departments.org_id', member.org_id);
     
     if (agentName) {
-      query = query.ilike('name', agentName);
+      // Safely map frontend role shortcuts to exact internal Agent names
+      const roleToName: Record<string, string> = {
+        'CEO': 'Atlas',
+        'CMO': 'Aria',
+        'CSO': 'Rex',
+        'CIO': 'Ghost',
+        'CTO': 'Wren',
+        'CCO': 'Echo'
+      };
+      const actualName = roleToName[agentName.toUpperCase()] || agentName;
+      query = query.ilike('name', actualName);
     } else if (rawAgentId && typeof rawAgentId === 'string') {
-      // Map 'cmo', 'ceo' etc to the explicit column acronyms if possible
       query = query.ilike('name', rawAgentId);
     }
     
