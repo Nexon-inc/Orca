@@ -214,7 +214,15 @@ function ChatContent() {
         })
       });
       const data = await res.json();
-      if (data.message) {
+      if (data.error) {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `SYSTEM OFFLINE: ${data.error} (Check Vercel Environment Variables)`,
+          agent: { name: 'SYSTEM', role: 'CORE', icon: 'warning' }
+        }]);
+        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      } else if (data.message) {
         setMessages(prev => [...prev, {
           ...data.message,
           role: 'assistant',

@@ -216,27 +216,25 @@ export async function POST(
   }, { onConflict: 'org_id,agent_id' })
 
   if (messageCount === 1) {
-    // Trigger AI Auto-Titling for new conversations
-    await inngest.send({
-      name: 'agent/conversation.title.generate',
-      data: {
-        org_id: orgId,
-        conversation_id: conversationId,
-        first_message: content
-      }
-    })
+    try {
+      await inngest.send({
+        name: 'agent/conversation.title.generate',
+        data: { org_id: orgId, conversation_id: conversationId, first_message: content }
+      });
+    } catch (e) {
+      console.error('Inngest title error:', e);
+    }
   }
 
   if (messageCount % 10 === 0) {
-    // Trigger memory compression via Inngest or inline
-    await inngest.send({
-      name: 'agent/memory.update',
-      data: {
-        org_id: orgId,
-        agent_id: agent.id,
-        conversation_id: conversationId,
-      }
-    })
+    try {
+      await inngest.send({
+        name: 'agent/memory.update',
+        data: { org_id: orgId, agent_id: agent.id, conversation_id: conversationId }
+      });
+    } catch (e) {
+      console.error('Inngest memory error:', e);
+    }
   }
 
   // Save agent message
@@ -266,19 +264,15 @@ export async function POST(
 
   // 14. Handle coordination
   if (coordMatch) {
-    const [, targetDept, targetAgent, reason] = coordMatch
-    await inngest.send({
-      name: 'agent/coordination.requested',
-      data: {
-        org_id: orgId,
-        from_agent_id: agent.id,
-        target_department_key: targetDept,
-        target_agent_acronym: targetAgent,
-        reason,
-        context: agentResponse,
-        conversation_id: conversationId,
-      }
-    })
+    try {
+      const [, targetDept, targetAgent, reason] = coordMatch;
+      await inngest.send({
+        name: 'agent/coordination.requested',
+        data: { org_id: orgId, from_agent_id: agent.id, target_department_key: targetDept, target_agent_acronym: targetAgent, reason, context: agentResponse, conversation_id: conversationId }
+      });
+    } catch (e) {
+      console.error('Inngest coord error:', e);
+    }
   }
 
   // 14b. Handle Wren Code Generation & PRs
@@ -303,21 +297,17 @@ export async function POST(
   }
 
   // 14c. Handle Ghost -> Wren coordination
-  const wrenFixMatch = agentResponse.match(/\[WREN_FIX_NEEDED: file=(.+?), line=(\d+), issue=(.+?)\]/)
+  const wrenFixMatch = agentResponse.match(/\[WREN_FIX_NEEDED: file=(.+?), line=(\d+), issue=(.+?)\]/);
   if (wrenFixMatch) {
-    const [, file, line, issue] = wrenFixMatch
-    await inngest.send({
-      name: 'agent/coordination.requested',
-      data: {
-        org_id: orgId,
-        from_agent_id: agent.id,
-        target_department_key: 'tech',
-        target_agent_name: 'Wren',
-        reason: `Security fix needed in ${file} line ${line}: ${issue}`,
-        context: agentResponse,
-        conversation_id: conversationId,
-      }
-    })
+    try {
+      const [, file, line, issue] = wrenFixMatch;
+      await inngest.send({
+        name: 'agent/coordination.requested',
+        data: { org_id: orgId, from_agent_id: agent.id, target_department_key: 'tech', target_agent_name: 'Wren', reason: `Security fix needed in ${file} line ${line}: ${issue}`, context: agentResponse, conversation_id: conversationId }
+      });
+    } catch (e) {
+      console.error('Inngest wren error:', e);
+    }
   }
 
   if (visualMatch) {
