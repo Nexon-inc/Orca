@@ -74,13 +74,25 @@ export async function POST(request: Request) {
     resolvedAgentId = defaultAgent?.id || null;
   }
 
+  // Finalize department key fallback
+  const dmap: Record<string, string> = {
+    cmo: 'marketing',
+    cso: 'sales',
+    cco: 'cs',
+    cio: 'intel',
+    cto: 'tech',
+    ceo: 'ops'
+  };
+  
+  const finalDeptKey = dmap[departmentKey?.toLowerCase()] || 'ops';
+
   const { data: conversation, error } = await supabase
     .from('conversations')
     .insert({ 
       org_id: member.org_id, 
       user_id: user.id, 
       agent_id: resolvedAgentId, 
-      department_key: departmentKey || 'ops' 
+      department_key: finalDeptKey 
     })
     .select()
     .single();
