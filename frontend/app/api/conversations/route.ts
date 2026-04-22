@@ -45,7 +45,10 @@ export async function POST(request: Request) {
   const isGenericString = typeof rawAgentId === 'string' && rawAgentId.length < 32 && !rawAgentId.includes('-');
 
   if (!rawAgentId || isGenericString || agentName) {
-    let query = supabase.from('agents').select('id').eq('org_id', member.org_id);
+    let query = supabase
+      .from('agents')
+      .select('id, departments!inner(org_id)')
+      .eq('departments.org_id', member.org_id);
     
     if (agentName) {
       query = query.ilike('name', agentName);
@@ -65,10 +68,8 @@ export async function POST(request: Request) {
   if (!resolvedAgentId) {
     const { data: defaultAgent } = await supabase
       .from('agents')
-      .select('id')
-      .eq('org_id', member.org_id)
-      .eq('is_department_head', true)
-      .order('created_at', { ascending: true })
+      .select('id, departments!inner(org_id)')
+      .eq('departments.org_id', member.org_id)
       .limit(1)
       .single();
     resolvedAgentId = defaultAgent?.id || null;
