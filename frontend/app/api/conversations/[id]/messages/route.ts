@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server'
 import { buildAgentSystemPrompt } from '@/lib/ai/prompt'
 import { getGemini, getGroq } from '@/lib/ai/client'
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
@@ -22,6 +22,7 @@ export async function POST(
 
   const { content: rawContent, attachments, mode, model: modelOverride } = await request.json()
   const supabase = await createServerSupabaseClient()
+  const serviceClient = createServiceSupabaseClient()
 
   // 1a. Security: Sanitize Input
   const content = sanitizeInput(rawContent)
@@ -70,7 +71,7 @@ export async function POST(
     .limit(10)
 
   // 5. Save user message
-  await supabase.from('messages').insert({
+  await serviceClient.from('messages').insert({
     conversation_id: conversationId,
     sender_type: 'user',
     content,
@@ -79,7 +80,7 @@ export async function POST(
 
   // 6. Update agent to busy
   const agent = Array.isArray(conversation.agents) ? conversation.agents[0] : conversation.agents
-  await supabase
+  await serviceClient
     .from('agents')
     .update({ status: 'busy' })
     .eq('id', agent.id)
@@ -200,7 +201,7 @@ export async function POST(
   const visualMatch = agentResponse.match(/request visual for (.+)/i)
 
   // 12. Update agent status & Increment Memory Counter
-  await supabase.from('agents').update({
+  await serviceClient.from('agents').update({
     status: 'active',
     tasks_today: (agent.tasks_today || 0) + 1,
     last_action: content.slice(0, 80),
@@ -208,7 +209,7 @@ export async function POST(
   }).eq('id', agent.id)
 
   // 13. Message Counter & Memory Update Trigger
-  await supabase.from('llm_memories').upsert({
+  await serviceClient.from('llm_memories').upsert({
     org_id: orgId,
     agent_id: agent.id,
     message_count: messageCount,
@@ -239,7 +240,7 @@ export async function POST(
 
   // Save agent message
   const agentMode = agent.departments ? agent.departments.agent_mode : 'approve_first'
-  const { data: agentMessage } = await supabase.from('messages').insert({
+  const { data: agentMessage } = await serviceClient.from('messages').insert({
     conversation_id: conversationId,
     sender_type: 'agent',
     content: agentResponse,

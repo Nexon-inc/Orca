@@ -1,5 +1,5 @@
 'use server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   const departmentKey = body.department_key;
   
   const supabase = await createServerSupabaseClient();
+  const serviceClient = createServiceSupabaseClient();
 
   const { data: member } = await supabase
     .from('org_members')
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
   
   const finalDeptKey = dmap[departmentKey?.toLowerCase()] || 'ops';
 
-  const { data: conversation, error } = await supabase
+  const { data: conversation, error } = await serviceClient
     .from('conversations')
     .insert({ 
       org_id: member.org_id, 

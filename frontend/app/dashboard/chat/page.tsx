@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
+import { toast } from 'sonner';
 
 function ChatContent() {
   const router = useRouter();
@@ -172,8 +173,15 @@ function ChatContent() {
     if (!input.trim()) return;
     
     let currentId = params.id as string;
+    const currentInput = input; // Save locally
     
-    // 1. Auto-Create Conversation if on "New Chat" route
+    // 1. Immediately append user message to chat UI
+    const userMsg = { id: Date.now().toString(), role: 'user', content: currentInput };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    
+    // 2. Auto-Create Conversation if on "New Chat" route
     if (!currentId) {
       try {
         const createRes = await fetch('/api/conversations', {
@@ -185,13 +193,11 @@ function ChatContent() {
           })
         });
         const createData = await createRes.json();
+        
         if (createData.error) {
-          setMessages(prev => [...prev, {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content: `ERROR: Failed to initialize. ${createData.error || createData.hint || createData.details}`,
-            agent: { name: 'SYSTEM', role: 'CORE', icon: 'warning' }
-          }]);
+          toast.error(`Failed to initialize: ${createData.error || createData.hint || createData.details}`);
+          setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+          setInput(currentInput);
           return;
         }
 
@@ -202,36 +208,29 @@ function ChatContent() {
         }
       } catch (err) {
         console.error('Failed to create conversation:', err);
+        toast.error('Network error while creating conversation.');
+        setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+        setInput(currentInput);
         return;
       }
     }
-
-    const userMsg = { id: Date.now().toString(), role: 'user', content: input };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    
-    // Scroll
-    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
     try {
       const res = await fetch(`/api/conversations/${currentId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          content: input,
+          content: currentInput,
           mode: chatMode.toLowerCase(),
-          model: activeModel.id
+          model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id
         })
       });
       const data = await res.json();
+      
       if (data.error) {
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: `SYSTEM OFFLINE: ${data.error} (Check Vercel Environment Variables)`,
-          agent: { name: 'SYSTEM', role: 'CORE', icon: 'warning' }
-        }]);
-        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        toast.error(`System Offline: ${data.error}`);
+        setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+        setInput(currentInput);
       } else if (data.message) {
         setMessages(prev => [...prev, {
           ...data.message,
@@ -242,6 +241,9 @@ function ChatContent() {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      toast.error('Network error while sending message.');
+      setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+      setInput(currentInput);
     }
   };
 
