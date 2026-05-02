@@ -231,7 +231,7 @@ export default function ChatPage() {
       <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
         <DashboardHeader />
 
-        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-32 ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
+        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-[40rem] ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
           
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
@@ -240,7 +240,7 @@ export default function ChatPage() {
               </h1>
             </div>
           ) : (
-            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-[32rem] min-h-full">
+            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 min-h-full">
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {msg.role === 'user' ? (
@@ -366,8 +366,8 @@ export default function ChatPage() {
                 </div>
               )}
 
-              <div ref={chatEndRef} className="h-20" />
-              <div className="h-64" /> {/* Massive bottom spacer to clear fixed input bar */}
+              <div className="h-[40rem] flex-shrink-0" />
+              <div ref={chatEndRef} />
             </div>
           )}
         </div>

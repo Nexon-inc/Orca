@@ -51,6 +51,21 @@ function ChatContent() {
   const [isBriefing, setIsBriefing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [thinkingStep, setThinkingStep] = useState(0);
+  const THINKING_MESSAGES = ['Analyzing platform data...', 'Strategizing roadmap...', 'Calculating growth vectors...', 'Orchestrating executives...', 'Refining directives...'];
+
+  useEffect(() => {
+    let interval: any;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setThinkingStep(prev => (prev + 1) % THINKING_MESSAGES.length);
+      }, 1500);
+    } else {
+      setThinkingStep(0);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) setGreeting('GOOD MORNING,');
@@ -189,13 +204,13 @@ function ChatContent() {
       <DashboardSidebar active="chat" />
       <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
         <DashboardHeader />
-        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-32 no-scrollbar ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
+        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-[40rem] ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
               <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase">{greeting} {userName}.</h1>
             </div>
           ) : (
-            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-[28rem] min-h-full">
+            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 min-h-full">
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {msg.role === 'user' ? (
@@ -209,13 +224,15 @@ function ChatContent() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider">{msg.agent?.role || 'ATLAS'}</span>
-                          <span className="text-[9px] font-mono text-primary-container/60 uppercase">{msg.agent?.title || 'EXECUTIVE OFFICER'}</span>
+                          <span className="text-[10px] font-black font-headline text-primary-container uppercase tracking-[0.25em]">{msg.agent?.role || 'ATLAS'}</span>
+                          <span className="w-1 h-1 rounded-full bg-on-surface/10" />
+                          <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest">{msg.agent?.title || 'CHIEF EXECUTIVE'}</span>
                         </div>
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
-                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0]
+                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0].split('---')[0]
                             .replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
                             .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n').replace(/##\s*(.*?)(?:\n|$)/g, '$1\n').replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
+                            .trim()
                           }
                         </div>
                         {(msg.result_items || (msg.content.includes('RESULT:') && msg.content.split('RESULT:')[1].split('COORDINATION_NEEDED:')[0].split('\n'))) && (
@@ -267,7 +284,7 @@ function ChatContent() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">{pinnedAgent || 'ATLAS'}</span>
-                      <span className="text-[9px] font-mono text-primary-container/30 uppercase">THINKING...</span>
+                      <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">{THINKING_MESSAGES[thinkingStep]}</span>
                     </div>
                     <div className="space-y-2">
                       <div className="h-2 w-3/4 bg-on-surface/5 rounded-full" />
@@ -276,8 +293,8 @@ function ChatContent() {
                   </div>
                 </div>
               )}
-              <div ref={chatEndRef} className="h-20" />
-              <div className="h-64" /> 
+              <div className="h-[40rem] flex-shrink-0" />
+              <div ref={chatEndRef} />
             </div>
           )}
         </div>
@@ -295,13 +312,13 @@ function ChatContent() {
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary-container/20">
               <div className="px-6 py-4">
                 <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h-[44px] max-h-[160px] no-scrollbar py-1"
-                  placeholder={isBriefing ? "Master Briefing in progress..." : (pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows")}
-                  rows={1} disabled={isBriefing || isLoading}
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h-[44px] max-h([160px] no-scrollbar py-1"
+                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows"}
+                  rows={1} disabled={isLoading}
                 />
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
-                <div className={`flex items-center gap-2 ${isBriefing ? 'opacity-20 pointer-events-none' : ''}`}>
+                <div className="flex items-center gap-2">
                   <Dropdown value={chatMode} options={MODES} onChange={setChatMode} />
                   <div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" />
                   <Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} />
