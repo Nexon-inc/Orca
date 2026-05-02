@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import anime from 'animejs';
+import { anime } from 'animejs';
 
 const INTEGRATIONS_CATALOG = [
   { id: 'marketing', name: 'Marketing & SEO', tools: [
