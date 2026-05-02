@@ -26,7 +26,7 @@ export async function POST(
     const content = sanitizeInput(rawContent)
     const { data: conversation } = await serviceClient
       .from('conversations')
-      .select('org_id, user_id, agent_id, agents:agent_id(*, departments(*))')
+      .select('org_id, user_id, agent_id, title, agents:agent_id(*, departments(*))')
       .eq('id', conversationId)
       .single()
 
@@ -103,7 +103,14 @@ export async function POST(
     }).select().single()
 
     // 9. Background Side Effects
-    serviceClient.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId).then(({ error }) => {
+    const updateData: any = { updated_at: new Date().toISOString() }
+    
+    // Auto-title if currently default
+    if (!conversation.title || conversation.title.includes('SESSION_')) {
+      updateData.title = content.length > 25 ? content.substring(0, 25) + '...' : content
+    }
+
+    serviceClient.from('conversations').update(updateData).eq('id', conversationId).then(({ error }) => {
       if (error) console.error('CONV_TS_UPDATE_ERR:', error)
     })
     serviceClient.from('llm_memories').upsert({ org_id: orgId, agent_id: agent.id, message_count: messageCount }, { onConflict: 'org_id,agent_id' }).then(({ error }) => {
