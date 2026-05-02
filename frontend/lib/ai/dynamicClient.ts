@@ -2,7 +2,6 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatGroq } from '@langchain/groq';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
-import { ChatMistralAI } from '@langchain/mistralai';
 import { ChatOllama } from '@langchain/community/chat_models/ollama';
 
 import { OpenRouter } from '@openrouter/sdk';
@@ -91,9 +90,10 @@ export function buildDynamicLLMClient(config: ResolvedLLM): HybridAIClient {
       }));
 
     case 'mistral':
-      return asHybrid(new ChatMistralAI({
+      return asHybrid(new ChatOpenAI({
         modelName: config.model,
         apiKey: config.apiKey,
+        configuration: { baseURL: 'https://api.mistral.ai/v1' },
         ...commonOptions,
       }));
 

@@ -15,7 +15,7 @@
     "@langchain/core": "^1.1.32",
     "@langchain/google-genai": "^2.1.25",
     "@langchain/groq": "^1.1.5",
-    "@langchain/mistralai": "*",
+
     "@langchain/openai": "^0.3.11",
     "@mendable/firecrawl-js": "^1.1.1",
     "@octokit/rest": "^22.0.1",
