@@ -26,7 +26,7 @@ export async function POST(
     const content = sanitizeInput(rawContent)
     const { data: conversation, error: convError } = await serviceClient
       .from('conversations')
-      .select('org_id, user_id, agent_id, title')
+      .select('org_id, user_id, agent_id')
       .eq('id', conversationId)
       .maybeSingle()
 
@@ -117,10 +117,7 @@ export async function POST(
     // 9. Background Side Effects
     const updateData: any = { updated_at: new Date().toISOString() }
     
-    // Auto-title if currently default
-    if (!conversation.title || conversation.title.includes('SESSION_')) {
-      updateData.title = content.length > 25 ? content.substring(0, 25) + '...' : content
-    }
+    // Auto-title removed (column does not exist)
 
     serviceClient.from('conversations').update(updateData).eq('id', conversationId).then(({ error }) => {
       if (error) console.error('CONV_TS_UPDATE_ERR:', error)
