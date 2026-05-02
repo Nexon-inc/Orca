@@ -263,6 +263,7 @@ function ChatContent() {
                   </div>
                 </div>
               )}
+              <div className="h-[250px] flex-shrink-0" />
               <div ref={chatEndRef} />
             </div>
           )}
