@@ -80,37 +80,40 @@ export default function ChatPage() {
           setUser(userData.user);
           
           if (params.id) {
-            // Fetch existing messages
-            try {
-              const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
-              if (msgRes.ok) {
-                const msgData = await msgRes.json();
-                if (msgData.messages) setMessages(msgData.messages);
+            // 1. Fetch History
+            let historyLoaded = false;
+            const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
+            if (msgRes.ok) {
+              const msgData = await msgRes.json();
+              if (msgData.messages && msgData.messages.length > 0) {
+                setMessages(msgData.messages);
+                historyLoaded = true;
                 setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
               }
-            } catch (err) {
-              console.error('Failed to load history:', err);
+            }
+
+            // 2. Check Identity for Onboarding
+            const identityRes = await fetch('/api/company'); 
+            const identityData = await identityRes.json();
+            const missionMissing = !identityData?.identity?.mission;
+            
+            setIsOnboarding(missionMissing);
+            if (missionMissing) setPinnedAgent('CEO');
+
+            // 3. Fallback to onboarding only if no history exists
+            if (missionMissing && !historyLoaded) {
+              setMessages([{
+                id: 'onboarding-init',
+                role: 'assistant',
+                content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?",
+                agent: EXECUTIVE_PILLS[0]
+              }]);
             }
           }
-
-          // Check Onboarding status
-          const identityRes = await fetch('/api/company'); 
-          const identityData = await identityRes.json();
-          
-          if (!identityData?.identity?.mission) {
-            setIsOnboarding(true);
-            setPinnedAgent('CEO');
-            setMessages([{
-              id: 'onboarding-init',
-              role: 'assistant',
-              content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?",
-              agent: EXECUTIVE_PILLS[0]
-            }]);
-          } else {
-            setIsOnboarding(false);
-          }
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error('INIT_ERR:', err);
+      }
     };
 
     initialize();
@@ -290,46 +293,46 @@ export default function ChatPage() {
                         )}
 
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
-                          {chatMode.toLowerCase() === 'approve' && (
-                            <>
-                              <button 
-                                onClick={async () => {
-                                  const res = await fetch(`/api/messages/${msg.id}/status`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ status: 'approved' })
-                                  });
-                                  if (res.ok) {
-                                    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'approved' } : m));
-                                  }
-                                }}
-                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'approved' ? 'text-primary-container' : 'text-on-surface hover:text-primary-container'}`}
-                              >
-                                <span className="material-symbols-outlined text-xs">{msg.status === 'approved' ? 'task_alt' : 'check'}</span> 
-                                {msg.status === 'approved' ? 'Approved' : 'Approve'}
-                              </button>
-                              <button 
-                                onClick={async () => {
-                                  const res = await fetch(`/api/messages/${msg.id}/status`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ status: 'rejected' })
-                                  });
-                                  if (res.ok) {
-                                    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'rejected' } : m));
-                                  }
-                                }}
-                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'rejected' ? 'text-error' : 'text-on-surface hover:text-error'}`}
-                              >
-                                <span className="material-symbols-outlined text-xs">{msg.status === 'rejected' ? 'block' : 'close'}</span> 
-                                {msg.status === 'rejected' ? 'Rejected' : 'Reject'}
-                              </button>
-                            </>
-                          )}
+                          <>
+                            <button 
+                              onClick={async () => {
+                                const res = await fetch(`/api/messages/${msg.id}/status`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ status: 'approved' })
+                                });
+                                if (res.ok) {
+                                  setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'approved' } : m));
+                                  toast.success('Strategy Approved');
+                                }
+                              }}
+                              className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'approved' ? 'text-primary-container' : 'text-on-surface hover:text-primary-container'}`}
+                            >
+                              <span className="material-symbols-outlined text-xs">{msg.status === 'approved' ? 'task_alt' : 'check'}</span> 
+                              {msg.status === 'approved' ? 'Approved' : 'Approve'}
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                const res = await fetch(`/api/messages/${msg.id}/status`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ status: 'rejected' })
+                                });
+                                if (res.ok) {
+                                  setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'rejected' } : m));
+                                  toast.error('Strategy Rejected');
+                                }
+                              }}
+                              className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'rejected' ? 'text-error' : 'text-on-surface hover:text-error'}`}
+                            >
+                              <span className="material-symbols-outlined text-xs">{msg.status === 'rejected' ? 'block' : 'close'}</span> 
+                              {msg.status === 'rejected' ? 'Rejected' : 'Reject'}
+                            </button>
+                          </>
                           <button 
                             onClick={() => {
                               navigator.clipboard.writeText(msg.content);
-                              // Could add a toast here
+                              toast.success('Copied to clipboard');
                             }}
                             className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors"
                           >

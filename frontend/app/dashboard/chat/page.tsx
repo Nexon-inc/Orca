@@ -247,27 +247,25 @@ function ChatContent() {
                           </div>
                         )}
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
-                          {chatMode.toLowerCase() === 'approve' && (
-                            <>
-                              <button onClick={async () => {
-                                  const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) });
-                                  if (res.ok) setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'approved' } : m));
-                                }}
-                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'approved' ? 'text-primary-container' : 'text-on-surface hover:text-primary-container'}`}
-                              >
-                                <span className="material-symbols-outlined text-xs">{msg.status === 'approved' ? 'task_alt' : 'check'}</span> {msg.status === 'approved' ? 'Approved' : 'Approve'}
-                              </button>
-                              <button onClick={async () => {
-                                  const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) });
-                                  if (res.ok) setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'rejected' } : m));
-                                }}
-                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'rejected' ? 'text-error' : 'text-on-surface hover:text-error'}`}
-                              >
-                                <span className="material-symbols-outlined text-xs">{msg.status === 'rejected' ? 'block' : 'close'}</span> {msg.status === 'rejected' ? 'Rejected' : 'Reject'}
-                              </button>
-                            </>
-                          )}
-                          <button onClick={() => navigator.clipboard.writeText(msg.content)} className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors">
+                          <>
+                            <button onClick={async () => {
+                                const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) });
+                                if (res.ok) { setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'approved' } : m)); toast.success('Strategy Approved'); }
+                              }}
+                              className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'approved' ? 'text-primary-container' : 'text-on-surface hover:text-primary-container'}`}
+                            >
+                              <span className="material-symbols-outlined text-xs">{msg.status === 'approved' ? 'task_alt' : 'check'}</span> {msg.status === 'approved' ? 'Approved' : 'Approve'}
+                            </button>
+                            <button onClick={async () => {
+                                const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) });
+                                if (res.ok) { setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'rejected' } : m)); toast.error('Strategy Rejected'); }
+                              }}
+                              className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'rejected' ? 'text-error' : 'text-on-surface hover:text-error'}`}
+                            >
+                              <span className="material-symbols-outlined text-xs">{msg.status === 'rejected' ? 'block' : 'close'}</span> {msg.status === 'rejected' ? 'Rejected' : 'Reject'}
+                            </button>
+                          </>
+                          <button onClick={() => { navigator.clipboard.writeText(msg.content); toast.success('Copied to clipboard'); }} className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors">
                             <span className="material-symbols-outlined text-xs">content_copy</span> Copy
                           </button>
                         </div>
