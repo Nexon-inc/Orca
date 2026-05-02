@@ -116,7 +116,7 @@ export async function POST(
     const coordMatch = agentResponse.match(/COORDINATION_NEEDED:\s*dept=(\w+)/)
 
     // 8. Save agent message
-    const { data: agentMessage, error: agentMsgErr } = await serviceClient.from('messages').insert({
+    let { data: agentMessage, error: agentMsgErr } = await serviceClient.from('messages').insert({
       conversation_id: conversationId,
       sender_type: 'agent',
       content: agentResponse,
@@ -126,8 +126,19 @@ export async function POST(
     }).select().single()
 
     if (agentMsgErr) {
-      console.error('AGENT_MSG_INSERT_ERR:', agentMsgErr)
-      return NextResponse.json({ error: 'Failed to save agent response', details: agentMsgErr.message }, { status: 500 })
+      console.warn('FULL_INSERT_FAILED, TRYING FALLBACK:', agentMsgErr.message);
+      // Fallback for older schemas missing metadata/result_items/status
+      const { data: fallbackMsg, error: fallbackErr } = await serviceClient.from('messages').insert({
+        conversation_id: conversationId,
+        sender_type: 'agent',
+        content: agentResponse
+      }).select().single()
+      
+      if (fallbackErr) {
+        console.error('FALLBACK_INSERT_ERR:', fallbackErr)
+        return NextResponse.json({ error: 'Failed to save agent response', details: fallbackErr.message }, { status: 500 })
+      }
+      agentMessage = fallbackMsg;
     }
 
     // 9. Side effects (async)

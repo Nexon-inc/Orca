@@ -21,11 +21,38 @@ import IntegrationsVault from './IntegrationsVault';
 
 export default function DashboardHeader() {
   const router = useRouter();
-  const [notifications] = useState([
-    { id: 1, text: "Atlas (CEO) initialized Day 1 Protocols", time: "2m ago", important: true },
-    { id: 2, text: "Aria (CMO) generated marketing strategy", time: "15m ago", important: false },
-    { id: 3, text: "Revenue projections updated by Rex (CSO)", time: "1h ago", important: true },
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch('/api/org/audit?limit=5');
+        const data = await res.json();
+        if (data.logs) {
+          const mapped = data.logs.map((log: any) => ({
+            id: log.id,
+            text: `${log.action.replace(/_/g, ' ').toUpperCase()}: ${log.metadata?.conversation_id ? 'Conversation Update' : 'System Protocol Updated'}`,
+            time: new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            important: log.action.includes('error') || log.action.includes('interaction')
+          }));
+          setNotifications(mapped);
+        }
+      } catch (e) {
+        // Fallback mocks if API fails
+        setNotifications([
+          { id: 1, text: "Atlas (CEO) initialized Day 1 Protocols", time: "2m ago", important: true },
+          { id: 2, text: "Aria (CMO) generated marketing strategy", time: "15m ago", important: false },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="h-16 flex items-center justify-end px-8 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-4">
@@ -87,10 +114,6 @@ export default function DashboardHeader() {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      {/* Workspace Menu */}
-      <button className="w-9 h-9 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5 group" title="Workspace Apps">
-        <span className="material-symbols-outlined text-[22px]">grid_view</span>
-      </button>
     </header>
   );
 }

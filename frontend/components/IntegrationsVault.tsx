@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { animate, stagger } from 'animejs';
+import anime from 'animejs';
 
 const INTEGRATIONS_CATALOG = [
   { id: 'marketing', name: 'Marketing & SEO', tools: [
@@ -84,12 +84,13 @@ function IntegrationsInner() {  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!loading) {
-      animate('.int-anim', {
+      anime({
+        targets: '.int-anim',
         opacity: [0, 1],
-        y: [20, 0],
-        delay: stagger(60),
+        translateY: [20, 0],
+        delay: anime.stagger(60),
         duration: 800,
-        ease: 'outExpo'
+        easing: 'easeOutExpo'
       });
     }
   }, [loading]);
