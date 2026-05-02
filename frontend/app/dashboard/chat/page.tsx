@@ -132,26 +132,13 @@ function ChatContent() {
               }]);
             }
           } else {
-            // Auto-Redirect to most recent conversation if on root
-            const convRes = await fetch('/api/conversations');
-            const convData = await convRes.json();
-            if (convData.conversations?.length > 0) {
-              const mostRecent = convData.conversations[0];
-              router.push(`/dashboard/chat/${mostRecent.id}`);
-              return;
-            }
-
+            // Stay on root for a fresh experience
             const identityRes = await fetch('/api/company'); 
             const identityData = await identityRes.json();
             if (!identityData?.identity?.mission) {
               setIsOnboarding(true);
               setPinnedAgent('CEO');
-              setMessages([{
-                id: 'onboarding-init',
-                role: 'assistant',
-                content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?",
-                agent: EXECUTIVE_PILLS[0]
-              }]);
+              // Don't auto-set messages, let the user choose or see the greeting
             }
           }
         }
@@ -364,10 +351,17 @@ function ChatContent() {
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
             <div className="flex justify-center gap-2 mb-1">
               {EXECUTIVE_PILLS.map(exec => (
-                <button key={exec.key} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-colors ${pinnedAgent === exec.role ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.1)]' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
+                <button 
+                  key={exec.key} 
+                  onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${
+                    pinnedAgent === exec.role 
+                      ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' 
+                      : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'
+                  }`}
                 >
-                  <span className="text-sm grayscale">{exec.icon}</span> {exec.role}
+                  <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> 
+                  {exec.role}
                 </button>
               ))}
             </div>

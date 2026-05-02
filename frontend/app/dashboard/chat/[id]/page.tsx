@@ -108,6 +108,13 @@ export default function ChatPage() {
                 if (msgData.messages && msgData.messages.length > 0) {
                   setMessages(msgData.messages);
                   historyLoaded = true;
+                  
+                  // Set pinned agent from the conversation history
+                  const lastAgentMsg = [...msgData.messages].reverse().find(m => m.sender_type === 'agent' || m.agent);
+                  if (lastAgentMsg) {
+                    setPinnedAgent(lastAgentMsg.agent?.role || 'CEO');
+                  }
+
                   setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
                 }
               }
@@ -121,7 +128,7 @@ export default function ChatPage() {
             const missionMissing = !identityData?.identity?.mission;
             
             setIsOnboarding(missionMissing);
-            if (missionMissing) setPinnedAgent('CEO');
+            if (missionMissing && !historyLoaded) setPinnedAgent('CEO');
 
             // 3. Fallback to onboarding ONLY if definitely no history and mission is missing
             if (missionMissing && !historyLoaded) {
@@ -421,15 +428,14 @@ export default function ChatPage() {
               {EXECUTIVE_PILLS.map(exec => (
                 <button 
                   key={exec.key}
-                  disabled={isOnboarding && exec.role !== 'CEO'}
                   onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${
                     pinnedAgent === exec.role
-                      ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.1)]'
+                      ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105'
                       : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'
-                  } ${isOnboarding && exec.role !== 'CEO' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                  }`}
                 >
-                  <span className="text-sm grayscale">{exec.icon}</span>
+                  <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span>
                   {exec.role}
                 </button>
               ))}

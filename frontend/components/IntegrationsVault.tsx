@@ -195,15 +195,34 @@ function IntegrationsInner() {  const searchParams = useSearchParams();
                      const connectedRecord = connectedTools.find(t => t.service_name === tool.service_key);
                      const isConnected = !!connectedRecord;
                      return (
-                        <div key={tIdx} className="p-6 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden flex flex-col justify-between">
-                           <div className="flex justify-between items-start mb-8">
-                               <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-[800] text-lg transition-all duration-500 scale-95 group-hover:scale-100 shadow-inner" style={{ backgroundColor: `${tool.color}15`, color: tool.color, border: '1px solid currentColor' }}>{tool.name.charAt(0)}</div>
-                               {isConnected ? <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green/10 border border-green/20"><div className="w-1 h-1 rounded-full bg-green animate-pulse" /><span className="text-[8px] font-[800] text-green uppercase tracking-widest">LINKED</span></div> : <span className="text-[8px] font-[800] text-white/10 uppercase tracking-widest">UNLINKED</span>}
+                        <div key={tIdx} className="p-8 min-h-[280px] rounded-[2.5rem] border border-white/5 bg-white/[0.02] transition-all duration-500 group relative overflow-hidden flex flex-col justify-between hover:border-green/20 hover:bg-white/[0.04]">
+                           <div className="flex justify-between items-start mb-10">
+                               <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 shadow-xl group-hover:scale-110" style={{ backgroundColor: `${tool.color}15`, color: tool.color, border: '1px solid currentColor' }}>
+                                 {tool.name.charAt(0)}
+                               </div>
+                               {isConnected ? (
+                                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green/10 border border-green/20 shadow-[0_0_15px_rgba(0,255,135,0.1)]">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+                                   <span className="text-[9px] font-black text-green uppercase tracking-widest">LINKED</span>
+                                 </div>
+                               ) : (
+                                 <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.2em] pt-1">UNLINKED</span>
+                               )}
                            </div>
-                           <div className="text-left mt-auto">
-                              <h4 className="font-syne font-[800] text-lg mb-1 tracking-tight uppercase">{tool.name}</h4>
-                              <p className="font-syne text-[8px] text-white/20 font-[800] uppercase tracking-widest mb-6">{isConnected ? 'System Operational' : 'Requires Setup'}</p>
-                              {isConnected ? <button onClick={() => handleDisconnect(connectedRecord.id)} className="w-full py-2.5 rounded-xl text-[9px] font-[800] uppercase tracking-widest transition-all duration-300 bg-white/5 text-white/20 border border-white/5 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20">Disconnect</button> : <button onClick={() => handleConnect(tool)} className="w-full py-2.5 rounded-xl text-[9px] font-[800] uppercase tracking-widest transition-all duration-300 bg-green/5 text-green border border-green/20 group-hover:bg-green group-hover:text-bg group-hover:border-green">Connect →</button>}
+                           <div className="text-left">
+                              <h4 className="font-syne font-black text-xl mb-1.5 tracking-tight uppercase text-white">{tool.name}</h4>
+                              <p className="font-syne text-[9px] text-white/30 font-black uppercase tracking-[0.15em] mb-8">
+                                {isConnected ? 'Link Secure & Operational' : 'Ready for Neural Link'}
+                              </p>
+                              {isConnected ? (
+                                <button onClick={() => handleDisconnect(connectedRecord.id)} className="w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 bg-white/5 text-white/20 border border-white/5 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20">
+                                  Disconnect
+                                </button>
+                              ) : (
+                                <button onClick={() => handleConnect(tool)} className="w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 bg-green/5 text-green border border-green/20 group-hover:bg-green group-hover:text-bg group-hover:border-green group-hover:shadow-[0_8px_25px_rgba(0,255,135,0.3)]">
+                                  Establish Link →
+                                </button>
+                              )}
                            </div>
                         </div>
                      );
