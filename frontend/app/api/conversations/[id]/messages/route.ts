@@ -28,10 +28,13 @@ export async function POST(
       .from('conversations')
       .select('org_id, user_id, agent_id, title')
       .eq('id', conversationId)
-      .single()
+      .maybeSingle()
 
     if (convError || !conversation) {
-      return NextResponse.json({ error: `Conversation not found: ${conversationId}` }, { status: 404 })
+      return NextResponse.json({ 
+        error: `Conversation not found: ${conversationId}`,
+        debug: { userId: user.id, convError: convError?.message } 
+      }, { status: 404 })
     }
 
     if (conversation.user_id !== user.id) {
