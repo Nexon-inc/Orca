@@ -11,7 +11,7 @@ import CostSection from '@/components/CostSection';
 import DepartmentsSection from '@/components/DepartmentsSection';
 import OnboardingPreview from '@/components/OnboardingPreview';
 import WhoItsForSection from '@/components/WhoItsForSection';
-import TestimonialsSection from '@/components/TestimonialsSection';
+
 import PricingSection from '@/components/PricingSection';
 import FinalCTASection from '@/components/FinalCTASection';
 import Footer from '@/components/Footer';
@@ -29,7 +29,7 @@ export default function Home() {
       <DepartmentsSection />
       <OnboardingPreview />
       <WhoItsForSection />
-      <TestimonialsSection />
+
       <PricingSection />
       <FinalCTASection />
       <Footer />
