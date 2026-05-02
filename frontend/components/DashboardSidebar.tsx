@@ -57,10 +57,17 @@ export default function DashboardSidebar({ active }: SidebarProps) {
   const currentActive = active || pathname.split('/').pop() || 'chat';
 
   useEffect(() => {
-    fetch('/api/conversations')
-      .then(res => res.json())
-      .then(data => setRecents(data.conversations || []))
-      .catch(() => {});
+    const fetchRecents = () => {
+      fetch('/api/conversations')
+        .then(res => res.json())
+        .then(data => setRecents(data.conversations || []))
+        .catch(() => {});
+    };
+
+    fetchRecents();
+
+    window.addEventListener('conversation_created', fetchRecents);
+    return () => window.removeEventListener('conversation_created', fetchRecents);
   }, [pathname]);
 
   const navItems = [

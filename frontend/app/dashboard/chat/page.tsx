@@ -132,9 +132,16 @@ function ChatContent() {
           
           if (params.id) {
              // Fetch existing messages
-             const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
-             const msgData = await msgRes.json();
-             if (msgData.messages) setMessages(msgData.messages);
+             try {
+               const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
+               if (msgRes.ok) {
+                 const msgData = await msgRes.json();
+                 if (msgData.messages) setMessages(msgData.messages);
+                 setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+               }
+             } catch (err) {
+               console.error('Failed to load history:', err);
+             }
           } else {
             // Check Onboarding status only if new chat
             const identityRes = await fetch('/api/company'); 
@@ -205,6 +212,7 @@ function ChatContent() {
           currentId = createData.conversation.id;
           // Silently push the new route while continuing our execution
           window.history.pushState({}, '', `/dashboard/chat/${currentId}`);
+          window.dispatchEvent(new Event('conversation_created'));
         }
       } catch (err) {
         console.error('Failed to create conversation:', err);

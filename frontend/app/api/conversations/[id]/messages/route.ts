@@ -330,3 +330,44 @@ export async function POST(
     visualRequested: !!visualMatch
   })
 }
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id: conversationId } = await params;
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const supabase = await createServerSupabaseClient();
+  
+  const { data: conversation } = await supabase
+    .from('conversations')
+    .select('user_id, agents(*)')
+    .eq('id', conversationId)
+    .single();
+
+  if (!conversation || conversation.user_id !== user.id) {
+    return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
+  }
+
+  const { data: dbMessages } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  const agent = Array.isArray(conversation.agents) ? conversation.agents[0] : conversation.agents;
+  
+  const messages = (dbMessages || []).map(m => ({
+    ...m,
+    role: m.sender_type === 'user' ? 'user' : 'assistant',
+    agent: m.sender_type === 'agent' ? { 
+      name: agent?.name || 'Aria', 
+      role: agent?.role_description || 'CMO',
+      icon: agent?.icon || 'smart_toy'
+    } : null
+  }));
+
+  return NextResponse.json({ messages });
+}
