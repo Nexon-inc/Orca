@@ -49,6 +49,7 @@ export default function ChatPage() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isBriefing, setIsBriefing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // 1. Initial Loading
@@ -121,6 +122,7 @@ export default function ChatPage() {
     // Scroll
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/conversations/${params.id}/messages`, {
         method: 'POST',
@@ -146,6 +148,8 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -211,7 +215,7 @@ export default function ChatPage() {
       <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
         <DashboardHeader />
 
-        <div className="flex-1 flex flex-col items-center justify-center relative overflow-y-auto w-full pt-8 pb-32 no-scrollbar">
+        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-32 no-scrollbar ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
           
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
@@ -220,58 +224,101 @@ export default function ChatPage() {
               </h1>
             </div>
           ) : (
-            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-20">
+            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-20 min-h-full">
               {messages.map(msg => (
-                <div key={msg.id} className="w-full">
+                <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {msg.role === 'user' ? (
                     <div className="flex justify-end mb-4">
-                      <div className="max-w-[70%] px-5 py-3 bg-surface-container-high border border-outline-variant/10 rounded-lg text-sm text-on-surface font-body leading-relaxed">
+                      <div className="max-w-[85%] px-5 py-3 bg-surface-container-high border border-outline-variant/10 rounded-2xl text-sm text-on-surface font-body leading-relaxed shadow-sm">
                         {msg.content}
                       </div>
                     </div>
                   ) : (
                     <div className="flex gap-4 mb-6">
                       <div className="flex-shrink-0 pt-1">
-                        <div className="text-[9px] font-black font-mono text-primary-container/60 uppercase tracking-widest flex items-center gap-1.5">
-                          <span className="text-sm grayscale">{msg.agent?.icon || '🎙️'}</span>
-                          {msg.agent?.role || 'CMO'}
+                        <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-lg shadow-inner grayscale">
+                          {msg.agent?.icon || '🏦'}
                         </div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider">{msg.agent?.role || 'ARIA'}</span>
+                          <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider">{msg.agent?.role || 'ATLAS'}</span>
                           <span className="text-[9px] font-mono text-primary-container/60 uppercase">
-                            {msg.agent?.title || 'CHIEF MARKETING OFFICER'}
-                          </span>
-                          <span className="text-[8px] font-mono text-on-surface/20 uppercase ml-auto">
-                            JUST NOW
+                            {msg.agent?.title || 'EXECUTIVE OFFICER'}
                           </span>
                         </div>
-                        <div className="text-sm text-on-secondary-container font-body leading-relaxed">
-                          {msg.content}
-                        </div>
-                        {chatMode.toLowerCase() === 'approve' && (
-                          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-outline-variant/10">
-                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-primary-container transition-colors flex items-center gap-1">
-                              <span className="material-symbols-outlined text-xs">check</span>
-                              Approve
-                            </button>
-                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-error transition-colors flex items-center gap-1">
-                              <span className="material-symbols-outlined text-xs">close</span>
-                              Reject
-                            </button>
-                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-on-surface transition-colors flex items-center gap-1 ml-auto">
-                              <span className="material-symbols-outlined text-xs">content_copy</span>
-                              Copy
-                            </button>
+                        
+                        {/* Thinking Steps */}
+                        {msg.metadata?.thinking_steps && (
+                          <div className="mb-4 space-y-1.5 opacity-40">
+                            {msg.metadata.thinking_steps.map((step: string, i: number) => (
+                              <div key={i} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                <span className="w-1 h-1 rounded-full bg-primary-container" />
+                                {step}
+                              </div>
+                            ))}
                           </div>
                         )}
+
+                        <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
+                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0]}
+                        </div>
+
+                        {/* Result Items */}
+                        {(msg.result_items || (msg.content.includes('RESULT:') && msg.content.split('RESULT:')[1].split('COORDINATION_NEEDED:')[0].split('\n'))) && (
+                          <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-2">
+                             <div className="text-[9px] font-black text-primary-container uppercase tracking-widest mb-1">Directives Generated</div>
+                             {(msg.result_items || msg.content.split('RESULT:')[1].split('COORDINATION_NEEDED:')[0].split('\n').filter(Boolean)).map((item: string, i: number) => (
+                               <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
+                                 <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
+                                 {item.replace(/^\d+\.\s*/, '').trim()}
+                               </div>
+                             ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
+                          <button className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1">
+                            <span className="material-symbols-outlined text-xs">check</span> Approve
+                          </button>
+                          <button className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1">
+                            <span className="material-symbols-outlined text-xs">close</span> Reject
+                          </button>
+                          <button className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto">
+                            <span className="material-symbols-outlined text-xs">content_copy</span> Copy
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
               ))}
-              <div ref={chatEndRef} />
+
+              {isLoading && (
+                <div className="flex gap-4 mb-6 w-full animate-pulse">
+                  <div className="flex-shrink-0 pt-1">
+                    <div className="w-8 h-8 rounded-xl bg-primary-container/10 flex items-center justify-center text-lg shadow-inner grayscale opacity-50">
+                      {pinnedAgent ? EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon : '🏦'}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">
+                        {pinnedAgent || 'ATLAS'}
+                      </span>
+                      <span className="text-[9px] font-mono text-primary-container/30 uppercase">
+                        THINKING...
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-2 w-3/4 bg-on-surface/5 rounded-full" />
+                      <div className="h-2 w-1/2 bg-on-surface/5 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={chatEndRef} className="h-4" />
             </div>
           )}
         </div>
