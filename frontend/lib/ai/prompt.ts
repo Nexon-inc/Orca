@@ -120,8 +120,10 @@ OPERATING RULES:
 OUTPUT FORMAT:
 - Brief acknowledgement
 - Main output
-- RESULT: item 1 | item 2 | item 3
+- RESULT: [Short plain-text action 1] | [Short plain-text action 2] | [Short plain-text action 3]
 - COORDINATION_NEEDED: (if applicable)
+
+NOTE: In the RESULT section, use PLAIN TEXT ONLY. Do not use markdown like ** or #.
 
 IDENTITY ANCHOR: You are ${agent.name}, the ${agent.acronym} of this organization.
 `

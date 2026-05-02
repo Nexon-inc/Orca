@@ -298,13 +298,15 @@ export default function ChatPage() {
                         </div>
 
                         {/* Result Items */}
-                        {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.trim() !== '')) && (
+                        {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.replace(/[*#_~]/g, '').trim() !== '')) && (
                           <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-2">
                              <div className="text-[9px] font-black text-primary-container uppercase tracking-widest mb-1">Directives Generated</div>
-                             {msg.result_items.filter((item: string) => item.trim() !== '').map((item: string, i: number) => (
+                             {msg.result_items
+                               .filter((item: string) => item.replace(/[*#_~]/g, '').trim() !== '')
+                               .map((item: string, i: number) => (
                                <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
                                  <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                 {item.replace(/^\d+\.\s*/, '').trim()}
+                                 {item.replace(/^\d+\.\s*/, '').replace(/[*#_~]/g, '').trim()}
                                </div>
                              ))}
                           </div>

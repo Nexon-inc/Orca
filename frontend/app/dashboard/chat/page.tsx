@@ -276,13 +276,15 @@ function ChatContent() {
                             .trim()
                           }
                         </div>
-                        {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.trim() !== '')) && (
+                        {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.replace(/[*#_~]/g, '').trim() !== '')) && (
                           <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-2">
                              <div className="text-[9px] font-black text-primary-container uppercase tracking-widest mb-1">Directives Generated</div>
-                             {msg.result_items.filter((item: string) => item.trim() !== '').map((item: string, i: number) => (
+                             {msg.result_items
+                               .filter((item: string) => item.replace(/[*#_~]/g, '').trim() !== '')
+                               .map((item: string, i: number) => (
                                <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
                                  <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                 {item.replace(/^\d+\.\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim()}
+                                 {item.replace(/^\d+\.\s*/, '').replace(/[*#_~]/g, '').trim()}
                                </div>
                              ))}
                           </div>
@@ -345,8 +347,8 @@ function ChatContent() {
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
             <div className="flex justify-center gap-2 mb-1">
               {EXECUTIVE_PILLS.map(exec => (
-                <button key={exec.key} disabled={isOnboarding && exec.role !== 'CEO'} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-colors ${pinnedAgent === exec.role ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.1)]' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'} ${isOnboarding && exec.role !== 'CEO' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                <button key={exec.key} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-colors ${pinnedAgent === exec.role ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.1)]' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
                 >
                   <span className="text-sm grayscale">{exec.icon}</span> {exec.role}
                 </button>
@@ -355,7 +357,7 @@ function ChatContent() {
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary-container/20">
               <div className="px-6 py-4">
                 <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h-[44px] max-h([160px] no-scrollbar py-1"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h([44px] max-h([160px] no-scrollbar py-1"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows"}
                   rows={1} disabled={isLoading}
                 />
