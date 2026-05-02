@@ -149,7 +149,11 @@ function ChatContent() {
         return;
       }
       if (data.message) {
-        setMessages(prev => [...prev, { ...data.message, role: 'assistant', agent: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent) || EXECUTIVE_PILLS[0] }]);
+        setMessages(prev => [...prev, { 
+          ...data.message, 
+          sender_type: 'agent', 
+          agent: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent) || EXECUTIVE_PILLS[0] 
+        }]);
         setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       }
     } catch (err) {
@@ -196,7 +200,7 @@ function ChatContent() {
             <div className="w-full max-w-3xl flex flex-col gap-6 px-4 min-h-full">
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  {msg.sender_type === 'user' ? (
+                  {(msg.sender_type === 'user' || msg.role === 'user') ? (
                     <div className="flex flex-col items-end mb-6">
                       <div className="flex items-center gap-2 mb-2 mr-2">
                         <span className="text-[10px] font-black font-headline text-on-surface/40 uppercase tracking-widest">{userName}</span>
@@ -247,7 +251,16 @@ function ChatContent() {
                             <><button onClick={() => toast.success('Approved')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-primary-container transition-colors"><span className="material-symbols-outlined text-xs">check</span> Approve</button>
                             <button onClick={() => toast.error('Rejected')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-error transition-colors"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
                           )}
-                          <button onClick={() => { navigator.clipboard.writeText(msg.content); toast.success('Copied'); }} className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors"><span className="material-symbols-outlined text-xs">content_copy</span> Copy</button>
+                          <button 
+                            onClick={() => {
+                              const cleanContent = msg.content.split('DIRECTIVE_DOCUMENT:')[0].split('RESULT:')[0].split('---')[0].trim();
+                              navigator.clipboard.writeText(cleanContent);
+                              toast.success('Response copied');
+                            }}
+                            className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-xs">content_copy</span> Copy
+                          </button>
                         </div>
                       </div>
                     </div>
