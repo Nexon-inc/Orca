@@ -129,7 +129,7 @@ function ChatContent() {
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
-    const userMsg = { id: Date.now().toString(), role: 'user', content: input };
+    const userMsg = { id: Date.now().toString(), sender_type: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
     const currentInput = input;
     setInput('');
@@ -196,7 +196,7 @@ function ChatContent() {
             <div className="w-full max-w-3xl flex flex-col gap-6 px-4 min-h-full">
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  {msg.role === 'user' ? (
+                  {msg.sender_type === 'user' ? (
                     <div className="flex flex-col items-end mb-6">
                       <div className="flex items-center gap-2 mb-2 mr-2">
                         <span className="text-[10px] font-black font-headline text-on-surface/40 uppercase tracking-widest">{userName}</span>
