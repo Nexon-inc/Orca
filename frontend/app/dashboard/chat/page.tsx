@@ -50,21 +50,39 @@ function ChatContent() {
   const [isListening, setIsListening] = useState(false);
   const [isBriefing, setIsBriefing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
   const [thinkingStep, setThinkingStep] = useState(0);
-  const THINKING_MESSAGES = ['Analyzing platform data...', 'Strategizing roadmap...', 'Calculating growth vectors...', 'Orchestrating executives...', 'Refining directives...'];
+
+  const getThinkingMessages = () => {
+    if (chatMode === 'Planning') {
+      return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
+    }
+    if (pinnedAgent === 'CTO') {
+      return ['Scanning system architecture...', 'Generating technical blueprints...', 'Debugging protocol logic...', 'Validating code integrity...'];
+    }
+    if (pinnedAgent === 'CEO') {
+      return ['Orchestrating executive team...', 'Reviewing organizational OKRs...', 'Synchronizing department data...', 'Finalizing CEO directives...'];
+    }
+    if (pinnedAgent === 'CMO') {
+      return ['Analyzing market resonance...', 'Synthesizing creative assets...', 'Refining brand voice...', 'Mapping audience signals...'];
+    }
+    if (pinnedAgent === 'CSO') {
+      return ['Prospecting lead data...', 'Analyzing revenue pipeline...', 'Optimizing sales sequences...', 'Calculating conversion metrics...'];
+    }
+    return ['Processing intelligence...', 'Synthesizing response...', 'Refining department output...', 'Finalizing brief...'];
+  };
 
   useEffect(() => {
     let interval: any;
+    const currentMessages = getThinkingMessages();
     if (isLoading) {
       interval = setInterval(() => {
-        setThinkingStep(prev => (prev + 1) % THINKING_MESSAGES.length);
+        setThinkingStep(prev => (prev + 1) % currentMessages.length);
       }, 1500);
     } else {
       setThinkingStep(0);
     }
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [isLoading, chatMode, pinnedAgent]);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -80,11 +98,34 @@ function ChatContent() {
           setUser(userData.user);
           
           if (params.id) {
+            // 1. Fetch History
+            let historyLoaded = false;
             const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
             if (msgRes.ok) {
               const msgData = await msgRes.json();
-              if (msgData.messages) setMessages(msgData.messages);
-              setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+              if (msgData.messages && msgData.messages.length > 0) {
+                setMessages(msgData.messages);
+                historyLoaded = true;
+                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+              }
+            }
+
+            // 2. Check Identity for Onboarding
+            const identityRes = await fetch('/api/company'); 
+            const identityData = await identityRes.json();
+            const missionMissing = !identityData?.identity?.mission;
+            
+            setIsOnboarding(missionMissing);
+            if (missionMissing) setPinnedAgent('CEO');
+
+            // 3. Fallback to onboarding only if no history exists
+            if (missionMissing && !historyLoaded) {
+              setMessages([{
+                id: 'onboarding-init',
+                role: 'assistant',
+                content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?",
+                agent: EXECUTIVE_PILLS[0]
+              }]);
             }
           } else {
             // Auto-Redirect to most recent conversation if on root
@@ -204,7 +245,7 @@ function ChatContent() {
       <DashboardSidebar active="chat" />
       <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
         <DashboardHeader />
-        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-[40rem] ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
+        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
               <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase">{greeting} {userName}.</h1>
@@ -235,10 +276,10 @@ function ChatContent() {
                             .trim()
                           }
                         </div>
-                        {(msg.result_items || (msg.content.includes('RESULT:') && msg.content.split('RESULT:')[1].split('COORDINATION_NEEDED:')[0].split('\n'))) && (
+                        {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.trim() !== '')) && (
                           <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-2">
                              <div className="text-[9px] font-black text-primary-container uppercase tracking-widest mb-1">Directives Generated</div>
-                             {(msg.result_items || msg.content.split('RESULT:')[1].split('COORDINATION_NEEDED:')[0].split('\n').filter(Boolean)).map((item: string, i: number) => (
+                             {msg.result_items.filter((item: string) => item.trim() !== '').map((item: string, i: number) => (
                                <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
                                  <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
                                  {item.replace(/^\d+\.\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim()}
@@ -247,24 +288,26 @@ function ChatContent() {
                           </div>
                         )}
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
-                          <>
-                            <button onClick={async () => {
-                                const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) });
-                                if (res.ok) { setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'approved' } : m)); toast.success('Strategy Approved'); }
-                              }}
-                              className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'approved' ? 'text-primary-container' : 'text-on-surface hover:text-primary-container'}`}
-                            >
-                              <span className="material-symbols-outlined text-xs">{msg.status === 'approved' ? 'task_alt' : 'check'}</span> {msg.status === 'approved' ? 'Approved' : 'Approve'}
-                            </button>
-                            <button onClick={async () => {
-                                const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) });
-                                if (res.ok) { setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'rejected' } : m)); toast.error('Strategy Rejected'); }
-                              }}
-                              className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'rejected' ? 'text-error' : 'text-on-surface hover:text-error'}`}
-                            >
-                              <span className="material-symbols-outlined text-xs">{msg.status === 'rejected' ? 'block' : 'close'}</span> {msg.status === 'rejected' ? 'Rejected' : 'Reject'}
-                            </button>
-                          </>
+                          {chatMode !== 'Planning' && (
+                            <>
+                              <button onClick={async () => {
+                                  const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) });
+                                  if (res.ok) { setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'approved' } : m)); toast.success('Strategy Approved'); }
+                                }}
+                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'approved' ? 'text-primary-container' : 'text-on-surface hover:text-primary-container'}`}
+                              >
+                                <span className="material-symbols-outlined text-xs">{msg.status === 'approved' ? 'task_alt' : 'check'}</span> {msg.status === 'approved' ? 'Approved' : 'Approve'}
+                              </button>
+                              <button onClick={async () => {
+                                  const res = await fetch(`/api/messages/${msg.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) });
+                                  if (res.ok) { setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'rejected' } : m)); toast.error('Strategy Rejected'); }
+                                }}
+                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'rejected' ? 'text-error' : 'text-on-surface hover:text-error'}`}
+                              >
+                                <span className="material-symbols-outlined text-xs">{msg.status === 'rejected' ? 'block' : 'close'}</span> {msg.status === 'rejected' ? 'Rejected' : 'Reject'}
+                              </button>
+                            </>
+                          )}
                           <button onClick={() => { navigator.clipboard.writeText(msg.content); toast.success('Copied to clipboard'); }} className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors">
                             <span className="material-symbols-outlined text-xs">content_copy</span> Copy
                           </button>
@@ -282,7 +325,9 @@ function ChatContent() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">{pinnedAgent || 'ATLAS'}</span>
-                      <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">{THINKING_MESSAGES[thinkingStep]}</span>
+                      <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">
+                        {getThinkingMessages()[thinkingStep]}
+                      </span>
                     </div>
                     <div className="space-y-2">
                       <div className="h-2 w-3/4 bg-on-surface/5 rounded-full" />
@@ -291,7 +336,7 @@ function ChatContent() {
                   </div>
                 </div>
               )}
-              <div className="h-[40rem] flex-shrink-0" />
+              <div className="h-[20rem] flex-shrink-0" />
               <div ref={chatEndRef} />
             </div>
           )}
