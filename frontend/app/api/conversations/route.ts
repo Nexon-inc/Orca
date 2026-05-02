@@ -7,9 +7,8 @@ export async function GET() {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const supabase = await createServerSupabaseClient()
-
-  const { data: conversations } = await supabase
+  const serviceClient = createServiceSupabaseClient()
+  const { data: conversations } = await serviceClient
     .from('conversations')
     .select(`
       id, department_key, created_at, updated_at,
@@ -17,6 +16,7 @@ export async function GET() {
     `)
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
+    .order('created_at', { ascending: false })
     .order('created_at', { ascending: false })
 
   return NextResponse.json({ conversations })

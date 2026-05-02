@@ -184,7 +184,7 @@ export async function GET(
     return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
   }
 
-  const { data: dbMessages } = await supabase
+  const { data: dbMessages } = await serviceClient
     .from('messages')
     .select('*')
     .eq('conversation_id', conversationId)

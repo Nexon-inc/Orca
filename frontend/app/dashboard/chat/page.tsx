@@ -71,14 +71,21 @@ function ChatContent() {
               if (msgData.messages) setMessages(msgData.messages);
               setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
             }
-          }
+          } else {
+            // Auto-Redirect to most recent conversation if on root
+            const convRes = await fetch('/api/conversations');
+            const convData = await convRes.json();
+            if (convData.conversations?.length > 0) {
+              const mostRecent = convData.conversations[0];
+              router.push(`/dashboard/chat/${mostRecent.id}`);
+              return;
+            }
 
-          const identityRes = await fetch('/api/company'); 
-          const identityData = await identityRes.json();
-          if (!identityData?.identity?.mission) {
-            setIsOnboarding(true);
-            setPinnedAgent('CEO');
-            if (!params.id) {
+            const identityRes = await fetch('/api/company'); 
+            const identityData = await identityRes.json();
+            if (!identityData?.identity?.mission) {
+              setIsOnboarding(true);
+              setPinnedAgent('CEO');
               setMessages([{
                 id: 'onboarding-init',
                 role: 'assistant',
@@ -86,8 +93,6 @@ function ChatContent() {
                 agent: EXECUTIVE_PILLS[0]
               }]);
             }
-          } else {
-            setIsOnboarding(false);
           }
         }
       } catch (err) {}
