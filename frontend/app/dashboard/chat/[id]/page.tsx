@@ -5,8 +5,18 @@ import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
+import { toast } from 'sonner';
+import { Suspense } from 'react';
 
 export default function ChatPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChatContent />
+    </Suspense>
+  );
+}
+
+function ChatContent() {
   const router = useRouter();
   const params = useParams();
   const [org, setOrg] = useState<any>(null);
@@ -185,9 +195,13 @@ export default function ChatPage() {
       const data = await res.json();
       console.log('DEBUG_CHAT_RESPONSE:', data);
       
-      if (data.error) {
-        console.error('System error:', data.error);
-      } else if (data.message) {
+      if (data.error || !res.ok) {
+        toast.error(`ORCA Error: ${data.error || 'Failed to process brief'}`);
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.message) {
         setMessages(prev => [...prev, {
           ...data.message,
           role: 'assistant',

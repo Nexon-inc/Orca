@@ -24,19 +24,28 @@ export async function POST(
 
     // 1. Sanitize & Context
     const content = sanitizeInput(rawContent)
-    const { data: conversation } = await serviceClient
+    const { data: conversation, error: convError } = await serviceClient
       .from('conversations')
-      .select('org_id, user_id, agent_id, title, agents:agent_id(*, departments(*))')
+      .select('org_id, user_id, agent_id, title')
       .eq('id', conversationId)
       .single()
 
-    if (!conversation || conversation.user_id !== user.id) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    if (convError || !conversation) {
+      return NextResponse.json({ error: `Conversation not found: ${conversationId}` }, { status: 404 })
+    }
+
+    if (conversation.user_id !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized: Conversation belongs to another user' }, { status: 403 })
     }
 
     const orgId = conversation.org_id
-    const agent = Array.isArray(conversation.agents) ? conversation.agents[0] : conversation.agents
-    if (!agent) return NextResponse.json({ error: 'No agent' }, { status: 400 })
+    const { data: agent } = await serviceClient
+      .from('agents')
+      .select('*')
+      .eq('id', conversation.agent_id)
+      .single()
+
+    if (!agent) return NextResponse.json({ error: 'No agent found' }, { status: 400 })
 
     // 2. Security
     const { allowed: rlAllowed } = await checkRateLimit(user.id, 'agent_briefs')
@@ -154,7 +163,7 @@ export async function GET(
     const supabase = await createServerSupabaseClient()
     const { data: messages, error } = await supabase
       .from('messages')
-      .select('*, agent:agent_id(*)')
+      .select('id, conversation_id, sender_type, content, result_items, status, created_at, metadata')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
 
