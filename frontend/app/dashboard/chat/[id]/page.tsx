@@ -58,6 +58,28 @@ function ChatContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(400);
+  const isResizing = useRef(false);
+
+  const startResizing = (e: React.MouseEvent) => {
+    isResizing.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResizing);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth > 320 && newWidth < 900) {
+      setSidebarWidth(newWidth);
+    }
+  };
+
+  const stopResizing = () => {
+    isResizing.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', stopResizing);
+  };
 
   const getThinkingMessages = () => {
     if (chatMode === 'Planning') return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
@@ -79,6 +101,17 @@ function ChatContent() {
     }
     return () => clearInterval(interval);
   }, [isLoading, chatMode, pinnedAgent]);
+
+  const adjustTextareaHeight = () => {
+    if (inputRef.current) {
+      inputRef.current.style.height = '40px'; 
+      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 240)}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [input]);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -195,7 +228,10 @@ function ChatContent() {
     <div className="flex h-screen bg-surface">
       <DashboardSidebar active="chat" />
       <main className="flex-1 ml-64 flex flex-row min-h-screen relative grid-bg overflow-hidden">
-        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 ${activeDirectives ? 'mr-[400px]' : ''} ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
+        <div 
+          style={{ marginRight: activeDirectives ? `${sidebarWidth}px` : 0 }}
+          className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}
+        >
           <DashboardHeader />
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
@@ -288,13 +324,24 @@ function ChatContent() {
         </div>
 
         {activeDirectives && (
-          <div className="w-[400px] bg-surface-container-low border-l border-outline-variant/10 flex flex-col h-screen animate-in slide-in-from-right duration-500 z-40">
+          <div 
+            style={{ width: `${sidebarWidth}px` }}
+            className="bg-surface-container-low border-l border-outline-variant/10 flex flex-col h-screen animate-in slide-in-from-right duration-500 z-40 relative"
+          >
+            {/* Resize Handle */}
+            <div 
+              onMouseDown={startResizing}
+              className="absolute left-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-primary-container/40 active:bg-primary-container transition-colors z-50 group"
+            >
+              <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-8 w-[2px] bg-outline-variant/20 group-hover:bg-primary-container/40 rounded-full" />
+            </div>
+
             <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container">
               <div><h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2><p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0,8)}</p></div>
               <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface"><span className="material-symbols-outlined text-sm">close</span></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar bg-[#0f110f]">
-              <div className="p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl min-h-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-500">
+            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 no-scrollbar bg-[#0f110f]">
+              <div className="p-5 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl min-h-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-500">
                 <div className="prose prose-sm prose-invert max-w-none text-on-surface/80 font-body leading-loose whitespace-pre-wrap break-words">
                   {activeDirectives.metadata?.directive_raw || 
                    activeDirectives.content.split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
@@ -332,7 +379,10 @@ function ChatContent() {
           </div>
         )}
 
-        <div className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30 ${activeDirectives ? 'right-[400px]' : 'right-0'}`}>
+        <div 
+          style={{ right: activeDirectives ? `${sidebarWidth}px` : 0 }}
+          className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30`}
+        >
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
             <div className="flex justify-center gap-2 mb-1">
               {EXECUTIVE_PILLS.map(exec => (
@@ -346,7 +396,7 @@ function ChatContent() {
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
               <div className="px-6 py-4">
                 <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[160px] no-scrollbar py-1"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-1 overflow-y-auto"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} rows={1} disabled={isLoading}
                 />
               </div>
