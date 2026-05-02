@@ -104,6 +104,8 @@ export async function POST(
     const resultMatch = agentResponse.match(/RESULT:\s*([\s\S]+?)(?:\n|$)/)
     const resultItems = resultMatch ? resultMatch[1].split('|').map(s => s.trim()) : []
     const coordMatch = agentResponse.match(/COORDINATION_NEEDED:\s*dept=(\w+)/)
+    const directiveMatch = agentResponse.match(/DIRECTIVE_DOCUMENT:\s*([\s\S]+?)(?:\nRESULT:|\nCOORDINATION_NEEDED:|$)/)
+    const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
 
     const { data: agentMessage } = await serviceClient.from('messages').insert({
       conversation_id: conversationId,
@@ -111,7 +113,10 @@ export async function POST(
       content: agentResponse,
       result_items: resultItems,
       status: 'pending',
-      metadata: { thinking_steps: mode === 'planning' ? ['Analyzing...', 'Strategizing...'] : ['Executing...'] }
+      metadata: { 
+        thinking_steps: mode === 'planning' ? ['Analyzing...', 'Strategizing...'] : ['Executing...'],
+        directive_raw: directiveRaw
+      }
     }).select().single()
 
     // 9. Background Side Effects

@@ -120,10 +120,9 @@ OPERATING RULES:
 OUTPUT FORMAT:
 - Brief acknowledgement
 - Main output
-- RESULT: [Short plain-text action 1] | [Short plain-text action 2] | [Short plain-text action 3]
+- DIRECTIVE_DOCUMENT: (A formal markdown document including Title, Objective, and Action Items)
+- RESULT: [Item 1] | [Item 2] | [Item 3] (Brief action tags for the UI)
 - COORDINATION_NEEDED: (if applicable)
-
-NOTE: In the RESULT section, use PLAIN TEXT ONLY. Do not use markdown like ** or #.
 
 IDENTITY ANCHOR: You are ${agent.name}, the ${agent.acronym} of this organization.
 `

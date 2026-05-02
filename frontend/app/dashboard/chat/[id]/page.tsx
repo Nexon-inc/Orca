@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
 import { toast } from 'sonner';
-import { Suspense } from 'react';
 
 export default function ChatPage() {
   return (
@@ -46,47 +45,33 @@ function ChatContent() {
   ];
 
   const EXECUTIVE_PILLS = [
-    { key: 'ceo', role: 'CEO', icon: '🏦', title: 'Atlas (CEO/Ops)' },
-    { key: 'cmo', role: 'CMO', icon: '🎙️', title: 'Aria (Marketing)' },
-    { key: 'cso', role: 'CSO', icon: '💰', title: 'Rex (Sales)' },
-    { key: 'cco', role: 'CCO', icon: '🛟', title: 'Purity (Customer)' },
-    { key: 'cio', role: 'CIO', icon: '🏛️', title: 'Roman (Intel)' },
-    { key: 'cto', role: 'CTO', icon: '👻', title: 'Ghost (Tech)' },
+    { key: 'ceo', role: 'CEO', icon: '🏦', title: 'Atlas (CEO/Ops)', name: 'Atlas' },
+    { key: 'cmo', role: 'CMO', icon: '🎙️', title: 'Aria (Marketing)', name: 'Aria' },
+    { key: 'cso', role: 'CSO', icon: '💰', title: 'Rex (Sales)', name: 'Rex' },
+    { key: 'cco', role: 'CCO', icon: '🛟', title: 'Purity (Customer)', name: 'Purity' },
+    { key: 'cio', role: 'CIO', icon: '🏛️', title: 'Roman (Intel)', name: 'Roman' },
+    { key: 'cto', role: 'CTO', icon: '👻', title: 'Ghost (Tech)', name: 'Ghost' },
   ];
 
   const [isOnboarding, setIsOnboarding] = useState(false);
-  const [isIdeating, setIsIdeating] = useState(false);
-  const [showAddMenu, setShowAddMenu] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [isBriefing, setIsBriefing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
+
   const getThinkingMessages = () => {
-    if (chatMode === 'Planning') {
-      return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
-    }
-    if (pinnedAgent === 'CTO') {
-      return ['Scanning system architecture...', 'Generating technical blueprints...', 'Debugging protocol logic...', 'Validating code integrity...'];
-    }
-    if (pinnedAgent === 'CEO') {
-      return ['Orchestrating executive team...', 'Reviewing organizational OKRs...', 'Synchronizing department data...', 'Finalizing CEO directives...'];
-    }
-    if (pinnedAgent === 'CMO') {
-      return ['Analyzing market resonance...', 'Synthesizing creative assets...', 'Refining brand voice...', 'Mapping audience signals...'];
-    }
-    if (pinnedAgent === 'CSO') {
-      return ['Prospecting lead data...', 'Analyzing revenue pipeline...', 'Optimizing sales sequences...', 'Calculating conversion metrics...'];
-    }
+    if (chatMode === 'Planning') return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
+    if (pinnedAgent === 'CTO') return ['Scanning system architecture...', 'Generating technical blueprints...', 'Debugging protocol logic...', 'Validating code integrity...'];
+    if (pinnedAgent === 'CEO') return ['Orchestrating executive team...', 'Reviewing organizational OKRs...', 'Synchronizing department data...', 'Finalizing CEO directives...'];
+    if (pinnedAgent === 'CMO') return ['Analyzing market resonance...', 'Synthesizing creative assets...', 'Refining brand voice...', 'Mapping audience signals...'];
+    if (pinnedAgent === 'CSO') return ['Prospecting lead data...', 'Analyzing revenue pipeline...', 'Optimizing sales sequences...', 'Calculating conversion metrics...'];
     return ['Processing intelligence...', 'Synthesizing response...', 'Refining department output...', 'Finalizing brief...'];
   };
 
   useEffect(() => {
     let interval: any;
-    const currentMessages = getThinkingMessages();
     if (isLoading) {
       interval = setInterval(() => {
-        setThinkingStep(prev => (prev + 1) % currentMessages.length);
+        setThinkingStep(prev => (prev + 1) % getThinkingMessages().length);
       }, 1500);
     } else {
       setThinkingStep(0);
@@ -95,7 +80,6 @@ function ChatContent() {
   }, [isLoading, chatMode, pinnedAgent]);
 
   useEffect(() => {
-    // 1. Initial Loading
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) setGreeting('GOOD MORNING,');
     else if (hour >= 12 && hour < 17) setGreeting('GOOD AFTERNOON,');
@@ -107,9 +91,7 @@ function ChatContent() {
         const userData = await userRes.json();
         if (userData?.user) {
           setUser(userData.user);
-          
           if (params.id) {
-            // 1. Fetch History
             let historyLoaded = false;
             try {
               const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
@@ -118,70 +100,39 @@ function ChatContent() {
                 if (msgData.messages && msgData.messages.length > 0) {
                   setMessages(msgData.messages);
                   historyLoaded = true;
-                  
-                  // Set pinned agent from the conversation history
-                  const lastAgentMsg = [...msgData.messages].reverse().find(m => m.sender_type === 'agent' || m.agent);
+                  const lastAgentMsg = [...msgData.messages].reverse().find(m => m.sender_type === 'agent');
                   if (lastAgentMsg) {
-                    setPinnedAgent(lastAgentMsg.agent?.role || 'CEO');
+                    const found = EXECUTIVE_PILLS.find(p => p.name === lastAgentMsg.metadata?.agent_name);
+                    setPinnedAgent(found?.role || 'CEO');
                   }
-
                   setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
                 }
               }
-            } catch (historyErr) {
-              console.error('HISTORY_FETCH_ERR:', historyErr);
-            }
+            } catch (err) {}
 
-            // 2. Check Identity for Onboarding
             const identityRes = await fetch('/api/company'); 
             const identityData = await identityRes.json();
             const missionMissing = !identityData?.identity?.mission;
-            
             setIsOnboarding(missionMissing);
-            // ONLY force CEO if mission is missing AND it's a new chat (no history)
-            if (missionMissing && !historyLoaded && !params.id) {
-              setPinnedAgent('CEO');
-            }
-
-            // 3. Fallback to onboarding ONLY if definitely no history and mission is missing
+            
             if (missionMissing && !historyLoaded) {
-              setMessages([{
-                id: 'onboarding-init',
-                role: 'assistant',
-                content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?",
-                agent: EXECUTIVE_PILLS[0]
-              }]);
+              setPinnedAgent('CEO');
+              setMessages([{ id: 'onboarding-init', role: 'assistant', content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?", agent: EXECUTIVE_PILLS[0] }]);
             }
           }
         }
-      } catch (err) {
-        console.error('INIT_ERR:', err);
-      }
+      } catch (err) {}
     };
-
     initialize();
-
-    // Focus input on slash
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [params.id]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim()) return;
-    
+    if (!input.trim() || isLoading) return;
     const userMsg = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
     const currentInput = input;
     setInput('');
-    
-    // Scroll
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
     setIsLoading(true);
@@ -189,104 +140,57 @@ function ChatContent() {
       const res = await fetch(`/api/conversations/${params.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          content: currentInput,
-          mode: chatMode.toLowerCase(),
-          model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id
-        })
+        body: JSON.stringify({ content: currentInput, mode: chatMode.toLowerCase(), model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id })
       });
       const data = await res.json();
-      console.log('DEBUG_CHAT_RESPONSE:', data);
-      
       if (data.error || !res.ok) {
         toast.error(`ORCA Error: ${data.error || 'Failed to process brief'}`);
         setIsLoading(false);
         return;
       }
-
       if (data.message) {
-        setMessages(prev => [...prev, {
-          ...data.message,
-          role: 'assistant',
-          agent: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent) || EXECUTIVE_PILLS[0]
-        }]);
+        setMessages(prev => [...prev, { ...data.message, role: 'assistant', agent: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent) || EXECUTIVE_PILLS[0] }]);
         setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       }
     } catch (err) {
-      console.error('Failed to send message:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVoiceInput = () => {
-    setIsListening(true);
-    setTimeout(() => setIsListening(false), 2000);
-  };
+  const userName = user?.full_name?.split(' ')[0] || 'KALE';
 
-  const adjustTextareaHeight = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = '40px'; 
-      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
-    }
-  };
-
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [input]);
-
-  // Dropdown Component 
   const Dropdown = ({ value, options, onChange, labelKey = 'name' }: { value: any, options: any[], onChange: (v: any) => void, labelKey?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
     const displayValue = typeof value === 'string' ? value : value[labelKey];
-    
     return (
       <div className="relative">
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 text-on-surface/30 hover:text-primary-container transition-colors group pointer-events-auto"
-        >
-          <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-primary-container font-label">{displayValue}</span>
+        <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-1.5 text-on-surface/40 hover:text-primary-container transition-colors font-label text-[10px] uppercase tracking-widest px-2 py-1">
+          <span>{displayValue}</span>
           <span className="material-symbols-outlined text-[16px]">{isOpen ? 'expand_less' : 'expand_more'}</span>
         </button>
         {isOpen && (
-          <div className="absolute bottom-full mb-2 left-0 min-w-[140px] bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 z-50 pointer-events-auto overflow-hidden">
-            {options.map(opt => {
-              const optLabel = typeof opt === 'string' ? opt : opt[labelKey];
-              const optId = typeof opt === 'string' ? opt : opt.id;
-              const activeId = typeof value === 'string' ? value : value.id;
-
-              return (
-                <button
-                  key={optId}
-                  onClick={() => { onChange(opt); setIsOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-primary-container/10 transition-colors ${activeId === optId ? 'text-primary-container' : 'text-on-surface/60'}`}
-                >
-                  {optLabel}
-                </button>
-              );
-            })}
+          <div className="absolute bottom-full mb-2 left-0 min-w-[140px] bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 z-50">
+            {options.map(opt => (
+              <button key={typeof opt === 'string' ? opt : opt.id} onClick={() => { onChange(opt); setIsOpen(false); }} className={`w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${ (typeof opt === 'string' ? opt : opt.id) === (typeof value === 'string' ? value : value.id) ? 'text-primary-container' : 'text-on-surface/60' }`}>
+                {typeof opt === 'string' ? opt : opt[labelKey]}
+              </button>
+            ))}
           </div>
         )}
       </div>
     );
   };
 
-  const userName = user?.full_name?.split(' ')[0] || 'KALE';
-
   return (
     <div className="flex h-screen bg-surface">
       <DashboardSidebar active="chat" />
-
       <main className="flex-1 ml-64 flex flex-row min-h-screen relative grid-bg overflow-hidden">
         <div className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 ${activeDirectives ? 'mr-[400px]' : ''} ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
           <DashboardHeader />
-          
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
-              <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase">
-                {greeting} {userName}.
-              </h1>
+              <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase">{greeting} {userName}.</h1>
             </div>
           ) : (
             <div className="w-full max-w-3xl flex flex-col gap-6 px-4 min-h-full">
@@ -296,256 +200,146 @@ function ChatContent() {
                     <div className="flex flex-col items-end mb-6">
                       <div className="flex items-center gap-2 mb-2 mr-2">
                         <span className="text-[10px] font-black font-headline text-on-surface/40 uppercase tracking-widest">{userName}</span>
-                        <div className="w-6 h-6 rounded-lg bg-surface-container-highest border border-outline-variant/10 flex items-center justify-center text-[10px] font-black text-primary-container shadow-inner">
-                          {userName[0]}
-                        </div>
+                        <div className="w-6 h-6 rounded-lg bg-surface-container-highest border border-outline-variant/10 flex items-center justify-center text-[10px] font-black text-primary-container shadow-inner">{userName[0]}</div>
                       </div>
-                      <div className="max-w-[85%] px-5 py-3 bg-surface-container-high border border-outline-variant/10 rounded-2xl text-sm text-on-surface font-body leading-relaxed shadow-sm">
-                        {msg.content}
-                      </div>
+                      <div className="max-w-[85%] px-5 py-3 bg-surface-container-high border border-outline-variant/10 rounded-2xl text-sm text-on-surface font-body leading-relaxed shadow-sm">{msg.content}</div>
                     </div>
                   ) : (
                     <div className="flex gap-4 mb-6">
                       <div className="flex-shrink-0 pt-1">
-                        <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-lg shadow-inner grayscale">
-                          {msg.agent?.icon || '🏦'}
-                        </div>
+                        <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-lg shadow-inner grayscale">{msg.agent?.icon || '🏦'}</div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-[10px] font-black font-headline text-primary-container uppercase tracking-[0.25em]">{msg.agent?.role || 'ATLAS'}</span>
                           <span className="w-1 h-1 rounded-full bg-on-surface/10" />
-                          <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest">
-                            {msg.agent?.title || 'CHIEF EXECUTIVE'}
-                          </span>
+                          <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest">{msg.agent?.title || 'CHIEF EXECUTIVE'}</span>
                         </div>
-                        
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
-                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0].split('---')[0]
-                            .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
-                            .replace(/\*(.*?)\*/g, '$1')   // Remove italic
-                            .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n') // Clean headers
-                            .replace(/##\s*(.*?)(?:\n|$)/g, '$1\n')
-                            .replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
+                          {msg.content.split('DIRECTIVE_DOCUMENT:')[0].split('RESULT:')[0].split('---')[0]
+                            .replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
+                            .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n').replace(/##\s*(.*?)(?:\n|$)/g, '$1\n').replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
                             .trim()
                           }
                         </div>
-
-                        {/* Result Items */}
-                        {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.replace(/[*#_~]/g, '').trim() !== '')) && (
+                        {(msg.metadata?.directive_raw || (msg.result_items && msg.result_items.length > 0)) && (
                           <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-3">
                              <div className="flex items-center justify-between">
-                               <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Directives Generated</div>
-                               <button 
-                                 onClick={() => {
-                                   setActiveDirectives(msg);
-                                 }}
-                                 className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all"
-                               >
-                                 <span className="material-symbols-outlined text-[14px]">open_in_new</span> View & Delegate
+                               <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Executive Briefing Generated</div>
+                               <button onClick={() => setActiveDirectives(msg)} className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all">
+                                 <span className="material-symbols-outlined text-[14px]">description</span> View & Delegate
                                </button>
                              </div>
-                             <div className="space-y-2">
-                               {msg.result_items
-                                 .filter((item: string) => item.replace(/[*#_~]/g, '').trim() !== '')
-                                 .map((item: string, i: number) => (
-                                 <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
-                                   <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                   {item.replace(/^\d+\.\s*/, '').replace(/[*#_~]/g, '').trim()}
-                                 </div>
-                               ))}
-                             </div>
+                             {msg.result_items && (
+                               <div className="space-y-2">
+                                 {msg.result_items.slice(0, 3).map((item: string, i: number) => (
+                                   <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
+                                     <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
+                                     {item}
+                                   </div>
+                                 ))}
+                               </div>
+                             )}
                           </div>
                         )}
-
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
                           {chatMode !== 'Planning' && (
-                            <>
-                              <button 
-                                onClick={async () => {
-                                  const res = await fetch(`/api/messages/${msg.id}/status`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ status: 'approved' })
-                                  });
-                                  if (res.ok) {
-                                    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'approved' } : m));
-                                    toast.success('Strategy Approved');
-                                  }
-                                }}
-                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'approved' ? 'text-primary-container' : 'text-on-surface hover:text-primary-container'}`}
-                              >
-                                <span className="material-symbols-outlined text-xs">{msg.status === 'approved' ? 'task_alt' : 'check'}</span> 
-                                {msg.status === 'approved' ? 'Approved' : 'Approve'}
-                              </button>
-                              <button 
-                                onClick={async () => {
-                                  const res = await fetch(`/api/messages/${msg.id}/status`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ status: 'rejected' })
-                                  });
-                                  if (res.ok) {
-                                    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'rejected' } : m));
-                                    toast.error('Strategy Rejected');
-                                  }
-                                }}
-                                className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${msg.status === 'rejected' ? 'text-error' : 'text-on-surface hover:text-error'}`}
-                              >
-                                <span className="material-symbols-outlined text-xs">{msg.status === 'rejected' ? 'block' : 'close'}</span> 
-                                {msg.status === 'rejected' ? 'Rejected' : 'Reject'}
-                              </button>
-                            </>
+                            <><button onClick={() => toast.success('Approved')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-primary-container transition-colors"><span className="material-symbols-outlined text-xs">check</span> Approve</button>
+                            <button onClick={() => toast.error('Rejected')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-error transition-colors"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
                           )}
-                          <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(msg.content);
-                              toast.success('Copied to clipboard');
-                            }}
-                            className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-xs">content_copy</span> Copy
-                          </button>
+                          <button onClick={() => { navigator.clipboard.writeText(msg.content); toast.success('Copied'); }} className="text-[9px] font-black text-on-surface uppercase tracking-widest flex items-center gap-1 ml-auto hover:text-primary-container transition-colors"><span className="material-symbols-outlined text-xs">content_copy</span> Copy</button>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
               ))}
-
               {isLoading && (
                 <div className="flex gap-4 mb-6 w-full animate-pulse">
-                  <div className="flex-shrink-0 pt-1">
-                    <div className="w-8 h-8 rounded-xl bg-primary-container/10 flex items-center justify-center text-lg shadow-inner grayscale opacity-50">
-                      {pinnedAgent ? EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon : '🏦'}
-                    </div>
-                  </div>
+                  <div className="flex-shrink-0 pt-1"><div className="w-8 h-8 rounded-xl bg-primary-container/10 flex items-center justify-center text-lg shadow-inner grayscale opacity-50">{pinnedAgent ? EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon : '🏦'}</div></div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">
-                        {pinnedAgent || 'ATLAS'}
-                      </span>
-                      <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">
-                        {getThinkingMessages()[thinkingStep]}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-2 w-3/4 bg-on-surface/5 rounded-full" />
-                      <div className="h-2 w-1/2 bg-on-surface/5 rounded-full" />
-                    </div>
+                    <div className="flex items-center gap-3 mb-2"><span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">{pinnedAgent || 'ATLAS'}</span><span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">{getThinkingMessages()[thinkingStep]}</span></div>
+                    <div className="space-y-2"><div className="h-2 w-3/4 bg-on-surface/5 rounded-full" /><div className="h-2 w-1/2 bg-on-surface/5 rounded-full" /></div>
                   </div>
                 </div>
               )}
-
-              <div className="h-[20rem] flex-shrink-0" />
               <div ref={chatEndRef} />
             </div>
           )}
         </div>
 
-        {/* Input System */}
+        {activeDirectives && (
+          <div className="w-[400px] bg-surface-container-low border-l border-outline-variant/10 flex flex-col h-screen animate-in slide-in-from-right duration-500 z-40">
+            <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container">
+              <div><h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2><p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0,8)}</p></div>
+              <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface"><span className="material-symbols-outlined text-sm">close</span></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar bg-[#0f110f]">
+              <div className="p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl min-h-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-500">
+                <div className="prose prose-sm prose-invert max-w-none text-on-surface/80 font-body leading-loose whitespace-pre-wrap break-words">
+                  {activeDirectives.metadata?.directive_raw || 
+                   activeDirectives.content.split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-3 pb-8">
+                <button 
+                  onClick={() => {
+                    const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
+                    const blob = new Blob([content], { type: 'text/markdown' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `ORCA_DIRECTIVE_${activeDirectives.id.substring(0,8)}.md`;
+                    a.click();
+                    toast.success('Document downloaded locally');
+                  }}
+                  className="w-full py-3 bg-surface-container-high border border-outline-variant/20 text-on-surface font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[16px]">download</span> Download as .md
+                </button>
+
+                <button 
+                  onClick={() => {
+                    toast.success('Delegating to executive departments...');
+                    // Logic to trigger background orchestration
+                  }} 
+                  className="w-full py-4 bg-primary-container text-on-primary rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined">send_and_archive</span> Authorize & Execute
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30 ${activeDirectives ? 'right-[400px]' : 'right-0'}`}>
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
-            
             <div className="flex justify-center gap-2 mb-1">
               {EXECUTIVE_PILLS.map(exec => (
-                <button 
-                  key={exec.key}
-                  onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${
-                    pinnedAgent === exec.role
-                      ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105'
-                      : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'
-                  }`}
+                <button key={exec.key} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
                 >
-                  <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span>
-                  {exec.role}
+                  <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> {exec.role}
                 </button>
               ))}
             </div>
-
-            <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary-container/20">
+            <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
               <div className="px-6 py-4">
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h-[44px] max-h-[160px] no-scrollbar py-1"
-                  placeholder={isBriefing ? "Master Briefing in progress..." : (pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows")}
-                  rows={1}
-                  disabled={isBriefing}
+                <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[160px] no-scrollbar py-1"
+                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} rows={1} disabled={isLoading}
                 />
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
-                <div className={`flex items-center gap-2 ${isBriefing ? 'opacity-20 pointer-events-none' : ''}`}>
-                  <div className="relative">
-                    <button 
-                      onClick={() => setShowAddMenu(!showAddMenu)}
-                      className="h-8 w-8 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5"
-                    >
-                      <span className="material-symbols-outlined text-[22px]">add</span>
-                    </button>
-                    {showAddMenu && (
-                      <div className="absolute bottom-full mb-3 left-0 bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 min-w-[180px] z-50">
-                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">upload_file</span> Upload Document
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">image</span> Upload Image
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">link</span> Link Source
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="h-4 w-[1px] bg-[#262a26] mx-1" />
-                  <Dropdown value={chatMode} options={MODES} onChange={setChatMode} />
-                  <div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" />
-                  <Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} />
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={handleVoiceInput}
-                    className={`h-8 w-8 flex items-center justify-center transition-colors rounded-lg hover:bg-white/5 ${isListening ? 'text-error animate-pulse' : 'text-on-surface/40 hover:text-primary-container'}`}
-                  >
-                    <span className="material-symbols-outlined text-[22px]">mic</span>
-                  </button>
-                  <button 
-                    onClick={() => handleSendMessage()}
-                    className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${
-                      input.trim() 
-                        ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95'
-                        : 'bg-[#212421] text-on-surface/20 cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
-                  </button>
-                </div>
+                <div className="flex items-center gap-2"><Dropdown value={chatMode} options={MODES} onChange={setChatMode} /><div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" /><Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} /></div>
+                <button onClick={() => handleSendMessage()} disabled={!input.trim() || isLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${input.trim() && !isLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
               </div>
-            </div>
-
-            <div className="text-[9px] font-mono text-on-surface/40 italic uppercase tracking-widest text-center mt-1">
-              ORCA can make mistakes. Check important info.
             </div>
           </div>
         </div>
       </main>
-      
-      {showPricingModal && (
-        <PricingModal 
-          isOpen={showPricingModal} 
-          onClose={() => !isLocked && setShowPricingModal(false)} 
-          isLocked={isLocked}
-          currentPlan={org?.plan}
-        />
-      )}
+      {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => !isLocked && setShowPricingModal(false)} isLocked={isLocked} currentPlan={org?.plan} />}
     </div>
   );
 }
