@@ -100,14 +100,18 @@ export default function ChatPage() {
           if (params.id) {
             // 1. Fetch History
             let historyLoaded = false;
-            const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
-            if (msgRes.ok) {
-              const msgData = await msgRes.json();
-              if (msgData.messages && msgData.messages.length > 0) {
-                setMessages(msgData.messages);
-                historyLoaded = true;
-                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+            try {
+              const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
+              if (msgRes.ok) {
+                const msgData = await msgRes.json();
+                if (msgData.messages && msgData.messages.length > 0) {
+                  setMessages(msgData.messages);
+                  historyLoaded = true;
+                  setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+                }
               }
+            } catch (historyErr) {
+              console.error('HISTORY_FETCH_ERR:', historyErr);
             }
 
             // 2. Check Identity for Onboarding
@@ -118,7 +122,7 @@ export default function ChatPage() {
             setIsOnboarding(missionMissing);
             if (missionMissing) setPinnedAgent('CEO');
 
-            // 3. Fallback to onboarding only if no history exists
+            // 3. Fallback to onboarding ONLY if definitely no history and mission is missing
             if (missionMissing && !historyLoaded) {
               setMessages([{
                 id: 'onboarding-init',

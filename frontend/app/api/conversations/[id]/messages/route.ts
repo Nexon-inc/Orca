@@ -103,8 +103,12 @@ export async function POST(
     }).select().single()
 
     // 9. Background Side Effects
-    serviceClient.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId).catch(() => {})
-    serviceClient.from('llm_memories').upsert({ org_id: orgId, agent_id: agent.id, message_count: messageCount }, { onConflict: 'org_id,agent_id' }).catch(() => {})
+    serviceClient.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId).then(({ error }) => {
+      if (error) console.error('CONV_TS_UPDATE_ERR:', error)
+    })
+    serviceClient.from('llm_memories').upsert({ org_id: orgId, agent_id: agent.id, message_count: messageCount }, { onConflict: 'org_id,agent_id' }).then(({ error }) => {
+      if (error) console.error('MEMORY_UPDATE_ERR:', error)
+    })
 
     // 10. Auto-Onboarding (If mission is missing)
     if (!company?.mission || company.mission.includes('not defined')) {
