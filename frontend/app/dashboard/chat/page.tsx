@@ -246,8 +246,16 @@ function ChatContent() {
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {msg.role === 'user' ? (
-                    <div className="flex justify-end mb-4">
-                      <div className="max-w-[85%] px-5 py-3 bg-surface-container-high border border-outline-variant/10 rounded-2xl text-sm text-on-surface font-body leading-relaxed shadow-sm">{msg.content}</div>
+                    <div className="flex flex-col items-end mb-6">
+                      <div className="flex items-center gap-2 mb-2 mr-2">
+                        <span className="text-[10px] font-black font-headline text-on-surface/40 uppercase tracking-widest">{userName}</span>
+                        <div className="w-6 h-6 rounded-lg bg-surface-container-highest border border-outline-variant/10 flex items-center justify-center text-[10px] font-black text-primary-container shadow-inner">
+                          {userName[0]}
+                        </div>
+                      </div>
+                      <div className="max-w-[85%] px-5 py-3 bg-surface-container-high border border-outline-variant/10 rounded-2xl text-sm text-on-surface font-body leading-relaxed shadow-sm">
+                        {msg.content}
+                      </div>
                     </div>
                   ) : (
                     <div className="flex gap-4 mb-6">

@@ -160,15 +160,25 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const supabase = await createServerSupabaseClient()
-    const { data: messages, error } = await supabase
+    const serviceClient = createServiceSupabaseClient()
+    
+    // Verify ownership before fetching
+    const { data: conversation } = await serviceClient
+      .from('conversations')
+      .select('user_id')
+      .eq('id', conversationId)
+      .single()
+
+    if (!conversation) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+    if (conversation.user_id !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+
+    const { data: messages, error } = await serviceClient
       .from('messages')
       .select('id, conversation_id, sender_type, content, result_items, status, created_at, metadata')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
 
     if (error) throw error
-
     return NextResponse.json({ messages })
   } catch (err: any) {
     return NextResponse.json({ error: 'Server Error', details: err.message }, { status: 500 })
