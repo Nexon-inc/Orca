@@ -50,6 +50,20 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [isBriefing, setIsBriefing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [thinkingStep, setThinkingStep] = useState(0);
+  const THINKING_MESSAGES = ['Analyzing platform data...', 'Strategizing roadmap...', 'Calculating growth vectors...', 'Orchestrating executives...', 'Refining directives...'];
+
+  useEffect(() => {
+    let interval: any;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setThinkingStep(prev => (prev + 1) % THINKING_MESSAGES.length);
+      }, 1500);
+    } else {
+      setThinkingStep(0);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   useEffect(() => {
     // 1. Initial Loading
@@ -217,7 +231,7 @@ export default function ChatPage() {
       <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
         <DashboardHeader />
 
-        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-32 no-scrollbar ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
+        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto w-full pt-8 pb-32 ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
           
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
@@ -226,7 +240,7 @@ export default function ChatPage() {
               </h1>
             </div>
           ) : (
-            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-64 min-h-full">
+            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-[32rem] min-h-full">
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {msg.role === 'user' ? (
@@ -244,19 +258,21 @@ export default function ChatPage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider">{msg.agent?.role || 'ATLAS'}</span>
-                          <span className="text-[9px] font-mono text-primary-container/60 uppercase">
-                            {msg.agent?.title || 'EXECUTIVE OFFICER'}
+                          <span className="text-[10px] font-black font-headline text-primary-container uppercase tracking-[0.25em]">{msg.agent?.role || 'ATLAS'}</span>
+                          <span className="w-1 h-1 rounded-full bg-on-surface/10" />
+                          <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest">
+                            {msg.agent?.title || 'CHIEF EXECUTIVE'}
                           </span>
                         </div>
                         
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
-                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0]
+                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0].split('---')[0]
                             .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
                             .replace(/\*(.*?)\*/g, '$1')   // Remove italic
                             .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n') // Clean headers
                             .replace(/##\s*(.*?)(?:\n|$)/g, '$1\n')
                             .replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
+                            .trim()
                           }
                         </div>
 
@@ -338,8 +354,8 @@ export default function ChatPage() {
                       <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">
                         {pinnedAgent || 'ATLAS'}
                       </span>
-                      <span className="text-[9px] font-mono text-primary-container/30 uppercase">
-                        THINKING...
+                      <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">
+                        {THINKING_MESSAGES[thinkingStep]}
                       </span>
                     </div>
                     <div className="space-y-2">
