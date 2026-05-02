@@ -142,6 +142,11 @@ export async function POST(
     }
 
     // 9. Side effects (async)
+    // Update conversation timestamp for sidebar sorting
+    serviceClient.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId).then(({ error }) => {
+      if (error) console.error('CONV_TS_UPDATE_ERR:', error)
+    })
+
     if (coordMatch) {
        inngest.send({ name: 'agent/coordination.requested', data: { org_id: orgId, from_agent_id: agent.id, conversation_id: conversationId, context: agentResponse } }).catch(console.error)
     }
@@ -167,6 +172,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const supabase = await createServerSupabaseClient();
+  const serviceClient = createServiceSupabaseClient();
   
   const { data: conversation } = await serviceClient
     .from('conversations')

@@ -138,10 +138,10 @@ export default function DashboardSidebar({ active }: SidebarProps) {
                   className="flex items-center w-full gap-2 px-3 py-1.5 text-[10px] text-on-surface/60 hover:text-primary-container uppercase font-mono group"
                 >
                   <span className="material-symbols-outlined text-xs text-primary-container/40 group-hover:text-primary-container">
-                    {getExecIcon(conv.agents?.name)}
+                    {getExecIcon(Array.isArray(conv.agents) ? conv.agents[0]?.name : conv.agents?.name)}
                   </span>
                   <span className="truncate">
-                    {conv.title || 'UNTITLED_SESSION'}
+                    {conv.title || `SESSION_${conv.id.split('-')[0].toUpperCase()}`}
                   </span>
                 </Link>
               ))
