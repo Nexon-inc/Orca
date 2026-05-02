@@ -25,16 +25,16 @@ function ChatContent() {
 
   // Chat Modes & Models
   const [chatMode, setChatMode] = useState('Planning');
-  const [activeModel, setActiveModel] = useState('ORCA Intelligence');
+  const [activeModel, setActiveModel] = useState({ name: 'ORCA Intelligence', id: 'orca-intel' });
 
   const MODES = ['Planning', 'Automate', 'Approve'];
   const MODELS = [
-    'ORCA Intelligence',
-    'Claude 3.5 Sonnet',
-    'GPT-4o',
-    'Llama 3.1 405B',
-    'Gemini 1.5 Pro (Native)',
-    'DeepSeek V3 (OR)'
+    { name: 'ORCA Intelligence', id: 'orca-intel' },
+    { name: 'Claude 3.5 Sonnet', id: 'anthropic/claude-3.5-sonnet' },
+    { name: 'GPT-4o', id: 'openai/gpt-4o' },
+    { name: 'Llama 3.1 405B', id: 'meta-llama/llama-3.1-405b-instruct' },
+    { name: 'Gemini 1.5 Pro (Native)', id: 'google/gemini-1.5-pro' },
+    { name: 'DeepSeek V3 (OR)', id: 'deepseek/deepseek-chat' }
   ];
 
   const EXECUTIVE_PILLS = [
