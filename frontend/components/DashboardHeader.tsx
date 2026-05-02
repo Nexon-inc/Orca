@@ -1,21 +1,95 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import IntegrationsVault from './IntegrationsVault';
 
 export default function DashboardHeader() {
+  const router = useRouter();
+  const [notifications] = useState([
+    { id: 1, text: "Atlas (CEO) initialized Day 1 Protocols", time: "2m ago", important: true },
+    { id: 2, text: "Aria (CMO) generated marketing strategy", time: "15m ago", important: false },
+    { id: 3, text: "Revenue projections updated by Rex (CSO)", time: "1h ago", important: true },
+  ]);
+
   return (
-    <header className="h-16 flex items-center justify-end px-8 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-6">
-      <a href="/dashboard/settings#billing" className="bg-primary-container text-on-primary px-4 py-1.5 text-[10px] font-black uppercase rounded-sm hover:opacity-90 transition-all font-headline tracking-widest block flex items-center justify-center cursor-pointer">
-        Upgrade License
-      </a>
-      
-      <button className="text-on-surface/40 hover:text-primary-container transition-colors relative">
-        <span className="material-symbols-outlined text-xl">notifications</span>
-        <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-error rounded-full"></span>
+    <header className="h-16 flex items-center justify-end px-8 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-4">
+      {/* New Chat Button */}
+      <button 
+        onClick={() => router.push('/dashboard/chat')}
+        className="w-9 h-9 flex items-center justify-center bg-primary-container text-on-primary rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg group"
+        title="New Chat"
+      >
+        <span className="material-symbols-outlined text-xl font-bold">add</span>
       </button>
+
+      <div className="h-4 w-[1px] bg-outline-variant/20 mx-2" />
+
+      {/* Integrations Quick Access */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <button className="w-9 h-9 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5 group" title="Integrations Vault">
+            <span className="material-symbols-outlined text-[22px]">hub</span>
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-w-5xl bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
+          <div className="p-8 max-h-[85vh] overflow-y-auto no-scrollbar">
+            <IntegrationsVault />
+          </div>
+        </DialogContent>
+      </Dialog>
       
-      <button className="text-on-surface/40 hover:text-primary-container transition-colors">
-        <span className="material-symbols-outlined text-xl">apps</span>
+      {/* Notifications Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="w-9 h-9 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors relative rounded-lg hover:bg-white/5 group" title="Notifications">
+            <span className="material-symbols-outlined text-[22px]">notifications</span>
+            {notifications.some(n => n.important) && (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-[#0a0c0a]"></span>
+            )}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-80 bg-[#121412] border-[#262a26] p-2 rounded-2xl shadow-2xl">
+          <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface/40 px-3 py-2">
+            Intelligence Feed
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-[#262a26]" />
+          <div className="max-h-80 overflow-y-auto no-scrollbar">
+            {notifications.map((n) => (
+              <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 focus:bg-white/5 cursor-pointer rounded-xl transition-colors">
+                <div className="flex items-center gap-2 w-full">
+                  {n.important && <div className="w-1.5 h-1.5 rounded-full bg-primary-container shadow-[0_0_8px_rgba(0,195,103,0.5)]" />}
+                  <span className="text-[11px] text-on-surface font-medium leading-tight">{n.text}</span>
+                </div>
+                <span className="text-[9px] font-mono text-on-surface/20 uppercase ml-3.5">{n.time}</span>
+              </DropdownMenuItem>
+            ))}
+          </div>
+          <DropdownMenuSeparator className="bg-[#262a26]" />
+          <DropdownMenuItem className="justify-center text-[9px] font-black uppercase tracking-widest text-primary-container py-2 focus:bg-primary-container/10">
+            Clear Neural Cache
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      {/* Workspace Menu */}
+      <button className="w-9 h-9 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5 group" title="Workspace Apps">
+        <span className="material-symbols-outlined text-[22px]">grid_view</span>
       </button>
     </header>
   );
