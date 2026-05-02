@@ -2,7 +2,6 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { anime } from 'animejs';
 
 const INTEGRATIONS_CATALOG = [
   { id: 'marketing', name: 'Marketing & SEO', tools: [
@@ -83,16 +82,8 @@ function IntegrationsInner() {  const searchParams = useSearchParams();
   }, [searchParams]);
 
   useEffect(() => {
-    if (!loading) {
-      anime({
-        targets: '.int-anim',
-        opacity: [0, 1],
-        translateY: [20, 0],
-        delay: anime.stagger(60),
-        duration: 800,
-        easing: 'easeOutExpo'
-      });
-    }
+    // Animation logic removed to ensure build stability. 
+    // Content will now appear immediately with CSS transitions.
   }, [loading]);
 
   const handleConnect = (tool: any) => {
@@ -188,14 +179,14 @@ function IntegrationsInner() {  const searchParams = useSearchParams();
         </div>
       )}
 
-      <div className="mb-12 int-anim opacity-0">
+      <div className="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <h1 className="font-syne text-3xl font-[800] text-white mb-2 tracking-tight uppercase">Platform <span className="text-green">Integrations</span></h1>
         <p className="font-syne text-[11px] text-white/40 font-[800] uppercase tracking-widest">Connect your neural network to local and cloud infrastructures.</p>
       </div>
 
       <div className="space-y-16 pb-24">
          {INTEGRATIONS_CATALOG.map((dept, idx) => (
-            <div key={idx} className="int-anim opacity-0">
+            <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-both" style={{ animationDelay: `${idx * 100}ms` }}>
                <div className="flex items-center justify-between mb-8 border-l-2 border-green/30 pl-6">
                   <h3 className="font-syne text-xl font-[800] text-white uppercase tracking-tight">{dept.name}</h3>
                </div>
