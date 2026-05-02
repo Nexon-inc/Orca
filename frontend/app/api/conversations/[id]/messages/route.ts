@@ -67,7 +67,7 @@ export async function POST(
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(5)
 
     // 4. Save user message
     const { error: userMsgErr } = await serviceClient.from('messages').insert({

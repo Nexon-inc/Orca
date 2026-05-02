@@ -251,7 +251,13 @@ export default function ChatPage() {
                         </div>
                         
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
-                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0]}
+                          {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0]
+                            .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+                            .replace(/\*(.*?)\*/g, '$1')   // Remove italic
+                            .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n') // Clean headers
+                            .replace(/##\s*(.*?)(?:\n|$)/g, '$1\n')
+                            .replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
+                          }
                         </div>
 
                         {/* Result Items */}
@@ -344,7 +350,8 @@ export default function ChatPage() {
                 </div>
               )}
 
-              <div ref={chatEndRef} className="h-4" />
+              <div ref={chatEndRef} className="h-20" />
+              <div className="h-64" /> {/* Massive bottom spacer to clear fixed input bar */}
             </div>
           )}
         </div>
