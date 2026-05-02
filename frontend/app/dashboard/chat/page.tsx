@@ -234,6 +234,7 @@ function ChatContent() {
         })
       });
       const data = await res.json();
+      console.log('DEBUG_CHAT_RESPONSE:', data);
       
       if (data.error) {
         toast.error(`System Offline: ${data.error}`);

@@ -132,6 +132,7 @@ export default function ChatPage() {
         })
       });
       const data = await res.json();
+      console.log('DEBUG_CHAT_RESPONSE:', data);
       
       if (data.error) {
         console.error('System error:', data.error);
