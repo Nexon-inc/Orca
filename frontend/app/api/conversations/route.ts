@@ -17,6 +17,7 @@ export async function GET() {
     `)
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
+    .order('created_at', { ascending: false })
 
   return NextResponse.json({ conversations })
 }
