@@ -226,7 +226,7 @@ export default function ChatPage() {
               </h1>
             </div>
           ) : (
-            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-20 min-h-full">
+            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 pb-64 min-h-full">
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {msg.role === 'user' ? (
@@ -250,18 +250,6 @@ export default function ChatPage() {
                           </span>
                         </div>
                         
-                        {/* Thinking Steps */}
-                        {msg.metadata?.thinking_steps && (
-                          <div className="mb-4 space-y-1.5 opacity-40">
-                            {msg.metadata.thinking_steps.map((step: string, i: number) => (
-                              <div key={i} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest animate-pulse">
-                                <span className="w-1 h-1 rounded-full bg-primary-container" />
-                                {step}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
                           {msg.content.split('RESULT:')[0].split('COORDINATION_NEEDED:')[0]}
                         </div>
