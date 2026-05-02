@@ -142,3 +142,26 @@ export async function POST(
     return NextResponse.json({ error: 'Server Error', details: err.message }, { status: 500 })
   }
 }
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id: conversationId } = await params
+  const user = await getAuthUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const supabase = await createServerSupabaseClient()
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*, agent:agent_id(*)')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+
+    if (error) throw error
+
+    return NextResponse.json({ messages })
+  } catch (err: any) {
+    return NextResponse.json({ error: 'Server Error', details: err.message }, { status: 500 })
+  }
+}

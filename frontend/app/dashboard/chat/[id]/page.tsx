@@ -51,6 +51,7 @@ export default function ChatPage() {
   const [isBriefing, setIsBriefing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
+  const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
   const getThinkingMessages = () => {
     if (chatMode === 'Planning') {
       return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
@@ -253,10 +254,9 @@ export default function ChatPage() {
     <div className="flex h-screen bg-surface">
       <DashboardSidebar active="chat" />
 
-      <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
-        <DashboardHeader />
-
-        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
+      <main className="flex-1 ml-64 flex flex-row min-h-screen relative grid-bg overflow-hidden">
+        <div className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 ${activeDirectives ? 'mr-[400px]' : ''} ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}>
+          <DashboardHeader />
           
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
@@ -303,16 +303,28 @@ export default function ChatPage() {
 
                         {/* Result Items */}
                         {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.replace(/[*#_~]/g, '').trim() !== '')) && (
-                          <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-2">
-                             <div className="text-[9px] font-black text-primary-container uppercase tracking-widest mb-1">Directives Generated</div>
-                             {msg.result_items
-                               .filter((item: string) => item.replace(/[*#_~]/g, '').trim() !== '')
-                               .map((item: string, i: number) => (
-                               <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
-                                 <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                 {item.replace(/^\d+\.\s*/, '').replace(/[*#_~]/g, '').trim()}
-                               </div>
-                             ))}
+                          <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-3">
+                             <div className="flex items-center justify-between">
+                               <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Directives Generated</div>
+                               <button 
+                                 onClick={() => {
+                                   setActiveDirectives(msg);
+                                 }}
+                                 className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all"
+                               >
+                                 <span className="material-symbols-outlined text-[14px]">open_in_new</span> View & Delegate
+                               </button>
+                             </div>
+                             <div className="space-y-2">
+                               {msg.result_items
+                                 .filter((item: string) => item.replace(/[*#_~]/g, '').trim() !== '')
+                                 .map((item: string, i: number) => (
+                                 <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
+                                   <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
+                                   {item.replace(/^\d+\.\s*/, '').replace(/[*#_~]/g, '').trim()}
+                                 </div>
+                               ))}
+                             </div>
                           </div>
                         )}
 
@@ -402,7 +414,7 @@ export default function ChatPage() {
         </div>
 
         {/* Input System */}
-        <div className="fixed bottom-0 left-64 right-0 p-8 pt-0 flex flex-col items-center pointer-events-none z-30">
+        <div className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30 ${activeDirectives ? 'right-[400px]' : 'right-0'}`}>
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
             
             <div className="flex justify-center gap-2 mb-1">

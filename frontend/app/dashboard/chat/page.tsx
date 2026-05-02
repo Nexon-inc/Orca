@@ -100,14 +100,18 @@ function ChatContent() {
           if (params.id) {
             // 1. Fetch History
             let historyLoaded = false;
-            const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
-            if (msgRes.ok) {
-              const msgData = await msgRes.json();
-              if (msgData.messages && msgData.messages.length > 0) {
-                setMessages(msgData.messages);
-                historyLoaded = true;
-                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+            try {
+              const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
+              if (msgRes.ok) {
+                const msgData = await msgRes.json();
+                if (msgData.messages && msgData.messages.length > 0) {
+                  setMessages(msgData.messages);
+                  historyLoaded = true;
+                  setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+                }
               }
+            } catch (historyErr) {
+              console.error('HISTORY_FETCH_ERR:', historyErr);
             }
 
             // 2. Check Identity for Onboarding
@@ -118,7 +122,7 @@ function ChatContent() {
             setIsOnboarding(missionMissing);
             if (missionMissing) setPinnedAgent('CEO');
 
-            // 3. Fallback to onboarding only if no history exists
+            // 3. Fallback to onboarding ONLY if definitely no history and mission is missing
             if (missionMissing && !historyLoaded) {
               setMessages([{
                 id: 'onboarding-init',
@@ -277,16 +281,29 @@ function ChatContent() {
                           }
                         </div>
                         {(msg.result_items && msg.result_items.length > 0 && msg.result_items.some((i: string) => i.replace(/[*#_~]/g, '').trim() !== '')) && (
-                          <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-2">
-                             <div className="text-[9px] font-black text-primary-container uppercase tracking-widest mb-1">Directives Generated</div>
-                             {msg.result_items
-                               .filter((item: string) => item.replace(/[*#_~]/g, '').trim() !== '')
-                               .map((item: string, i: number) => (
-                               <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
-                                 <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                 {item.replace(/^\d+\.\s*/, '').replace(/[*#_~]/g, '').trim()}
-                               </div>
-                             ))}
+                          <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-3">
+                             <div className="flex items-center justify-between">
+                               <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Directives Generated</div>
+                               <button 
+                                 onClick={async () => {
+                                   const res = await fetch(`/api/messages/${msg.id}/delegate`, { method: 'POST' });
+                                   if (res.ok) { toast.success('Delegated to Executive Team'); }
+                                 }}
+                                 className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all"
+                               >
+                                 <span className="material-symbols-outlined text-[14px]">groups</span> Delegate to Team
+                               </button>
+                             </div>
+                             <div className="space-y-2">
+                               {msg.result_items
+                                 .filter((item: string) => item.replace(/[*#_~]/g, '').trim() !== '')
+                                 .map((item: string, i: number) => (
+                                 <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
+                                   <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
+                                   {item.replace(/^\d+\.\s*/, '').replace(/[*#_~]/g, '').trim()}
+                                 </div>
+                               ))}
+                             </div>
                           </div>
                         )}
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
