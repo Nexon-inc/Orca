@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
 
 const tabs = [
@@ -68,12 +67,7 @@ export default function AccountPage() {
   };
 
   useEffect(() => {
-    animate('.acc-tab-anim', {
-      opacity: [0, 1],
-      y: [20, 0],
-      duration: 600,
-      ease: 'outExpo'
-    });
+    // Animation logic moved to CSS for stability.
   }, [activeTab]);
 
   return (
@@ -302,32 +296,35 @@ export default function AccountPage() {
                   </div>
                 )}
 
-                {activeTab === 'billing' && (
-                   <div className="space-y-10">
-                      <div className="p-12 rounded-[3.5rem] border border-green/20 bg-green/5 relative overflow-hidden shadow-2xl">
-                         <h3 className="font-syne text-2xl font-black text-white mb-2 uppercase tracking-tight">Plan: <span className="text-green">{plan ? plan.toUpperCase() : 'BUILDER'}</span></h3>
-                         <p className="text-[11px] text-green font-black uppercase tracking-widest mb-12">Level 2 Enterprise System</p>
-                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                            <div>
-                               <p className="text-[9px] text-white/30 font-black uppercase mb-1">Executives</p>
-                               <p className="text-white font-syne font-black text-lg">6 / 6</p>
-                            </div>
-                            <div>
-                               <p className="text-[9px] text-white/30 font-black uppercase mb-1">Departments</p>
-                               <p className="text-white font-syne font-black text-lg">5 / 5</p>
-                            </div>
-                            <div>
-                               <p className="text-[9px] text-white/30 font-black uppercase mb-1">Compute</p>
-                               <p className="text-green font-syne font-black text-lg">ELITE</p>
-                            </div>
-                            <div>
-                               <p className="text-[9px] text-white/30 font-black uppercase mb-1">Priority</p>
-                               <p className="text-white font-syne font-black text-lg">FAST</p>
-                            </div>
-                         </div>
-                      </div>
-                   </div>
-                )}
+                 {activeTab === 'billing' && (
+                    <div className="space-y-10">
+                       <div className="p-12 rounded-[3.5rem] border border-primary-container/20 bg-primary-container/5 relative overflow-hidden shadow-2xl">
+                          <div className="absolute top-8 right-8 px-4 py-1.5 bg-primary-container text-bg text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg">
+                             Active: Lifetime
+                          </div>
+                          <h3 className="font-syne text-2xl font-black text-white mb-2 uppercase tracking-tight">Plan: <span className="text-primary-container">{plan?.toUpperCase() === 'ENTERPRISE' || profile.email === 'nexonicindustries@gmail.com' ? 'LIFETIME PRO' : (plan?.toUpperCase() || 'BUILDER')}</span></h3>
+                          <p className="text-[11px] text-primary-container font-black uppercase tracking-widest mb-12">Level 2 Enterprise System</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                             <div>
+                                <p className="text-[9px] text-white/30 font-black uppercase mb-1">Executives</p>
+                                <p className="text-white font-syne font-black text-lg">UNLIMITED</p>
+                             </div>
+                             <div>
+                                <p className="text-[9px] text-white/30 font-black uppercase mb-1">Departments</p>
+                                <p className="text-white font-syne font-black text-lg">MAX</p>
+                             </div>
+                             <div>
+                                <p className="text-[9px] text-white/30 font-black uppercase mb-1">Compute</p>
+                                <p className="text-primary-container font-syne font-black text-lg">ELITE</p>
+                             </div>
+                             <div>
+                                <p className="text-[9px] text-white/30 font-black uppercase mb-1">Priority</p>
+                                <p className="text-white font-syne font-black text-lg">ULTRA</p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                 )}
 
               </div>
             </div>
