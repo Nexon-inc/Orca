@@ -57,9 +57,9 @@ export async function POST(request: Request) {
         'CEO': 'Atlas',
         'CMO': 'Aria',
         'CSO': 'Rex',
-        'CIO': 'Ghost',
-        'CTO': 'Wren',
-        'CCO': 'Echo'
+        'CIO': 'Roman',
+        'CTO': 'Ghost',
+        'CCO': 'Purity'
       };
       const actualName = roleToName[agentName.toUpperCase()] || agentName;
       query = query.ilike('name', actualName);

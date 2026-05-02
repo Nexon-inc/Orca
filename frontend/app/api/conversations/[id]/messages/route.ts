@@ -28,13 +28,20 @@ export async function POST(
   const content = sanitizeInput(rawContent)
 
   // 1. Get conversation + agent + company context
-  const { data: conversation } = await supabase
+  const { data: conversation, error: convError } = await supabase
     .from('conversations')
     .select('org_id, agent_id, agents:agent_id(*, departments(*))')
     .eq('id', conversationId)
     .single()
 
-  if (!conversation) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!conversation) {
+    console.error('CONVERSATION_NOT_FOUND:', convError);
+    return NextResponse.json({ 
+      error: 'Conversation not found', 
+      details: convError?.message,
+      code: convError?.code
+    }, { status: 404 });
+  }
   const orgId = conversation.org_id
 
   // 1b. Security: Rate Limit (using agent_briefs bucket)

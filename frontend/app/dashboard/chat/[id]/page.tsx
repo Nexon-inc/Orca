@@ -23,28 +23,32 @@ export default function ChatPage() {
 
   // Chat Modes & Models
   const [chatMode, setChatMode] = useState('Planning');
-  const [activeModel, setActiveModel] = useState('ORCA Intelligence');
+  const [activeModel, setActiveModel] = useState({ name: 'ORCA Intelligence', id: 'orca-intel' });
 
   const MODES = ['Planning', 'Automate', 'Approve'];
   const MODELS = [
-    'ORCA Intelligence',
-    'Claude 3.5 Sonnet',
-    'GPT-4o',
-    'Llama 3.1 405B',
-    'Gemini 1.5 Pro (Native)',
-    'DeepSeek V3 (OR)'
+    { name: 'ORCA Intelligence', id: 'orca-intel' },
+    { name: 'Claude 3.5 Sonnet', id: 'anthropic/claude-3.5-sonnet' },
+    { name: 'GPT-4o', id: 'openai/gpt-4o' },
+    { name: 'Llama 3.1 405B', id: 'meta-llama/llama-3.1-405b-instruct' },
+    { name: 'Gemini 1.5 Pro (Native)', id: 'google/gemini-1.5-pro' },
+    { name: 'DeepSeek V3 (OR)', id: 'deepseek/deepseek-chat' }
   ];
 
   const EXECUTIVE_PILLS = [
-    { key: 'ceo', role: 'CEO', icon: 'account_balance', title: 'Atlas (CEO/Ops)' },
-    { key: 'cmo', role: 'CMO', icon: 'campaign', title: 'Aria (Marketing)' },
-    { key: 'cso', role: 'CSO', icon: 'work', title: 'Rex (Sales)' },
-    { key: 'cco', role: 'CCO', icon: 'monitoring', title: 'Purity (Customer)' },
-    { key: 'cio', role: 'CIO', icon: 'terminal', title: 'Roman (Intel)' },
-    { key: 'cto', role: 'CTO', icon: 'security', title: 'Ghost (Tech)' },
+    { key: 'ceo', role: 'CEO', icon: '🏦', title: 'Atlas (CEO/Ops)' },
+    { key: 'cmo', role: 'CMO', icon: '🎙️', title: 'Aria (Marketing)' },
+    { key: 'cso', role: 'CSO', icon: '💰', title: 'Rex (Sales)' },
+    { key: 'cco', role: 'CCO', icon: '🛟', title: 'Purity (Customer)' },
+    { key: 'cio', role: 'CIO', icon: '🏛️', title: 'Roman (Intel)' },
+    { key: 'cto', role: 'CTO', icon: '👻', title: 'Ghost (Tech)' },
   ];
 
   const [isOnboarding, setIsOnboarding] = useState(false);
+  const [isIdeating, setIsIdeating] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isBriefing, setIsBriefing] = useState(false);
 
   useEffect(() => {
     // 1. Initial Loading
@@ -60,6 +64,20 @@ export default function ChatPage() {
         if (userData?.user) {
           setUser(userData.user);
           
+          if (params.id) {
+            // Fetch existing messages
+            try {
+              const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
+              if (msgRes.ok) {
+                const msgData = await msgRes.json();
+                if (msgData.messages) setMessages(msgData.messages);
+                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+              }
+            } catch (err) {
+              console.error('Failed to load history:', err);
+            }
+          }
+
           // Check Onboarding status
           const identityRes = await fetch('/api/company'); 
           const identityData = await identityRes.json();
@@ -97,6 +115,7 @@ export default function ChatPage() {
     
     const userMsg = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = input;
     setInput('');
     
     // Scroll
@@ -107,13 +126,16 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          content: input,
+          content: currentInput,
           mode: chatMode.toLowerCase(),
-          model: activeModel.id
+          model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id
         })
       });
       const data = await res.json();
-      if (data.message) {
+      
+      if (data.error) {
+        console.error('System error:', data.error);
+      } else if (data.message) {
         setMessages(prev => [...prev, {
           ...data.message,
           role: 'assistant',
@@ -124,6 +146,11 @@ export default function ChatPage() {
     } catch (err) {
       console.error('Failed to send message:', err);
     }
+  };
+
+  const handleVoiceInput = () => {
+    setIsListening(true);
+    setTimeout(() => setIsListening(false), 2000);
   };
 
   const adjustTextareaHeight = () => {
@@ -204,8 +231,9 @@ export default function ChatPage() {
                   ) : (
                     <div className="flex gap-4 mb-6">
                       <div className="flex-shrink-0 pt-1">
-                        <div className="text-[9px] font-black font-mono text-primary-container/60 uppercase tracking-widest">
-                          📣 {msg.agent?.role || 'CMO'}
+                        <div className="text-[9px] font-black font-mono text-primary-container/60 uppercase tracking-widest flex items-center gap-1.5">
+                          <span className="text-sm grayscale">{msg.agent?.icon || '🎙️'}</span>
+                          {msg.agent?.role || 'CMO'}
                         </div>
                       </div>
                       <div className="flex-1">
@@ -221,20 +249,22 @@ export default function ChatPage() {
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed">
                           {msg.content}
                         </div>
-                        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-outline-variant/10">
-                          <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-primary-container transition-colors flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs">check</span>
-                            Approve
-                          </button>
-                          <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-error transition-colors flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs">close</span>
-                            Reject
-                          </button>
-                          <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-on-surface transition-colors flex items-center gap-1 ml-auto">
-                            <span className="material-symbols-outlined text-xs">content_copy</span>
-                            Copy
-                          </button>
-                        </div>
+                        {chatMode.toLowerCase() === 'approve' && (
+                          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-outline-variant/10">
+                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-primary-container transition-colors flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">check</span>
+                              Approve
+                            </button>
+                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-error transition-colors flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">close</span>
+                              Reject
+                            </button>
+                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-on-surface transition-colors flex items-center gap-1 ml-auto">
+                              <span className="material-symbols-outlined text-xs">content_copy</span>
+                              Copy
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -257,17 +287,17 @@ export default function ChatPage() {
                   onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
                   className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-colors ${
                     pinnedAgent === exec.role
-                      ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container'
-                      : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/40 hover:border-primary-container/40 hover:text-on-surface'
+                      ? 'bg-primary-container/10 border border-primary-container/40 text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.1)]'
+                      : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'
                   } ${isOnboarding && exec.role !== 'CEO' ? 'opacity-30 cursor-not-allowed' : ''}`}
                 >
-                  <span className="material-symbols-outlined text-xs">{exec.icon}</span>
+                  <span className="text-sm grayscale">{exec.icon}</span>
                   {exec.role}
                 </button>
               ))}
             </div>
 
-            <div className="bg-[#1a1c1a] border border-[#2d312d] rounded-xl overflow-hidden chat-container-shadow transition-all focus-within:border-primary-container/30">
+            <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary-container/20">
               <div className="px-6 py-4">
                 <textarea
                   ref={inputRef}
@@ -279,36 +309,56 @@ export default function ChatPage() {
                       handleSendMessage();
                     }
                   }}
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-sm font-body resize-none overflow-y-auto min-h-[40px] max-h-[120px] no-scrollbar"
-                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows"}
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none overflow-y-auto min-h-[44px] max-h-[160px] no-scrollbar py-1"
+                  placeholder={isBriefing ? "Master Briefing in progress..." : (pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything, @ to mention, / for workflows")}
                   rows={1}
+                  disabled={isBriefing}
                 />
               </div>
-
-              <div className="flex items-center justify-between px-4 py-3 bg-[#131513]/50 border-t border-[#2d312d]/50">
-                <div className="flex items-center gap-4">
-                  <button className="text-on-surface/30 hover:text-primary-container transition-colors">
-                    <span className="material-symbols-outlined text-[20px]">add</span>
-                  </button>
-                  
+              <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
+                <div className={`flex items-center gap-2 ${isBriefing ? 'opacity-20 pointer-events-none' : ''}`}>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowAddMenu(!showAddMenu)}
+                      className="h-8 w-8 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5"
+                    >
+                      <span className="material-symbols-outlined text-[22px]">add</span>
+                    </button>
+                    {showAddMenu && (
+                      <div className="absolute bottom-full mb-3 left-0 bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 min-w-[180px] z-50">
+                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">upload_file</span> Upload Document
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">image</span> Upload Image
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-[9px] font-black text-on-surface/50 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">link</span> Link Source
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-4 w-[1px] bg-[#262a26] mx-1" />
                   <Dropdown value={chatMode} options={MODES} onChange={setChatMode} />
+                  <div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" />
                   <Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} />
-
                 </div>
-                
                 <div className="flex items-center gap-3">
-                  <button className="text-on-surface/30 hover:text-primary-container transition-colors">
-                    <span className="material-symbols-outlined text-[20px]">mic</span>
+                  <button 
+                    onClick={handleVoiceInput}
+                    className={`h-8 w-8 flex items-center justify-center transition-colors rounded-lg hover:bg-white/5 ${isListening ? 'text-error animate-pulse' : 'text-on-surface/40 hover:text-primary-container'}`}
+                  >
+                    <span className="material-symbols-outlined text-[22px]">mic</span>
                   </button>
                   <button 
                     onClick={() => handleSendMessage()}
-                    className={`h-8 w-8 flex items-center justify-center rounded-lg transition-all ${
+                    className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${
                       input.trim() 
-                        ? 'bg-primary-container text-on-primary neon-glow hover:bg-primary-fixed'
-                        : 'bg-[#242924] text-on-surface/40 cursor-not-allowed'
+                        ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95'
+                        : 'bg-[#212421] text-on-surface/20 cursor-not-allowed opacity-50'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                    <span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
                   </button>
                 </div>
               </div>

@@ -38,12 +38,12 @@ function ChatContent() {
   ];
 
   const EXECUTIVE_PILLS = [
-    { key: 'ceo', role: 'CEO', icon: 'leaderboard', name: 'Atlas' },
-    { key: 'cmo', role: 'CMO', icon: 'campaign', name: 'Aria' },
-    { key: 'cso', role: 'CSO', icon: 'payments', name: 'Rex' },
-    { key: 'cco', role: 'CCO', icon: 'support_agent', name: 'Purity' },
-    { key: 'cio', role: 'CIO', icon: 'hub', name: 'Roman' },
-    { key: 'cto', role: 'CTO', icon: 'memory', name: 'Ghost' },
+    { key: 'ceo', role: 'CEO', icon: '🏦', name: 'Atlas' },
+    { key: 'cmo', role: 'CMO', icon: '🎙️', name: 'Aria' },
+    { key: 'cso', role: 'CSO', icon: '💰', name: 'Rex' },
+    { key: 'cco', role: 'CCO', icon: '🛟', name: 'Purity' },
+    { key: 'cio', role: 'CIO', icon: '🏛️', name: 'Roman' },
+    { key: 'cto', role: 'CTO', icon: '👻', name: 'Ghost' },
   ];
 
   const [isIdeating, setIsIdeating] = useState(false);
@@ -349,8 +349,8 @@ function ChatContent() {
                     <div className="flex gap-4 mb-8">
                       <div className="flex-shrink-0 pt-1">
                         <div className="w-8 h-8 rounded bg-primary-container/10 border border-primary-container/20 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-[18px] text-primary-container">
-                            {EXECUTIVE_PILLS.find(p => p.role === msg.agent?.role)?.icon || 'smart_toy'}
+                          <span className="text-[18px] grayscale">
+                            {EXECUTIVE_PILLS.find(p => p.role === msg.agent?.role)?.icon || '🤖'}
                           </span>
                         </div>
                       </div>
@@ -366,20 +366,22 @@ function ChatContent() {
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed">
                           {msg.content}
                         </div>
-                        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-outline-variant/10">
-                          <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-primary-container transition-colors flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs">check</span>
-                            Approve
-                          </button>
-                          <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-error transition-colors flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs">close</span>
-                            Reject
-                          </button>
-                          <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-on-surface transition-colors flex items-center gap-1 ml-auto">
-                            <span className="material-symbols-outlined text-xs">content_copy</span>
-                            Copy
-                          </button>
-                        </div>
+                        {chatMode.toLowerCase() === 'approve' && (
+                          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-outline-variant/10">
+                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-primary-container transition-colors flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">check</span>
+                              Approve
+                            </button>
+                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-error transition-colors flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">close</span>
+                              Reject
+                            </button>
+                            <button className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest hover:text-on-surface transition-colors flex items-center gap-1 ml-auto">
+                              <span className="material-symbols-outlined text-xs">content_copy</span>
+                              Copy
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -406,7 +408,7 @@ function ChatContent() {
                       : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'
                   } ${isOnboarding && exec.role !== 'CEO' ? 'opacity-30 cursor-not-allowed' : ''}`}
                 >
-                  <span className="material-symbols-outlined text-sm">{exec.icon}</span>
+                  <span className="text-sm grayscale">{exec.icon}</span>
                   {exec.name}
                 </button>
               ))}
@@ -431,7 +433,7 @@ function ChatContent() {
                 />
               </div>
 
-              <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40">
+              <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
                 <div className={`flex items-center gap-2 ${isBriefing ? 'opacity-20 pointer-events-none' : ''}`}>
                   <div className="relative">
                     <button 
