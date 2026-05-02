@@ -27,10 +27,10 @@ export async function POST(
   // 1a. Security: Sanitize Input
   const content = sanitizeInput(rawContent)
 
-  // 1. Get conversation + agent + company context
-  const { data: conversation, error: convError } = await supabase
+  // 1. Get conversation + agent + company context (Using serviceClient to avoid RLS 404s on joins)
+  const { data: conversation, error: convError } = await serviceClient
     .from('conversations')
-    .select('org_id, agent_id, agents:agent_id(*, departments(*))')
+    .select('org_id, user_id, agent_id, agents:agent_id(*, departments(*))')
     .eq('id', conversationId)
     .single()
 
@@ -41,6 +41,11 @@ export async function POST(
       details: convError?.message,
       code: convError?.code
     }, { status: 404 });
+  }
+
+  // Security check: Ensure conversation belongs to the user
+  if (conversation.user_id !== user.id) {
+    return NextResponse.json({ error: 'Unauthorized access to conversation' }, { status: 403 });
   }
   const orgId = conversation.org_id
 
@@ -348,7 +353,7 @@ export async function GET(
 
   const supabase = await createServerSupabaseClient();
   
-  const { data: conversation } = await supabase
+  const { data: conversation } = await serviceClient
     .from('conversations')
     .select('user_id, agents(*)')
     .eq('id', conversationId)

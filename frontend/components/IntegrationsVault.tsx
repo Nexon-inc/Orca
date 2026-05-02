@@ -147,7 +147,7 @@ function IntegrationsInner() {  const searchParams = useSearchParams();
   return (
     <div className="p-0 overflow-y-auto no-scrollbar relative">
       {alertMsg && (
-        <div className={mb-8 p-4 rounded-xl border  font-syne text-sm font-bold uppercase tracking-widest flex justify-between items-center}>
+        <div className="mb-8 p-4 rounded-xl border font-syne text-sm font-bold uppercase tracking-widest flex justify-between items-center">
           <span>{alertMsg.text}</span>
           <button onClick={() => setAlertMsg(null)} className="opacity-50 hover:opacity-100">✕</button>
         </div>
@@ -203,14 +203,14 @@ function IntegrationsInner() {  const searchParams = useSearchParams();
                      const connectedRecord = connectedTools.find(t => t.service_name === tool.service_key);
                      const isConnected = !!connectedRecord;
                      return (
-                        <div key={tIdx} className={p-6 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden flex flex-col justify-between }>
+                        <div key={tIdx} className="p-6 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden flex flex-col justify-between">
                            <div className="flex justify-between items-start mb-8">
-                               <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-[800] text-lg transition-all duration-500 scale-95 group-hover:scale-100 shadow-inner" style={{ backgroundColor: ${tool.color}15, color: tool.color, border: 1px solid 20 }}>{tool.name.charAt(0)}</div>
+                               <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-[800] text-lg transition-all duration-500 scale-95 group-hover:scale-100 shadow-inner" style={{ backgroundColor: `${tool.color}15`, color: tool.color, border: '1px solid currentColor' }}>{tool.name.charAt(0)}</div>
                                {isConnected ? <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green/10 border border-green/20"><div className="w-1 h-1 rounded-full bg-green animate-pulse" /><span className="text-[8px] font-[800] text-green uppercase tracking-widest">LINKED</span></div> : <span className="text-[8px] font-[800] text-white/10 uppercase tracking-widest">UNLINKED</span>}
                            </div>
                            <div className="text-left mt-auto">
-                              <h4 className={ont-syne font-[800] text-lg mb-1 tracking-tight uppercase }>{tool.name}</h4>
-                              <p className="font-syne text-[8px] text-white/20 font-[800] uppercase tracking-widest mb-6">{isConnected ? 'System Operational' : Requires }</p>
+                              <h4 className="font-syne font-[800] text-lg mb-1 tracking-tight uppercase">{tool.name}</h4>
+                              <p className="font-syne text-[8px] text-white/20 font-[800] uppercase tracking-widest mb-6">{isConnected ? 'System Operational' : 'Requires Setup'}</p>
                               {isConnected ? <button onClick={() => handleDisconnect(connectedRecord.id)} className="w-full py-2.5 rounded-xl text-[9px] font-[800] uppercase tracking-widest transition-all duration-300 bg-white/5 text-white/20 border border-white/5 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20">Disconnect</button> : <button onClick={() => handleConnect(tool)} className="w-full py-2.5 rounded-xl text-[9px] font-[800] uppercase tracking-widest transition-all duration-300 bg-green/5 text-green border border-green/20 group-hover:bg-green group-hover:text-bg group-hover:border-green">Connect →</button>}
                            </div>
                         </div>
