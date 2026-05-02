@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
+export const dynamic = 'force-dynamic';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -94,7 +95,7 @@ function ChatContent() {
           if (params.id) {
             let historyLoaded = false;
             try {
-              const msgRes = await fetch(`/api/conversations/${params.id}/messages`);
+              const msgRes = await fetch(`/api/conversations/${params.id}/messages?t=${Date.now()}`);
               if (msgRes.ok) {
                 const msgData = await msgRes.json();
                 if (msgData.messages && msgData.messages.length > 0) {
@@ -110,7 +111,7 @@ function ChatContent() {
               }
             } catch (err) {}
 
-            const identityRes = await fetch('/api/company'); 
+            const identityRes = await fetch(`/api/company?t=${Date.now()}`); 
             const identityData = await identityRes.json();
             const missionMissing = !identityData?.identity?.mission;
             setIsOnboarding(missionMissing);
@@ -136,6 +137,9 @@ function ChatContent() {
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
     setIsLoading(true);
+    // Safety timeout to prevent UI lockup
+    const safetyTimeout = setTimeout(() => setIsLoading(false), 15000);
+
     try {
       const res = await fetch(`/api/conversations/${params.id}/messages`, {
         method: 'POST',
@@ -149,6 +153,7 @@ function ChatContent() {
         return;
       }
       if (data.message) {
+        clearTimeout(safetyTimeout);
         setMessages(prev => [...prev, { 
           ...data.message, 
           sender_type: 'agent', 
