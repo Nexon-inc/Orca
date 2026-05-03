@@ -7,6 +7,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
+  DialogDescription,
   DialogTrigger 
 } from '@/components/ui/dialog';
 import {
@@ -28,6 +29,9 @@ export default function DashboardHeader() {
     const fetchLogs = async () => {
       try {
         const res = await fetch('/api/org/audit?limit=5');
+        if (!res.ok) {
+          throw new Error('API not available');
+        }
         const data = await res.json();
         if (data.logs) {
           const mapped = data.logs.map((log: any) => ({
@@ -39,7 +43,7 @@ export default function DashboardHeader() {
           setNotifications(mapped);
         }
       } catch (e) {
-        // Fallback mocks if API fails
+        // Silent fallback mocks if API fails or 404s
         setNotifications([
           { id: 1, text: "Atlas (CEO) initialized Day 1 Protocols", time: "2m ago", important: true },
           { id: 2, text: "Aria (CMO) generated marketing strategy", time: "15m ago", important: false },
@@ -75,6 +79,8 @@ export default function DashboardHeader() {
           </button>
         </DialogTrigger>
         <DialogContent className="max-w-[90vw] w-full bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
+          <DialogTitle className="sr-only">Integrations Vault</DialogTitle>
+          <DialogDescription className="sr-only">Manage your connected applications and tools.</DialogDescription>
           <div className="p-8 max-h-[85vh] overflow-y-auto no-scrollbar">
             <IntegrationsVault />
           </div>
