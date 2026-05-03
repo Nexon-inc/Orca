@@ -162,7 +162,7 @@ export async function POST(
         try {
           return await streamText({ 
             ...streamOptions, 
-            model: google('gemini-1.5-flash'),
+            model: google('gemini-3.1-flash-lite-preview'),
             experimental_toolCallStreaming: true,
             onStepFinish: (step) => {
               console.log(`[ORCA_STEP] ${step.stepType} (usage: ${step.usage.completionTokens} tokens)`)
