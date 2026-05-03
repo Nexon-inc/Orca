@@ -20,9 +20,12 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { messages: rawMessages, model: modelOverride } = await request.json()
-    const lastMessage = rawMessages[rawMessages.length - 1]
-    const rawContent = lastMessage?.content || ''
+    const body = await request.json()
+    // Only extract the last user message — ignore full frontend history (avoids 48KB duplicate payload)
+    const rawMessages = body.messages || []
+    const modelOverride = body.model
+    const lastUserMessage = rawMessages.filter((m: any) => m.role === 'user').pop()
+    const rawContent = lastUserMessage?.content || rawMessages[rawMessages.length - 1]?.content || ''
     
     const supabase = await createServerSupabaseClient()
     const serviceClient = createServiceSupabaseClient()
@@ -71,16 +74,17 @@ export async function POST(
       content: content
     })
 
-    // 7. Prepare Prompt & Tools
-    const systemPrompt = buildAgentSystemPrompt(agent, company, member, memoryContext, connectedIntegrations)
+    // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth for context
+    const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations)
     const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
 
+    // Build clean messages array from DB only — no frontend state pollution
     const messages = [
-      ...(history || []).map(m => ({
-        role: m.sender_type === 'user' ? 'user' : 'assistant',
-        content: m.content
+      ...(history || []).map((m: any) => ({
+        role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: String(m.content || '')
       })),
-      { role: 'user', content }
+      { role: 'user' as const, content }
     ]
 
     // 8. Model Selection with Runtime Failover for Orca Intelligence
@@ -146,7 +150,7 @@ export async function POST(
     const result = await getStreamResult()
     return result.toDataStreamResponse()
   } catch (err: any) {
-    console.error('STREAM_ROUTE_ERR:', err)
+    console.error('[ORCA_STREAM_ERR]', err?.message, err?.stack)
     return NextResponse.json({ error: 'Server Error', details: err.message }, { status: 500 })
   }
 }

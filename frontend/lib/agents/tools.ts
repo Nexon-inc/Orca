@@ -1,12 +1,13 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { tavilySearch } from '@/lib/tools/tavily'
-import { scrapeUrl, crawlWebsite } from '@/lib/tools/firecrawl'
+import { scrapeUrl } from '@/lib/tools/firecrawl'
 import { executeViaComposio } from '@/lib/agents/composioExecutor'
 
 /**
  * Builds the native tools available for an executive.
- * Tools are filtered based on the agent's role and connected integrations.
+ * All execute() functions are wrapped in try/catch so a missing API key
+ * never crashes the streamText call — it returns a graceful error instead.
  */
 export function buildToolsForAgent(
   agentName: string,
@@ -23,9 +24,13 @@ export function buildToolsForAgent(
         query: z.string().describe('The specific search query'),
       }),
       execute: async ({ query }) => {
-        const results = await tavilySearch(query)
-        return { 
-          results: results.slice(0, 5).map(r => ({ title: r.title, url: r.url, snippet: r.content.slice(0, 300) })) 
+        try {
+          const results = await tavilySearch(query)
+          return {
+            results: results.slice(0, 5).map((r: any) => ({ title: r.title, url: r.url, snippet: r.content?.slice(0, 300) }))
+          }
+        } catch (err: any) {
+          return { error: `Web search unavailable: ${err.message}` }
         }
       },
     })
@@ -36,8 +41,12 @@ export function buildToolsForAgent(
         url: z.string().url(),
       }),
       execute: async ({ url }) => {
-        const content = await scrapeUrl(url)
-        return { content: content.slice(0, 5000) }
+        try {
+          const content = await scrapeUrl(url)
+          return { content: content.slice(0, 5000) }
+        } catch (err: any) {
+          return { error: `Page scraping unavailable: ${err.message}` }
+        }
       },
     })
   }
@@ -49,7 +58,11 @@ export function buildToolsForAgent(
         description: 'Post to LinkedIn.',
         parameters: z.object({ content: z.string() }),
         execute: async ({ content }) => {
-          return await executeViaComposio(orgId, 'linkedin', 'linkedin_post', { content })
+          try {
+            return await executeViaComposio(orgId, 'linkedin', 'linkedin_post', { content })
+          } catch (err: any) {
+            return { error: `LinkedIn unavailable: ${err.message}` }
+          }
         },
       })
     }
@@ -58,7 +71,11 @@ export function buildToolsForAgent(
         description: 'Post a tweet.',
         parameters: z.object({ text: z.string().max(280) }),
         execute: async ({ text }) => {
-          return await executeViaComposio(orgId, 'twitter', 'twitter_post', { text })
+          try {
+            return await executeViaComposio(orgId, 'twitter', 'twitter_post', { text })
+          } catch (err: any) {
+            return { error: `Twitter unavailable: ${err.message}` }
+          }
         },
       })
     }
@@ -75,7 +92,11 @@ export function buildToolsForAgent(
           contact_email: z.string().email(),
         }),
         execute: async (params) => {
-          return await executeViaComposio(orgId, 'hubspot', 'hubspot_create_deal', params)
+          try {
+            return await executeViaComposio(orgId, 'hubspot', 'hubspot_create_deal', params)
+          } catch (err: any) {
+            return { error: `HubSpot unavailable: ${err.message}` }
+          }
         },
       })
     }
@@ -93,7 +114,11 @@ export function buildToolsForAgent(
           branch: z.string(),
         }),
         execute: async (params) => {
-          return await executeViaComposio(orgId, 'github', 'github_create_pr', params)
+          try {
+            return await executeViaComposio(orgId, 'github', 'github_create_pr', params)
+          } catch (err: any) {
+            return { error: `GitHub unavailable: ${err.message}` }
+          }
         },
       })
     }

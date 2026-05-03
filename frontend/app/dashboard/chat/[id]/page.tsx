@@ -111,13 +111,16 @@ function ChatContent() {
     }
   });
 
-  // 2. Thinking Cycle Logic
+  // 2. Thinking Cycle Logic — keyed to pinned executive role
   const getThinkingMessages = () => {
-    if (chatMode === 'Planning') return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
     if (pinnedAgent === 'CTO') return ['Scanning system architecture...', 'Generating technical blueprints...', 'Debugging protocol logic...', 'Validating code integrity...'];
-    if (pinnedAgent === 'CEO') return ['Orchestrating executive team...', 'Reviewing organizational OKRs...', 'Synchronizing department data...', 'Finalizing CEO directives...'];
+    if (pinnedAgent === 'CEO') return ['Orchestrating executive team...', 'Reviewing organizational OKRs...', 'Aligning department priorities...', 'Finalizing CEO directives...'];
     if (pinnedAgent === 'CMO') return ['Analyzing market resonance...', 'Synthesizing creative assets...', 'Refining brand voice...', 'Mapping audience signals...'];
     if (pinnedAgent === 'CSO') return ['Prospecting lead data...', 'Analyzing revenue pipeline...', 'Optimizing sales sequences...', 'Calculating conversion metrics...'];
+    if (pinnedAgent === 'CCO') return ['Reviewing customer health scores...', 'Drafting support playbook...', 'Analyzing NPS signals...', 'Building retention strategy...'];
+    if (pinnedAgent === 'CIO') return ['Scanning intelligence feeds...', 'Mapping competitor signals...', 'Synthesizing market data...', 'Compiling research brief...'];
+    if (chatMode === 'Planning') return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
+    if (chatMode === 'Automate') return ['Queuing autonomous tasks...', 'Triggering agent workflows...', 'Coordinating departments...', 'Executing directives...'];
     return ['Processing intelligence...', 'Synthesizing response...', 'Refining department output...', 'Finalizing brief...'];
   };
 
@@ -204,39 +207,42 @@ function ChatContent() {
         const userData = await userRes.json();
         if (userData?.user) {
           setUser(userData.user);
-          if (conversationId) {
+            if (conversationId) {
             let historyLoaded = false;
             try {
               const msgRes = await fetch(`/api/conversations/${conversationId}/messages?t=${Date.now()}`);
               if (msgRes.ok) {
                 const msgData = await msgRes.json();
                 if (msgData.messages && msgData.messages.length > 0) {
+                  // ONLY pass clean AI-SDK compatible fields — no metadata/result_items/agent bleed
                   const transformed = msgData.messages.map((m: any) => ({
                     id: m.id,
-                    role: m.sender_type === 'user' ? 'user' : 'assistant',
-                    content: m.content,
+                    role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+                    content: String(m.content || ''),
                     createdAt: new Date(m.created_at)
                   }));
                   setMessages(transformed);
                   historyLoaded = true;
+                  // Infer which executive is pinned from the last agent message
                   const lastAgentMsg = [...msgData.messages].reverse().find((m: any) => m.sender_type === 'agent');
-                  if (lastAgentMsg) {
-                    const found = EXECUTIVE_PILLS.find(p => p.name === lastAgentMsg.metadata?.agent_name);
-                    setPinnedAgent(found?.role || 'CEO');
+                  if (lastAgentMsg?.metadata?.agent_name) {
+                    const found = EXECUTIVE_PILLS.find(p => p.name === lastAgentMsg.metadata.agent_name);
+                    if (found) setPinnedAgent(found.role);
                   }
                   setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
                 }
               }
-            } catch (err) {}
+            } catch (err) { console.error('History load error:', err); }
 
-            const identityRes = await fetch(`/api/company?t=${Date.now()}`); 
-            const identityData = await identityRes.json();
-            const missionMissing = !identityData?.identity?.mission;
-            setIsOnboarding(missionMissing);
-            
-            if (missionMissing && !historyLoaded) {
-              setPinnedAgent('CEO');
-              setMessages([{ id: 'onboarding-init', role: 'assistant', content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?" }]);
+            // Onboarding check — only inject prompt if truly zero messages exist
+            if (!historyLoaded) {
+              try {
+                const identityRes = await fetch(`/api/company?t=${Date.now()}`);
+                const identityData = await identityRes.json();
+                const missionMissing = !identityData?.identity?.mission;
+                setIsOnboarding(missionMissing);
+                // Do NOT inject fake messages — let the user start naturally
+              } catch (err) {}
             }
           }
         }
