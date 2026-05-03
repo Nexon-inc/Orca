@@ -1,11 +1,13 @@
 export const dynamic = 'force-dynamic'
+import { streamText } from 'ai'
+import { google } from '@ai-sdk/google'
+import { groq } from '@ai-sdk/groq'
+import { createOpenAI } from '@ai-sdk/openai'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server'
 import { buildAgentSystemPrompt } from '@/lib/ai/prompt'
-import { getGemini, getGroq } from '@/lib/ai/client'
-import { HumanMessage, SystemMessage } from '@langchain/core/messages'
-import { inngest } from '@/lib/inngest/client'
+import { buildToolsForAgent } from '@/lib/agents/tools'
 import { sanitizeInput } from '@/lib/security/sanitizeInput'
 import { checkRateLimit } from '@/lib/security/rateLimit'
 
@@ -18,144 +20,122 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { content: rawContent, mode, model: modelOverride } = await request.json()
+    const { content: rawContent, model: modelOverride } = await request.json()
     const supabase = await createServerSupabaseClient()
     const serviceClient = createServiceSupabaseClient()
 
-    // 1. Sanitize & Context
+    // 1. Sanitize & Fetch Context
     const content = sanitizeInput(rawContent)
-    const { data: conversation, error: convError } = await serviceClient
+    const { data: conversation } = await serviceClient
       .from('conversations')
       .select('org_id, user_id, agent_id')
       .eq('id', conversationId)
-      .maybeSingle()
-
-    if (convError || !conversation) {
-      return NextResponse.json({ 
-        error: `Conversation not found: ${conversationId}`,
-        debug: { userId: user.id, convError: convError?.message } 
-      }, { status: 404 })
-    }
-
-    if (conversation.user_id !== user.id) {
-      return NextResponse.json({ error: 'Unauthorized: Conversation belongs to another user' }, { status: 403 })
-    }
-
-    const orgId = conversation.org_id
-    const { data: agent } = await serviceClient
-      .from('agents')
-      .select('*')
-      .eq('id', conversation.agent_id)
       .single()
 
+    if (!conversation) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+    if (conversation.user_id !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+
+    const orgId = conversation.org_id
+    const { data: agent } = await serviceClient.from('agents').select('*').eq('id', conversation.agent_id).single()
     if (!agent) return NextResponse.json({ error: 'No agent found' }, { status: 400 })
 
-    // 2. Security
+    // 2. Security & Rate Limiting
     const { allowed: rlAllowed } = await checkRateLimit(user.id, 'agent_briefs')
     if (!rlAllowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
 
-    // 3. Fetch Company & Member
+    // 3. Fetch Company & Member Data
     const { data: company } = await supabase.from('company_identity').select('*').eq('org_id', orgId).single()
     const { data: member } = await supabase.from('org_members').select('*').eq('user_id', user.id).eq('org_id', orgId).single()
+    const { data: integrations } = await supabase.from('integrations').select('service_name').eq('org_id', orgId)
+    const connectedIntegrations = integrations?.map(i => i.service_name) || []
 
-    // 4. History
-    const { data: history } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    // 5. Memory
+    // 4. Memory Context
     const { data: memoryRow } = await supabase.from('llm_memories').select('*').eq('org_id', orgId).eq('agent_id', agent.id).single()
     const memoryContext = memoryRow?.memory_data?.context_summary || ''
-    const messageCount = (memoryRow?.message_count || 0) + 1
 
-    // 6. Build Prompt
-    const systemPrompt = buildAgentSystemPrompt(agent, company, member, memoryContext)
-    const langchainMessages: any[] = [
-      new SystemMessage(systemPrompt),
-      ...(history || []).reverse().map((m: any) =>
-        m.sender_type === 'user' ? new HumanMessage(m.content) : new SystemMessage(`Previous response: ${m.content}`)
-      ),
-      new HumanMessage(content)
+    // 5. History
+    const { data: history } = await supabase
+      .from('messages')
+      .select('sender_type, content')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+      .limit(10)
+
+    // 6. Save User Message immediately
+    await serviceClient.from('messages').insert({
+      conversation_id: conversationId,
+      sender_type: 'user',
+      content: content
+    })
+
+    // 7. Prepare Prompt & Tools
+    const systemPrompt = buildAgentSystemPrompt(agent, company, member, memoryContext, connectedIntegrations)
+    const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
+
+    const messages = [
+      ...(history || []).map(m => ({
+        role: m.sender_type === 'user' ? 'user' : 'assistant',
+        content: m.content
+      })),
+      { role: 'user', content }
     ]
 
-    // 7. AI Call
-    let agentResponse = ''
-    try {
-      if (!modelOverride || modelOverride === 'orca-intel') {
-        const gemini = getGemini()
-        const result = await gemini.invoke(langchainMessages)
-        agentResponse = result.content as string
-      } else {
-        const { buildDynamicLLMClient } = await import('@/lib/ai/dynamicClient')
-        const ai = buildDynamicLLMClient({ provider: 'openrouter', model: modelOverride, apiKey: process.env.OPENROUTER_API_KEY! })
-        const result = await ai.invoke(langchainMessages)
-        agentResponse = result.content as string
+    // 8. Model Selection with Failover for Orca Intelligence
+    let model: any
+    const isOrcaIntel = !modelOverride || modelOverride === 'orca-intel'
+
+    if (isOrcaIntel) {
+      // Primary: Gemini 1.5 Pro
+      try {
+        model = google('gemini-1.5-pro-latest')
+      } catch (err) {
+        // Failover: Groq Llama 3.3 70b
+        model = groq('llama-3.3-70b-versatile')
       }
-    } catch (err) {
-      const groq = getGroq()
-      const result = await groq.invoke(langchainMessages)
-      agentResponse = result.content as string
+    } else {
+      // BYO-LLM via OpenRouter
+      const openrouter = createOpenAI({
+        baseURL: 'https://openrouter.ai/api/v1',
+        apiKey: process.env.OPENROUTER_API_KEY
+      })
+      model = openrouter(modelOverride)
     }
 
-    // 8. Parse & Save
-    const resultMatch = agentResponse.match(/RESULT:\s*([\s\S]+?)(?:\n|$)/)
-    const resultItems = resultMatch ? resultMatch[1].split('|').map(s => s.trim()) : []
-    const coordMatch = agentResponse.match(/COORDINATION_NEEDED:\s*dept=(\w+)/)
-    const directiveMatch = agentResponse.match(/DIRECTIVE_DOCUMENT:\s*([\s\S]+?)(?:\nRESULT:|\nCOORDINATION_NEEDED:|$)/)
-    const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
+    // 9. Stream Response
+    const result = await streamText({
+      model,
+      system: systemPrompt,
+      // @ts-ignore
+      messages,
+      tools,
+      maxSteps: 5,
+      onFinish: async ({ text, toolResults }) => {
+        // Save Agent Response to DB on completion
+        const resultMatch = text.match(/RESULT:\s*([\s\S]+?)(?:\n|$)/)
+        const resultItems = resultMatch ? resultMatch[1].split('|').map(s => s.trim()) : []
+        const directiveMatch = text.match(/DIRECTIVE_DOCUMENT:\s*([\s\S]+?)(?:\nRESULT:|\nCOORDINATION_NEEDED:|$)/)
+        const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
 
-    const { data: agentMessage } = await serviceClient.from('messages').insert({
-      conversation_id: conversationId,
-      sender_type: 'agent',
-      content: agentResponse,
-      result_items: resultItems,
-      status: 'pending',
-      metadata: { 
-        thinking_steps: mode === 'planning' ? ['Analyzing...', 'Strategizing...'] : ['Executing...'],
-        directive_raw: directiveRaw
-      }
-    }).select().single()
-
-    // 9. Background Side Effects
-    const updateData: any = { updated_at: new Date().toISOString() }
-    
-    // Auto-title removed (column does not exist)
-
-    serviceClient.from('conversations').update(updateData).eq('id', conversationId).then(({ error }) => {
-      if (error) console.error('CONV_TS_UPDATE_ERR:', error)
-    })
-    serviceClient.from('llm_memories').upsert({ org_id: orgId, agent_id: agent.id, message_count: messageCount }, { onConflict: 'org_id,agent_id' }).then(({ error }) => {
-      if (error) console.error('MEMORY_UPDATE_ERR:', error)
-    })
-
-    // 10. Auto-Onboarding (If mission is missing)
-    if (!company?.mission || company.mission.includes('not defined')) {
-      const nameMatch = content.match(/company is called (.*?)\./i)
-      const missionMatch = content.match(/Our goal is (.*?)\./i) || content.match(/We are building (.*?)\./i)
-      
-      if (nameMatch || missionMatch) {
-        serviceClient.from('company_identity').update({
-          company_name: nameMatch ? nameMatch[1] : company?.company_name,
-          mission: missionMatch ? missionMatch[1] : content,
-          updated_at: new Date().toISOString()
-        }).eq('org_id', orgId).then(({ error }) => {
-          if (error) console.error('ONBOARDING_UPDATE_ERR:', error)
+        await serviceClient.from('messages').insert({
+          conversation_id: conversationId,
+          sender_type: 'agent',
+          content: text,
+          result_items: resultItems,
+          metadata: { 
+            directive_raw: directiveRaw,
+            tool_results: toolResults 
+          }
         })
       }
-    }
+    })
 
-    if (coordMatch) {
-      inngest.send({ name: 'agent/coordination.requested', data: { org_id: orgId, conversation_id: conversationId, context: agentResponse } }).catch(() => {})
-    }
-
-    return NextResponse.json({ message: agentMessage, resultItems })
+    return result.toDataStreamResponse()
   } catch (err: any) {
+    console.error('STREAM_ROUTE_ERR:', err)
     return NextResponse.json({ error: 'Server Error', details: err.message }, { status: 500 })
   }
 }
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -166,20 +146,12 @@ export async function GET(
 
   try {
     const serviceClient = createServiceSupabaseClient()
-    
-    // Verify ownership before fetching
-    const { data: conversation } = await serviceClient
-      .from('conversations')
-      .select('user_id')
-      .eq('id', conversationId)
-      .single()
-
-    if (!conversation) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
-    if (conversation.user_id !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    const { data: conversation } = await serviceClient.from('conversations').select('user_id').eq('id', conversationId).single()
+    if (!conversation || conversation.user_id !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     const { data: messages, error } = await serviceClient
       .from('messages')
-      .select('id, conversation_id, sender_type, content, result_items, status, created_at, metadata')
+      .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
 

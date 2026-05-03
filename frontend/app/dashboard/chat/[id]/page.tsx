@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
+import { useChat } from '@ai-sdk/react';
 import { toast } from 'sonner';
 
 export default function ChatPage() {
@@ -26,8 +27,6 @@ function ChatContent() {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   
-  const [messages, setMessages] = useState<any[]>([]);
-  const [input, setInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -55,11 +54,45 @@ function ChatContent() {
   ];
 
   const [isOnboarding, setIsOnboarding] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const isResizing = useRef(false);
+
+  // Tool Display Names
+  const TOOL_DISPLAY_NAMES: Record<string, string> = {
+    web_search: '🔍 Searching the web',
+    scrape_page: '📄 Reading webpage',
+    linkedin_post: '📤 Posting to LinkedIn',
+    twitter_post: '📤 Posting to X/Twitter',
+    hubspot_create_deal: '💼 Creating deal in CRM',
+    github_create_pr: '🔧 Opening GitHub PR',
+  };
+
+  // AI SDK useChat Hook
+  const { 
+    messages, 
+    setMessages,
+    input, 
+    setInput, 
+    handleSubmit, 
+    isLoading, 
+    reload, 
+    stop 
+  } = useChat({
+    api: `/api/conversations/${params.id}/messages`,
+    id: params.id as string,
+    body: {
+      model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
+      mode: chatMode.toLowerCase(),
+    },
+    onFinish: () => {
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    },
+    onError: (err) => {
+      toast.error(`ORCA Error: ${err.message}`);
+    }
+  });
 
   const startResizing = (e: React.MouseEvent) => {
     isResizing.current = true;
@@ -132,7 +165,16 @@ function ChatContent() {
               if (msgRes.ok) {
                 const msgData = await msgRes.json();
                 if (msgData.messages && msgData.messages.length > 0) {
-                  setMessages(msgData.messages);
+                  // Transform Supabase messages to Vercel AI SDK format if needed
+                  const transformed = msgData.messages.map((m: any) => ({
+                    id: m.id,
+                    role: m.sender_type === 'user' ? 'user' : 'assistant',
+                    content: m.content,
+                    metadata: m.metadata,
+                    result_items: m.result_items,
+                    createdAt: new Date(m.created_at)
+                  }));
+                  setMessages(transformed);
                   historyLoaded = true;
                   const lastAgentMsg = [...msgData.messages].reverse().find(m => m.sender_type === 'agent');
                   if (lastAgentMsg) {
@@ -163,41 +205,11 @@ function ChatContent() {
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
-    const userMsg = { id: Date.now().toString(), sender_type: 'user', content: input };
-    setMessages(prev => [...prev, userMsg]);
-    const currentInput = input;
-    setInput('');
+    
+    // Call AI SDK handleSubmit
+    handleSubmit(e);
+    
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-
-    setIsLoading(true);
-    // Safety timeout to prevent UI lockup
-    const safetyTimeout = setTimeout(() => setIsLoading(false), 15000);
-
-    try {
-      const res = await fetch(`/api/conversations/${params.id}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: currentInput, mode: chatMode.toLowerCase(), model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id })
-      });
-      const data = await res.json();
-      if (data.error || !res.ok) {
-        toast.error(`ORCA Error: ${data.error || 'Failed to process brief'}`);
-        setIsLoading(false);
-        return;
-      }
-      if (data.message) {
-        clearTimeout(safetyTimeout);
-        setMessages(prev => [...prev, { 
-          ...data.message, 
-          sender_type: 'agent', 
-          agent: EXECUTIVE_PILLS.find(p => p.role === pinnedAgent) || EXECUTIVE_PILLS[0] 
-        }]);
-        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-      }
-    } catch (err) {
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const userName = user?.full_name?.split(' ')[0] || 'KALE';
@@ -256,10 +268,37 @@ function ChatContent() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-[10px] font-black font-headline text-primary-container uppercase tracking-[0.25em]">{msg.agent?.role || 'ATLAS'}</span>
+                          <span className="text-[10px] font-black font-headline text-primary-container uppercase tracking-[0.25em]">{msg.agent?.role || pinnedAgent || 'ATLAS'}</span>
                           <span className="w-1 h-1 rounded-full bg-on-surface/10" />
-                          <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest">{msg.agent?.title || 'CHIEF EXECUTIVE'}</span>
+                          <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest">{msg.agent?.title || 'EXECUTIVE AGENT'}</span>
                         </div>
+
+                        {/* Tool Invocations UI */}
+                        {msg.toolInvocations?.map((toolInvocation: any) => {
+                          const toolCallId = toolInvocation.toolCallId;
+                          const toolName = toolInvocation.toolName;
+                          const toolDisplayName = TOOL_DISPLAY_NAMES[toolName] || toolName;
+                          
+                          return (
+                            <div key={toolCallId} className="flex items-center gap-3 px-4 py-2.5 bg-surface-container-low border-l-2 border-primary-container/40 rounded-lg mb-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                               <div className="flex-1">
+                                 <div className="text-[10px] font-mono text-primary-container uppercase tracking-widest flex items-center gap-2">
+                                   {toolDisplayName}
+                                   {toolInvocation.state === 'result' ? (
+                                     <span className="text-primary-container material-symbols-outlined text-xs">check_circle</span>
+                                   ) : (
+                                     <div className="flex gap-1 ml-1">
+                                       <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce [animation-delay:-0.3s]"/>
+                                       <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce [animation-delay:-0.15s]"/>
+                                       <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce"/>
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                            </div>
+                          );
+                        })}
+
                         <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
                           {msg.content.split('DIRECTIVE_DOCUMENT:')[0].split('RESULT:')[0].split('---')[0]
                             .replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
@@ -340,8 +379,8 @@ function ChatContent() {
               <div><h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2><p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0,8)}</p></div>
               <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface"><span className="material-symbols-outlined text-sm">close</span></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 no-scrollbar bg-[#0f110f]">
-              <div className="p-5 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl min-h-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-500">
+            <div className="flex-1 overflow-y-auto p-2 space-y-4 no-scrollbar bg-[#0f110f]">
+              <div className="p-4 lg:p-6 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl min-h-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-500">
                 <div className="prose prose-sm prose-invert max-w-none text-on-surface/80 font-body leading-loose whitespace-pre-wrap break-words">
                   {activeDirectives.metadata?.directive_raw || 
                    activeDirectives.content.split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
