@@ -25,12 +25,33 @@ export default function DashboardHeader() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Audit logs are currently mocked until backend implementation is finalized
-    setNotifications([
-      { id: 1, text: "Atlas (CEO) initialized Day 1 Protocols", time: "2m ago", important: true },
-      { id: 2, text: "Aria (CMO) generated marketing strategy", time: "15m ago", important: false },
-    ]);
-    setLoading(false);
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch('/api/org/audit?limit=5');
+        const data = await res.json();
+        if (data.logs) {
+          const mapped = data.logs.map((log: any) => ({
+            id: log.id,
+            text: `${log.action.replace(/_/g, ' ').toUpperCase()}: ${log.metadata?.conversation_id ? 'Conversation Update' : 'System Protocol Updated'}`,
+            time: new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            important: log.action.includes('error') || log.action.includes('interaction')
+          }));
+          setNotifications(mapped);
+        }
+      } catch (e) {
+        // Fallback mocks if API fails
+        setNotifications([
+          { id: 1, text: "Atlas (CEO) initialized Day 1 Protocols", time: "2m ago", important: true },
+          { id: 2, text: "Aria (CMO) generated marketing strategy", time: "15m ago", important: false },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 30000); // Poll every 30s
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -53,7 +74,7 @@ export default function DashboardHeader() {
             <span className="material-symbols-outlined text-[22px]">hub</span>
           </button>
         </DialogTrigger>
-        <DialogContent className="max-w-5xl bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
+        <DialogContent className="max-w-[90vw] w-full bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
           <div className="p-8 max-h-[85vh] overflow-y-auto no-scrollbar">
             <IntegrationsVault />
           </div>
