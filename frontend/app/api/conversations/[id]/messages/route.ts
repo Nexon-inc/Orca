@@ -17,11 +17,10 @@ export async function POST(
 ) {
   const { id: conversationId } = await params
   const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return new NextResponse('Unauthorized access', { status: 401 })
 
   try {
     const body = await request.json()
-    // Only extract the last user message — ignore full frontend history (avoids 48KB duplicate payload)
     const rawMessages = body.messages || []
     const modelOverride = body.model
     const lastUserMessage = rawMessages.filter((m: any) => m.role === 'user').pop()
@@ -38,16 +37,16 @@ export async function POST(
       .eq('id', conversationId)
       .single()
 
-    if (!conversation) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
-    if (conversation.user_id !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    if (!conversation) return new NextResponse('Conversation not found: ' + conversationId, { status: 404 })
+    if (conversation.user_id !== user.id) return new NextResponse('Unauthorized (Wrong User)', { status: 403 })
 
     const orgId = conversation.org_id
     const { data: agent } = await serviceClient.from('agents').select('*').eq('id', conversation.agent_id).single()
-    if (!agent) return NextResponse.json({ error: 'No agent found' }, { status: 400 })
+    if (!agent) return new NextResponse('No agent found for this conversation', { status: 400 })
 
     // 2. Security & Rate Limiting
     const { allowed: rlAllowed } = await checkRateLimit(user.id, 'agent_briefs')
-    if (!rlAllowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
+    if (!rlAllowed) return new NextResponse('Rate limit exceeded. Please wait a moment.', { status: 429 })
 
     // 3. Fetch Company & Member Data
     const { data: company } = await supabase.from('company_identity').select('*').eq('org_id', orgId).single()
@@ -78,7 +77,7 @@ export async function POST(
       .single()
 
     const isDuplicate = lastMsg?.content?.trim() === content.trim() &&
-      (Date.now() - new Date(lastMsg.created_at).getTime()) < 30_000 // same message within 30s = retry
+      (Date.now() - new Date(lastMsg.created_at).getTime()) < 30_000
 
     if (!isDuplicate) {
       await serviceClient.from('messages').insert({
@@ -88,23 +87,18 @@ export async function POST(
       })
     }
 
-    // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth for context
+    // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth
     const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations)
     const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
 
-    // Build and normalize the messages array:
-    // - Convert DB rows to AI SDK format
-    // - CRITICAL: collapse consecutive same-role messages (model APIs hard-reject these)
     const rawHistory = (history || []).map((m: any) => ({
       role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
       content: String(m.content || '')
     }))
 
-    // Deduplicate: merge consecutive messages of the same role into one
     const normalizedHistory = rawHistory.reduce((acc: any[], msg: any) => {
       const last = acc[acc.length - 1]
       if (last && last.role === msg.role) {
-        // Merge content instead of having two consecutive same-role messages
         last.content = `${last.content}\n\n${msg.content}`
       } else {
         acc.push({ ...msg })
@@ -112,11 +106,9 @@ export async function POST(
       return acc
     }, [])
 
-    // Ensure history ends with an assistant message (not user) before appending new user msg
-    // This prevents user→user consecutive issue if DB is out of sync
     const lastHistoryRole = normalizedHistory[normalizedHistory.length - 1]?.role
     const cleanHistory = lastHistoryRole === 'user'
-      ? normalizedHistory.slice(0, -1) // drop trailing user msg, we'll add the fresh one
+      ? normalizedHistory.slice(0, -1)
       : normalizedHistory
 
     const messages = [
@@ -134,7 +126,7 @@ export async function POST(
         system: systemPrompt,
         // @ts-ignore
         messages,
-        tools,
+        tools: Object.keys(tools).length > 0 ? tools : undefined,
         maxSteps: 5,
         onFinish: async ({ text, toolResults }: { text: string; toolResults: any }) => {
           const resultMatch = text.match(/RESULT:\s*([\s\S]+?)(?:\n|$)/)
@@ -153,7 +145,6 @@ export async function POST(
       }
 
       if (!isOrcaIntel) {
-        // BYO-LLM via OpenRouter
         const openrouter = createOpenAI({
           baseURL: 'https://openrouter.ai/api/v1',
           apiKey: process.env.OPENROUTER_API_KEY
@@ -190,7 +181,7 @@ export async function POST(
     return result.toDataStreamResponse()
   } catch (err: any) {
     console.error('[ORCA_STREAM_ERR]', err?.message, err?.stack)
-    return NextResponse.json({ error: 'Server Error', details: err.message }, { status: 500 })
+    return new NextResponse(err.message || 'Unknown stream error', { status: 500 })
   }
 }
 

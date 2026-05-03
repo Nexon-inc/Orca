@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
@@ -21,13 +21,14 @@ export default function ChatPage() {
 function ChatContent() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const [org, setOrg] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [greeting, setGreeting] = useState('GOOD MORNING,');
   const [pinnedAgent, setPinnedAgent] = useState<string | null>(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
-  
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -63,41 +64,41 @@ function ChatContent() {
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
-  const historyInitialized = useRef(false); // guard against race condition
-  const isFirstMessage = useRef(true); // track if this is the first message for title generation
+  const historyInitialized = useRef(false);
+  const isFirstMessage = useRef(true);
+  const initialMessageSent = useRef(false);
 
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
-  search_web: '🔍 Searching the web',
-  scrape_webpage: '📄 Reading webpage',
-  post_to_linkedin: '📤 Publishing to LinkedIn',
-  post_to_twitter: '📤 Publishing to X/Twitter',
-  send_email_campaign: '📧 Sending email campaign',
-  create_hubspot_contact: '👤 Adding contact to CRM',
-  create_hubspot_deal: '💼 Creating deal in CRM',
-  find_leads: '🔎 Researching leads',
-  send_slack_message: '💬 Sending Slack message',
-  send_customer_email: '📧 Sending customer email',
-  research_competitor: '🕵️ Researching competitor',
-  save_to_notion: '📝 Saving to Notion',
-  create_github_pr: '🔧 Opening GitHub PR',
-  trigger_deployment: '🚀 Triggering deployment',
-  security_scan: '🛡️ Running security scan',
-  research_business_opportunity: '💡 Researching opportunity',
-  analyze_company_health: '📊 Analyzing company health',
+    search_web: '🔍 Searching the web',
+    scrape_webpage: '📄 Reading webpage',
+    post_to_linkedin: '📤 Publishing to LinkedIn',
+    post_to_twitter: '📤 Publishing to X/Twitter',
+    send_email_campaign: '📧 Sending email campaign',
+    create_hubspot_contact: '👤 Adding contact to CRM',
+    create_hubspot_deal: '💼 Creating deal in CRM',
+    find_leads: '🔎 Researching leads',
+    send_slack_message: '💬 Sending Slack message',
+    send_customer_email: '📧 Sending customer email',
+    research_competitor: '🕵️ Researching competitor',
+    save_to_notion: '📝 Saving to Notion',
+    create_github_pr: '🔧 Opening GitHub PR',
+    trigger_deployment: '🚀 Triggering deployment',
+    security_scan: '🛡️ Running security scan',
+    research_business_opportunity: '💡 Researching opportunity',
+    analyze_company_health: '📊 Analyzing company health',
   };
 
-  // 1. AI SDK useChat Hook
   // Guard: params.id must be resolved before useChat initializes
   const conversationId = params?.id as string | undefined
 
-  const { 
-    messages, 
+  const {
+    messages,
     setMessages,
-    input, 
-    setInput, 
+    input,
+    setInput,
     append,
-    isLoading, 
+    isLoading,
   } = useChat({
     api: conversationId ? `/api/conversations/${conversationId}/messages` : '/api/conversations/none/messages',
     id: conversationId || 'init',
@@ -105,20 +106,48 @@ function ChatContent() {
       model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
       mode: chatMode.toLowerCase(),
     },
+    onResponse: (response) => {
+      if (!response.ok) {
+        response.text().then(text => {
+          console.error('[ORCA_RAW_ERROR]', text);
+          toast.error(`Server Error: ${text.slice(0, 150)}`);
+        });
+      }
+    },
     onFinish: (message) => {
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-      // Auto-title the conversation after first AI response
       if (isFirstMessage.current && conversationId) {
         isFirstMessage.current = false;
         window.dispatchEvent(new Event('conversation_created')); // refresh sidebar
       }
     },
     onError: (err) => {
-      toast.error(`ORCA Error: ${err.message}`);
+      if (err.message !== 'An error occurred.') {
+        toast.error(`ORCA Error: ${err.message}`);
+      }
     }
   });
 
-  // 2. Thinking Cycle Logic — keyed to pinned executive role
+  const startResizing = (e: React.MouseEvent) => {
+    isResizing.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResizing);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth > 320 && newWidth < 900) {
+      setSidebarWidth(newWidth);
+    }
+  };
+
+  const stopResizing = () => {
+    isResizing.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', stopResizing);
+  };
+
   const getThinkingMessages = () => {
     if (pinnedAgent === 'CTO') return ['Scanning system architecture...', 'Generating technical blueprints...', 'Debugging protocol logic...', 'Validating code integrity...'];
     if (pinnedAgent === 'CEO') return ['Orchestrating executive team...', 'Reviewing organizational OKRs...', 'Aligning department priorities...', 'Finalizing CEO directives...'];
@@ -142,26 +171,6 @@ function ChatContent() {
     }
     return () => clearInterval(interval);
   }, [isLoading, chatMode, pinnedAgent]);
-
-  const startResizing = (e: React.MouseEvent) => {
-    isResizing.current = true;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', stopResizing);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isResizing.current) return;
-    const newWidth = window.innerWidth - e.clientX;
-    if (newWidth > 320 && newWidth < 900) {
-      setSidebarWidth(newWidth);
-    }
-  };
-
-  const stopResizing = () => {
-    isResizing.current = false;
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', stopResizing);
-  };
 
   const handleVoiceInput = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -193,10 +202,11 @@ function ChatContent() {
 
   const adjustTextareaHeight = () => {
     if (inputRef.current) {
-      inputRef.current.style.height = '40px'; 
+      inputRef.current.style.height = '40px';
       inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 240)}px`;
     }
   };
+
 
   useEffect(() => {
     adjustTextareaHeight();
@@ -209,7 +219,7 @@ function ChatContent() {
     else setGreeting('GOOD EVENING,');
 
     const initialize = async () => {
-      if (historyInitialized.current) return; // prevent re-run overwriting live messages
+      if (historyInitialized.current) return;
       historyInitialized.current = true;
       try {
         const userRes = await fetch('/api/user');
@@ -226,7 +236,7 @@ function ChatContent() {
               if (msgRes.ok) {
                 const msgData = await msgRes.json();
                 if (msgData.messages && msgData.messages.length > 0) {
-                  isFirstMessage.current = false; // existing conversation, not first message
+                  isFirstMessage.current = false;
                   const transformed = msgData.messages.map((m: any) => ({
                     id: m.id,
                     role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
@@ -250,37 +260,62 @@ function ChatContent() {
                 const identityRes = await fetch(`/api/company`, { cache: 'no-store' });
                 const identityData = await identityRes.json();
                 setIsOnboarding(!identityData?.identity?.mission);
-              } catch (err) {}
+              } catch (err) { }
             }
           }
         }
-      } catch (err) {}
+      } catch (err) { }
     };
     initialize();
   }, [conversationId]);
 
+  // Handle auto-submitting initialMessage from URL
+  useEffect(() => {
+    const initMsg = searchParams?.get('initialMessage');
+    if (initMsg && historyInitialized.current && !initialMessageSent.current) {
+      initialMessageSent.current = true;
+
+      // Clear from URL without triggering Next.js route reload
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', `/dashboard/chat/${conversationId}`);
+      }
+
+      // Auto-submit after a tiny delay to ensure useChat is ready
+      setTimeout(() => {
+        if (isFirstMessage.current) {
+          const titleSlug = initMsg.trim().split(/\s+/).slice(0, 6).join(' ');
+          fetch(`/api/conversations/${conversationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: titleSlug })
+          }).catch(() => { });
+        }
+        append({ role: 'user', content: initMsg });
+      }, 500);
+    }
+  }, [searchParams, conversationId, append, router]);
+
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading || !conversationId) return;
-    
+
     const currentInput = input;
     setInput('');
 
-    // Auto-update conversation title on first send using first 6 words
     if (isFirstMessage.current) {
       const titleSlug = currentInput.trim().split(/\s+/).slice(0, 6).join(' ');
       fetch(`/api/conversations/${conversationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: titleSlug })
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     append({ role: 'user', content: currentInput });
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
-  const userName = user?.full_name?.split(' ')[0] || 'KALE';
+  const userName = user?.full_name?.split(' ')[0] || '';
 
   const Dropdown = ({ value, options, onChange, labelKey = 'name' }: { value: any, options: any[], onChange: (v: any) => void, labelKey?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -294,7 +329,7 @@ function ChatContent() {
         {isOpen && (
           <div className="absolute bottom-full mb-2 left-0 min-w-[140px] bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 z-50">
             {options.map(opt => (
-              <button key={typeof opt === 'string' ? opt : opt.id} onClick={() => { onChange(opt); setIsOpen(false); }} className={`w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${ (typeof opt === 'string' ? opt : opt.id) === (typeof value === 'string' ? value : value.id) ? 'text-primary-container' : 'text-on-surface/60' }`}>
+              <button key={typeof opt === 'string' ? opt : opt.id} onClick={() => { onChange(opt); setIsOpen(false); }} className={`w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${(typeof opt === 'string' ? opt : opt.id) === (typeof value === 'string' ? value : value.id) ? 'text-primary-container' : 'text-on-surface/60'}`}>
                 {typeof opt === 'string' ? opt : opt[labelKey]}
               </button>
             ))}
@@ -308,7 +343,7 @@ function ChatContent() {
     <div className="flex h-screen bg-surface">
       <DashboardSidebar active="chat" />
       <main className="flex-1 ml-64 flex flex-row min-h-screen relative grid-bg overflow-hidden">
-        <div 
+        <div
           style={{ marginRight: activeDirectives ? `${sidebarWidth}px` : 0 }}
           className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}
         >
@@ -321,7 +356,7 @@ function ChatContent() {
             <div className="w-full max-w-3xl flex flex-col gap-6 px-4 min-h-full">
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  {(msg.sender_type === 'user' || msg.role === 'user') ? (
+                  {(msg.role === 'user') ? (
                     <div className="flex flex-col items-end mb-6">
                       <div className="flex items-center gap-2 mb-2 mr-2">
                         <span className="text-[10px] font-black font-headline text-on-surface/40 uppercase tracking-widest">{userName}</span>
@@ -332,7 +367,7 @@ function ChatContent() {
                   ) : (
                     <div className="flex gap-4 mb-6">
                       <div className="flex-shrink-0 pt-1">
-                        <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-lg shadow-inner grayscale">{msg.agent?.icon || '🏦'}</div>
+                        <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-lg shadow-inner grayscale">{msg.agent?.icon || EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon || '🏦'}</div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -346,23 +381,23 @@ function ChatContent() {
                           const toolCallId = toolInvocation.toolCallId;
                           const toolName = toolInvocation.toolName;
                           const toolDisplayName = TOOL_DISPLAY_NAMES[toolName] || toolName;
-                          
+
                           return (
                             <div key={toolCallId} className="flex items-center gap-3 px-4 py-2.5 bg-surface-container-low border-l-2 border-primary-container/40 rounded-lg mb-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                               <div className="flex-1">
-                                 <div className="text-[10px] font-mono text-primary-container uppercase tracking-widest flex items-center gap-2">
-                                   {toolDisplayName}
-                                   {toolInvocation.state === 'result' ? (
-                                     <span className="text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                   ) : (
-                                     <div className="flex gap-1 ml-1">
-                                       <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce [animation-delay:-0.3s]"/>
-                                       <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce [animation-delay:-0.15s]"/>
-                                       <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce"/>
-                                     </div>
-                                   )}
-                                 </div>
-                               </div>
+                              <div className="flex-1">
+                                <div className="text-[10px] font-mono text-primary-container uppercase tracking-widest flex items-center gap-2">
+                                  {toolDisplayName}
+                                  {toolInvocation.state === 'result' ? (
+                                    <span className="text-primary-container material-symbols-outlined text-xs">check_circle</span>
+                                  ) : (
+                                    <div className="flex gap-1 ml-1">
+                                      <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce [animation-delay:-0.3s]" />
+                                      <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce [animation-delay:-0.15s]" />
+                                      <div className="w-1 h-1 rounded-full bg-primary-container animate-bounce" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           );
                         })}
@@ -376,30 +411,30 @@ function ChatContent() {
                         </div>
                         {(msg.metadata?.directive_raw || (msg.result_items && msg.result_items.length > 0)) && (
                           <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-3">
-                             <div className="flex items-center justify-between">
-                               <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Executive Briefing Generated</div>
-                               <button onClick={() => setActiveDirectives(msg)} className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all">
-                                 <span className="material-symbols-outlined text-[14px]">description</span> View & Delegate
-                               </button>
-                             </div>
-                             {msg.result_items && (
-                               <div className="space-y-2">
-                                 {msg.result_items.slice(0, 3).map((item: string, i: number) => (
-                                   <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
-                                     <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                     {item}
-                                   </div>
-                                 ))}
-                               </div>
-                             )}
+                            <div className="flex items-center justify-between">
+                              <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Executive Briefing Generated</div>
+                              <button onClick={() => setActiveDirectives(msg)} className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all">
+                                <span className="material-symbols-outlined text-[14px]">description</span> View & Delegate
+                              </button>
+                            </div>
+                            {msg.result_items && (
+                              <div className="space-y-2">
+                                {msg.result_items.slice(0, 3).map((item: string, i: number) => (
+                                  <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
+                                    <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
+                                    {item}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
                           {chatMode !== 'Planning' && (
                             <><button onClick={() => toast.success('Approved')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-primary-container transition-colors"><span className="material-symbols-outlined text-xs">check</span> Approve</button>
-                            <button onClick={() => toast.error('Rejected')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-error transition-colors"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
+                              <button onClick={() => toast.error('Rejected')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-error transition-colors"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
                           )}
-                          <button 
+                          <button
                             onClick={() => {
                               const cleanContent = msg.content.split('DIRECTIVE_DOCUMENT:')[0].split('RESULT:')[0].split('---')[0].trim();
                               navigator.clipboard.writeText(cleanContent);
@@ -447,12 +482,11 @@ function ChatContent() {
         </div>
 
         {activeDirectives && (
-          <div 
+          <div
             style={{ width: `${sidebarWidth}px` }}
             className="bg-surface-container-low border-l border-outline-variant/10 flex flex-col h-screen animate-in slide-in-from-right duration-500 z-40 relative"
           >
-            {/* Resize Handle */}
-            <div 
+            <div
               onMouseDown={startResizing}
               className="absolute left-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-primary-container/40 active:bg-primary-container transition-colors z-50 group"
             >
@@ -460,26 +494,26 @@ function ChatContent() {
             </div>
 
             <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container">
-              <div><h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2><p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0,8)}</p></div>
+              <div><h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2><p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0, 8)}</p></div>
               <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface"><span className="material-symbols-outlined text-sm">close</span></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0f110f]">
               <div className="p-5 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-500">
                 <div className="prose prose-sm prose-invert max-w-none text-on-surface/90 font-body leading-relaxed whitespace-pre-wrap break-words">
-                  {activeDirectives.metadata?.directive_raw || 
-                   activeDirectives.content.split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
+                  {activeDirectives.metadata?.directive_raw ||
+                    activeDirectives.content.split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
                 </div>
               </div>
-              
+
               <div className="flex flex-col gap-3 pb-8">
-                <button 
+                <button
                   onClick={() => {
                     const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
                     const blob = new Blob([content], { type: 'text/markdown' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `ORCA_DIRECTIVE_${activeDirectives.id.substring(0,8)}.md`;
+                    a.download = `ORCA_DIRECTIVE_${activeDirectives.id.substring(0, 8)}.md`;
                     a.click();
                     toast.success('Document downloaded locally');
                   }}
@@ -488,11 +522,10 @@ function ChatContent() {
                   <span className="material-symbols-outlined text-[16px]">download</span> Download as .md
                 </button>
 
-                <button 
+                <button
                   onClick={() => {
                     toast.success('Delegating to executive departments...');
-                    // Logic to trigger background orchestration
-                  }} 
+                  }}
                   className="w-full py-4 bg-primary-container text-on-primary rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined">send_and_archive</span> Authorize & Execute
@@ -502,7 +535,7 @@ function ChatContent() {
           </div>
         )}
 
-        <div 
+        <div
           style={{ right: activeDirectives ? `${sidebarWidth}px` : 0 }}
           className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30`}
         >
@@ -529,9 +562,9 @@ function ChatContent() {
                 }} />
                 {/* Add button with dropdown */}
                 <div className="relative mt-1.5">
-                  <button 
+                  <button
                     onClick={() => setShowAddMenu(v => !v)}
-                    className={`h-8 w-8 flex items-center justify-center rounded-lg transition-colors flex-shrink-0 ${ showAddMenu ? 'bg-primary-container/20 text-primary-container' : 'hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60'}`}
+                    className={`h-8 w-8 flex items-center justify-center rounded-lg transition-colors flex-shrink-0 ${showAddMenu ? 'bg-primary-container/20 text-primary-container' : 'hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60'}`}
                   >
                     <span className={`material-symbols-outlined text-[20px] transition-transform duration-200 ${showAddMenu ? 'rotate-45' : ''}`}>add</span>
                   </button>
@@ -553,9 +586,9 @@ function ChatContent() {
                   className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-y-auto"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} rows={1} disabled={isLoading}
                 />
-                <button 
+                <button
                   onClick={handleVoiceInput}
-                  className={`mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg transition-colors flex-shrink-0 ${ isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60'}`}
+                  className={`mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg transition-colors flex-shrink-0 ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60'}`}
                 >
                   <span className="material-symbols-outlined text-[20px]">{isListening ? 'mic_off' : 'mic'}</span>
                 </button>
