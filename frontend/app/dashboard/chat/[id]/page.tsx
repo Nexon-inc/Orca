@@ -63,6 +63,8 @@ function ChatContent() {
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const historyInitialized = useRef(false); // guard against race condition
+  const isFirstMessage = useRef(true); // track if this is the first message for title generation
 
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -103,8 +105,13 @@ function ChatContent() {
       model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
       mode: chatMode.toLowerCase(),
     },
-    onFinish: () => {
+    onFinish: (message) => {
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      // Auto-title the conversation after first AI response
+      if (isFirstMessage.current && conversationId) {
+        isFirstMessage.current = false;
+        window.dispatchEvent(new Event('conversation_created')); // refresh sidebar
+      }
     },
     onError: (err) => {
       toast.error(`ORCA Error: ${err.message}`);
@@ -202,19 +209,24 @@ function ChatContent() {
     else setGreeting('GOOD EVENING,');
 
     const initialize = async () => {
+      if (historyInitialized.current) return; // prevent re-run overwriting live messages
+      historyInitialized.current = true;
       try {
         const userRes = await fetch('/api/user');
         const userData = await userRes.json();
         if (userData?.user) {
           setUser(userData.user);
-            if (conversationId) {
+          if (conversationId) {
             let historyLoaded = false;
             try {
-              const msgRes = await fetch(`/api/conversations/${conversationId}/messages?t=${Date.now()}`);
+              const msgRes = await fetch(`/api/conversations/${conversationId}/messages`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+              });
               if (msgRes.ok) {
                 const msgData = await msgRes.json();
                 if (msgData.messages && msgData.messages.length > 0) {
-                  // ONLY pass clean AI-SDK compatible fields — no metadata/result_items/agent bleed
+                  isFirstMessage.current = false; // existing conversation, not first message
                   const transformed = msgData.messages.map((m: any) => ({
                     id: m.id,
                     role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
@@ -223,7 +235,6 @@ function ChatContent() {
                   }));
                   setMessages(transformed);
                   historyLoaded = true;
-                  // Infer which executive is pinned from the last agent message
                   const lastAgentMsg = [...msgData.messages].reverse().find((m: any) => m.sender_type === 'agent');
                   if (lastAgentMsg?.metadata?.agent_name) {
                     const found = EXECUTIVE_PILLS.find(p => p.name === lastAgentMsg.metadata.agent_name);
@@ -234,14 +245,11 @@ function ChatContent() {
               }
             } catch (err) { console.error('History load error:', err); }
 
-            // Onboarding check — only inject prompt if truly zero messages exist
             if (!historyLoaded) {
               try {
-                const identityRes = await fetch(`/api/company?t=${Date.now()}`);
+                const identityRes = await fetch(`/api/company`, { cache: 'no-store' });
                 const identityData = await identityRes.json();
-                const missionMissing = !identityData?.identity?.mission;
-                setIsOnboarding(missionMissing);
-                // Do NOT inject fake messages — let the user start naturally
+                setIsOnboarding(!identityData?.identity?.mission);
               } catch (err) {}
             }
           }
@@ -258,12 +266,17 @@ function ChatContent() {
     const currentInput = input;
     setInput('');
 
-    // Use append() — it directly fires a POST without needing a form submit event
-    append({
-      role: 'user',
-      content: currentInput,
-    });
-    
+    // Auto-update conversation title on first send using first 6 words
+    if (isFirstMessage.current) {
+      const titleSlug = currentInput.trim().split(/\s+/).slice(0, 6).join(' ');
+      fetch(`/api/conversations/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: titleSlug })
+      }).catch(() => {});
+    }
+
+    append({ role: 'user', content: currentInput });
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 

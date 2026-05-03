@@ -214,7 +214,13 @@ export async function GET(
       .order('created_at', { ascending: true })
 
     if (error) throw error
-    return NextResponse.json({ messages })
+
+    return NextResponse.json({ messages }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+      }
+    })
   } catch (err: any) {
     return NextResponse.json({ error: 'Server Error', details: err.message }, { status: 500 })
   }
