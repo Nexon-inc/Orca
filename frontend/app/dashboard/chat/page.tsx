@@ -58,26 +58,19 @@ function ChatContent() {
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const isResizing = useRef(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
-  search_web: '🔍 Searching the web',
-  scrape_webpage: '📄 Reading webpage',
-  post_to_linkedin: '📤 Publishing to LinkedIn',
-  post_to_twitter: '📤 Publishing to X/Twitter',
-  send_email_campaign: '📧 Sending email campaign',
-  create_hubspot_contact: '👤 Adding contact to CRM',
-  create_hubspot_deal: '💼 Creating deal in CRM',
-  find_leads: '🔎 Researching leads',
-  send_slack_message: '💬 Sending Slack message',
-  send_customer_email: '📧 Sending customer email',
-  research_competitor: '🕵️ Researching competitor',
-  save_to_notion: '📝 Saving to Notion',
-  create_github_pr: '🔧 Opening GitHub PR',
-  trigger_deployment: '🚀 Triggering deployment',
-  security_scan: '🛡️ Running security scan',
-  research_business_opportunity: '💡 Researching opportunity',
-  analyze_company_health: '📊 Analyzing company health',
+    web_search: '🔍 Searching the web',
+    scrape_page: '📄 Reading webpage',
+    linkedin_post: '📤 Posting to LinkedIn',
+    twitter_post: '📤 Posting to X/Twitter',
+    hubspot_create_deal: '💼 Creating deal in CRM',
+    github_create_pr: '🔧 Opening GitHub PR',
   };
 
   // Temporary ID for root chat - will redirect on first message
@@ -148,6 +141,27 @@ function ChatContent() {
     document.removeEventListener('mouseup', stopResizing);
   };
 
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) { toast.error('Voice input not supported'); return; }
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev ? `${prev} ${transcript}` : transcript);
+      inputRef.current?.focus();
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => { setIsListening(false); toast.error('Voice input failed'); };
+    recognition.start();
+    setIsListening(true);
+    toast.success('Listening... speak now');
+  };
+
   const adjustTextareaHeight = () => {
     if (inputRef.current) {
       inputRef.current.style.height = '40px'; 
@@ -181,7 +195,6 @@ function ChatContent() {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // If it's the very first message on the root page, create a conversation first
     if (!tempId) {
       try {
         const res = await fetch('/api/conversations', {
@@ -195,8 +208,6 @@ function ChatContent() {
         const data = await res.json();
         if (data.conversation?.id) {
           setTempId(data.conversation.id);
-          // We can't use handleSubmit immediately because the API endpoint in useChat is fixed at init
-          // So we redirect to the new conversation page instead to keep it simple and stable
           router.push(`/dashboard/chat/${data.conversation.id}?initialMessage=${encodeURIComponent(input)}`);
           return;
         }
@@ -210,7 +221,7 @@ function ChatContent() {
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
-  const userName = user?.full_name?.split(' ')[0] || 'KALE';
+  const userName = user?.full_name?.split(' ')[0] || '';
 
   const Dropdown = ({ value, options, onChange, labelKey = 'name' }: { value: any, options: any[], onChange: (v: any) => void, labelKey?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -265,15 +276,28 @@ function ChatContent() {
             </div>
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
               <div className="px-6 py-4 flex items-start gap-4">
-                <button className="mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60 transition-colors flex-shrink-0">
-                  <span className="material-symbols-outlined text-[20px]">add</span>
-                </button>
+                <input ref={fileInputRef} type="file" accept="image/*,.pdf,.txt,.md,.csv" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) { setInput(prev => prev ? `${prev} [Attached: ${file.name}]` : `[Attached: ${file.name}]`); toast.success(`Attached: ${file.name}`); setShowAddMenu(false); }
+                }} />
+                <div className="relative mt-1.5">
+                  <button onClick={() => setShowAddMenu(v => !v)} className={`h-8 w-8 flex items-center justify-center rounded-lg transition-colors flex-shrink-0 ${showAddMenu ? 'bg-primary-container/20 text-primary-container' : 'hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60'}`}>
+                    <span className={`material-symbols-outlined text-[20px] transition-transform duration-200 ${showAddMenu ? 'rotate-45' : ''}`}>add</span>
+                  </button>
+                  {showAddMenu && (
+                    <div className="absolute bottom-full mb-2 left-0 min-w-[180px] bg-[#1a1c1a] border border-[#2d312d] rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors"><span className="material-symbols-outlined text-[16px]">image</span> Attach Image</button>
+                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors"><span className="material-symbols-outlined text-[16px]">description</span> Attach Document</button>
+                      <button onClick={() => { setShowAddMenu(false); toast.info('Web context coming soon'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors"><span className="material-symbols-outlined text-[16px]">language</span> Add Web Context</button>
+                    </div>
+                  )}
+                </div>
                 <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                   className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-y-auto"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} rows={1} disabled={isLoading}
                 />
-                <button className="mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60 transition-colors flex-shrink-0">
-                  <span className="material-symbols-outlined text-[20px]">mic</span>
+                <button onClick={handleVoiceInput} className={`mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg transition-colors flex-shrink-0 ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60'}`}>
+                  <span className="material-symbols-outlined text-[20px]">{isListening ? 'mic_off' : 'mic'}</span>
                 </button>
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
