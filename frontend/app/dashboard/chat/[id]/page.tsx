@@ -1,7 +1,8 @@
+export const dynamic = 'force-dynamic';
+
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-export const dynamic = 'force-dynamic';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -85,19 +86,19 @@ function ChatContent() {
   };
 
   // 1. AI SDK useChat Hook
+  // Guard: params.id must be resolved before useChat initializes
+  const conversationId = params?.id as string | undefined
+
   const { 
     messages, 
     setMessages,
     input, 
     setInput, 
-    handleSubmit, 
     append,
     isLoading, 
-    reload, 
-    stop 
   } = useChat({
-    api: `/api/conversations/${params.id}/messages`,
-    id: params.id as string,
+    api: conversationId ? `/api/conversations/${conversationId}/messages` : '/api/conversations/none/messages',
+    id: conversationId || 'init',
     body: {
       model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
       mode: chatMode.toLowerCase(),
@@ -203,25 +204,22 @@ function ChatContent() {
         const userData = await userRes.json();
         if (userData?.user) {
           setUser(userData.user);
-          if (params.id) {
+          if (conversationId) {
             let historyLoaded = false;
             try {
-              const msgRes = await fetch(`/api/conversations/${params.id}/messages?t=${Date.now()}`);
+              const msgRes = await fetch(`/api/conversations/${conversationId}/messages?t=${Date.now()}`);
               if (msgRes.ok) {
                 const msgData = await msgRes.json();
                 if (msgData.messages && msgData.messages.length > 0) {
-                  // Transform Supabase messages to Vercel AI SDK format if needed
                   const transformed = msgData.messages.map((m: any) => ({
                     id: m.id,
                     role: m.sender_type === 'user' ? 'user' : 'assistant',
                     content: m.content,
-                    metadata: m.metadata,
-                    result_items: m.result_items,
                     createdAt: new Date(m.created_at)
                   }));
                   setMessages(transformed);
                   historyLoaded = true;
-                  const lastAgentMsg = [...msgData.messages].reverse().find(m => m.sender_type === 'agent');
+                  const lastAgentMsg = [...msgData.messages].reverse().find((m: any) => m.sender_type === 'agent');
                   if (lastAgentMsg) {
                     const found = EXECUTIVE_PILLS.find(p => p.name === lastAgentMsg.metadata?.agent_name);
                     setPinnedAgent(found?.role || 'CEO');
@@ -238,18 +236,18 @@ function ChatContent() {
             
             if (missionMissing && !historyLoaded) {
               setPinnedAgent('CEO');
-              setMessages([{ id: 'onboarding-init', role: 'assistant', content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?", agent: EXECUTIVE_PILLS[0] }]);
+              setMessages([{ id: 'onboarding-init', role: 'assistant', content: "I am Atlas, the CEO of your Autonomous OS. I've detected your company profile is incomplete. To begin operations, I need to understand your mission. Tell me: What does your company do and who are we building for?" }]);
             }
           }
         }
       } catch (err) {}
     };
     initialize();
-  }, [params.id]);
+  }, [conversationId]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !conversationId) return;
     
     const currentInput = input;
     setInput('');

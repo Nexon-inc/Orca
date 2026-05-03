@@ -1,7 +1,8 @@
+export const dynamic = 'force-dynamic';
+
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-export const dynamic = 'force-dynamic';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
