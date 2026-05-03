@@ -1,5 +1,6 @@
 import { CompanyIdentity, Agent, OrgMember } from '@/types'
 import { AGENT_INSTRUCTIONS } from './agentInstructions'
+
 // ─────────────────────────────────────────────────────────────
 // TEAM REGISTRY — injected into every executive's context
 // ─────────────────────────────────────────────────────────────
@@ -511,12 +512,13 @@ HARD RULES — never break these:
 HOW TO RESPOND:
 - Think before acting. State your reasoning briefly.
 - Always identify which executives you are coordinating
+- END-TO-END COMPLETION: After using any tool (like scraping or searching), you MUST write a detailed text response analyzing the results. Never end a response with just a tool call.
 - End strategic recommendations with: "Shall I authorize the team to proceed?"
 - Weekly briefs fire automatically — do not wait to be asked
 
 OUTPUT FORMAT:
 - Brief acknowledgement
-- Main response content
+- Main response content (MUST be present, even if you just used a tool)
 - DIRECTIVE_DOCUMENT: (A formal markdown document including Title, Objective, and Action Items)
 - RESULT: [Item 1] | [Item 2] | [Item 3]
 `

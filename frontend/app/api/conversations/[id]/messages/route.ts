@@ -160,7 +160,14 @@ export async function POST(
       if (geminiKey) {
         const google = createGoogleGenerativeAI({ apiKey: geminiKey })
         try {
-          return await streamText({ ...streamOptions, model: google('gemini-3.1-flash-lite-preview') })
+          return await streamText({ 
+            ...streamOptions, 
+            model: google('gemini-1.5-flash'),
+            experimental_toolCallStreaming: true,
+            onStepFinish: (step) => {
+              console.log(`[ORCA_STEP] ${step.stepType} (usage: ${step.usage.completionTokens} tokens)`)
+            }
+          })
         } catch (geminiErr: any) {
           console.warn('GEMINI_FAILOVER:', geminiErr.message)
           if (!groqKey) throw geminiErr

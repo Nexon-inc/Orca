@@ -239,7 +239,17 @@ function ChatContent() {
                     id: m.id,
                     role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
                     content: String(m.content || ''),
-                    createdAt: new Date(m.created_at)
+                    createdAt: new Date(m.created_at),
+                    metadata: m.metadata || {},
+                    result_items: m.result_items || [],
+                    // Map tool results back to toolInvocations for rendering
+                    toolInvocations: m.metadata?.tool_results ? m.metadata.tool_results.map((tr: any) => ({
+                      toolCallId: tr.toolCallId,
+                      toolName: tr.toolName,
+                      args: tr.args,
+                      state: 'result',
+                      result: tr.result
+                    })) : []
                   }));
                   setMessages(transformed);
                   historyLoaded = true;
