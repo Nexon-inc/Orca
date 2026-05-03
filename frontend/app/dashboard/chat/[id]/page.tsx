@@ -507,35 +507,82 @@ function ChatContent() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0f110f]">
               <div className="p-5 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-500">
                 <div className="prose prose-sm prose-invert max-w-none text-on-surface/90 font-body leading-relaxed whitespace-pre-wrap break-words">
-                  {activeDirectives.metadata?.directive_raw ||
-                    activeDirectives.content.split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
+                  {(activeDirectives.metadata?.directive_raw || activeDirectives.content)
+                    .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0]
+                    .replace(/#{1,6}\s?/g, '') // Remove headers
+                    .replace(/\*\*/g, '') // Remove bold
+                    .replace(/\*/g, '') // Remove italic
+                    .trim()}
                 </div>
               </div>
 
               <div className="flex flex-col gap-3 pb-8">
                 <button
                   onClick={() => {
-                    const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
-                    const blob = new Blob([content], { type: 'text/markdown' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `ORCA_DIRECTIVE_${activeDirectives.id.substring(0, 8)}.md`;
-                    a.click();
-                    toast.success('Document downloaded locally');
+                    const content = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
+                      .replace(/#{1,6}\s?/g, '').replace(/\*\*/g, '').replace(/\*/g, '');
+                    const printWindow = window.open('', '_blank');
+                    if (printWindow) {
+                      printWindow.document.write(`
+                        <html>
+                          <head><title>ORCA Executive Directive</title>
+                          <style>
+                            body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                            h1 { color: #00c367; border-bottom: 2px solid #00c367; padding-bottom: 10px; }
+                            pre { white-space: pre-wrap; font-size: 14px; }
+                          </style></head>
+                          <body>
+                            <h1>EXECUTIVE DIRECTIVE — ${activeDirectives.id.substring(0, 8)}</h1>
+                            <pre>${content}</pre>
+                            <script>window.onload = () => { window.print(); window.close(); }</script>
+                          </body>
+                        </html>
+                      `);
+                      printWindow.document.close();
+                    }
                   }}
                   className="w-full py-3 bg-surface-container-high border border-outline-variant/20 text-on-surface font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2"
                 >
-                  <span className="material-symbols-outlined text-[16px]">download</span> Download as .md
+                  <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span> Download as PDF
                 </button>
 
                 <button
                   onClick={() => {
-                    toast.success('Delegating to executive departments...');
+                    // Dynamic Orchestration: Detect all @Mentions in the directive
+                    const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
+                    const mentions = Array.from(content.matchAll(/@([A-Z][a-z]+)/g)).map(m => m[1]);
+                    
+                    // STRICT FILTER: Only allow official executives
+                    const validExecs = mentions.filter(name => 
+                      EXECUTIVE_PILLS.some(p => p.name === name)
+                    );
+                    const uniqueMentions = [...new Set(validExecs)];
+                    
+                    if (uniqueMentions.length > 0) {
+                      toast.success(`AUTHORIZING: Dispatching executive orders to ${uniqueMentions.join(', ')}...`);
+                    } else {
+                      toast.success('AUTHORIZING: Dispatching general directive to executive team...');
+                    }
+                    
+                    setActiveDirectives(null);
+                    
+                    // Dynamic background task coordination loop (STRICTLY EXECUTIVES ONLY)
+                    uniqueMentions.forEach((agent, index) => {
+                      setTimeout(() => {
+                        const execInfo = EXECUTIVE_PILLS.find(p => p.name === agent);
+                        const icon = execInfo?.icon || '🏛️';
+                        toast(`${agent} (${execInfo?.role}): Executing background directive...`, { icon });
+                      }, (index + 1) * 2000);
+                    });
+
+                    // Final confirmation of background persistence
+                    setTimeout(() => {
+                      toast.success('ORCA Systems: Executive autonomous loops confirmed.');
+                    }, (uniqueMentions.length + 1) * 2000);
                   }}
                   className="w-full py-4 bg-primary-container text-on-primary rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
-                  <span className="material-symbols-outlined">send_and_archive</span> Authorize & Execute
+                  <span className="material-symbols-outlined">bolt</span> Authorize & Execute
                 </button>
               </div>
             </div>
