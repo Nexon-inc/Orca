@@ -352,7 +352,6 @@ function ChatContent() {
       <DashboardSidebar active="chat" />
       <main className="flex-1 ml-64 flex flex-row min-h-screen relative grid-bg overflow-hidden">
         <div
-          style={{ marginRight: activeDirectives ? `${sidebarWidth}px` : 0 }}
           className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}
         >
           <DashboardHeader />
