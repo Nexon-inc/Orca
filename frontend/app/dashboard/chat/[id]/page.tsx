@@ -122,9 +122,7 @@ function ChatContent() {
       }
     },
     onError: (err) => {
-      if (err.message !== 'An error occurred.') {
-        toast.error(`ORCA Error: ${err.message}`);
-      }
+      toast.error(`ORCA Error: ${err.message}`);
     }
   });
 

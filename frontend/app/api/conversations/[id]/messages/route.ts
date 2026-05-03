@@ -178,7 +178,12 @@ export async function POST(
     }
 
     const result = await getStreamResult()
-    return result.toDataStreamResponse()
+    return result.toDataStreamResponse({
+      getErrorMessage: (err: any) => {
+        console.error('[ORCA_ASYNC_STREAM_ERR]', err?.message, err?.stack)
+        return String(err?.message || err)
+      }
+    })
   } catch (err: any) {
     console.error('[ORCA_STREAM_ERR]', err?.message, err?.stack)
     return new NextResponse(err.message || 'Unknown stream error', { status: 500 })

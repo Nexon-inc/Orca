@@ -53,7 +53,7 @@ export default function DashboardHeader() {
             <span className="material-symbols-outlined text-[22px]">hub</span>
           </button>
         </DialogTrigger>
-        <DialogContent className="max-w-[90vw] w-full bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
+        <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[1200px] w-full bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
           <DialogTitle className="sr-only">Integrations Vault</DialogTitle>
           <DialogDescription className="sr-only">Manage your connected applications and tools.</DialogDescription>
           <div className="p-8 max-h-[85vh] overflow-y-auto no-scrollbar">
