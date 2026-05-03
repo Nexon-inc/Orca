@@ -54,7 +54,58 @@ function ChatContent() {
   ];
 
   const [thinkingStep, setThinkingStep] = useState(0);
+  const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(400);
+  const isResizing = useRef(false);
 
+  // Tool Display Names
+  const TOOL_DISPLAY_NAMES: Record<string, string> = {
+  search_web: '🔍 Searching the web',
+  scrape_webpage: '📄 Reading webpage',
+  post_to_linkedin: '📤 Publishing to LinkedIn',
+  post_to_twitter: '📤 Publishing to X/Twitter',
+  send_email_campaign: '📧 Sending email campaign',
+  create_hubspot_contact: '👤 Adding contact to CRM',
+  create_hubspot_deal: '💼 Creating deal in CRM',
+  find_leads: '🔎 Researching leads',
+  send_slack_message: '💬 Sending Slack message',
+  send_customer_email: '📧 Sending customer email',
+  research_competitor: '🕵️ Researching competitor',
+  save_to_notion: '📝 Saving to Notion',
+  create_github_pr: '🔧 Opening GitHub PR',
+  trigger_deployment: '🚀 Triggering deployment',
+  security_scan: '🛡️ Running security scan',
+  research_business_opportunity: '💡 Researching opportunity',
+  analyze_company_health: '📊 Analyzing company health',
+  };
+
+  // Temporary ID for root chat - will redirect on first message
+  const [tempId, setTempId] = useState<string | null>(null);
+
+  // 1. AI SDK useChat Hook
+  const { 
+    messages, 
+    setMessages,
+    input, 
+    setInput, 
+    handleSubmit, 
+    isLoading, 
+  } = useChat({
+    api: tempId ? `/api/conversations/${tempId}/messages` : '/api/conversations/new/messages',
+    id: tempId || 'new-chat',
+    body: {
+      model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
+      mode: chatMode.toLowerCase(),
+    },
+    onFinish: (message) => {
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    },
+    onError: (err) => {
+      toast.error(`ORCA Error: ${err.message}`);
+    }
+  });
+
+  // 2. Thinking Cycle Logic
   const getThinkingMessages = () => {
     if (chatMode === 'Planning') return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
     if (pinnedAgent === 'CTO') return ['Scanning system architecture...', 'Generating technical blueprints...', 'Debugging protocol logic...', 'Validating code integrity...'];
@@ -75,47 +126,6 @@ function ChatContent() {
     }
     return () => clearInterval(interval);
   }, [isLoading, chatMode, pinnedAgent]);
-  const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
-  const [sidebarWidth, setSidebarWidth] = useState(400);
-  const isResizing = useRef(false);
-
-  // Tool Display Names
-  const TOOL_DISPLAY_NAMES: Record<string, string> = {
-    web_search: '🔍 Searching the web',
-    scrape_page: '📄 Reading webpage',
-    linkedin_post: '📤 Posting to LinkedIn',
-    twitter_post: '📤 Posting to X/Twitter',
-    hubspot_create_deal: '💼 Creating deal in CRM',
-    github_create_pr: '🔧 Opening GitHub PR',
-  };
-
-  // Temporary ID for root chat - will redirect on first message
-  const [tempId, setTempId] = useState<string | null>(null);
-
-  // AI SDK useChat Hook
-  const { 
-    messages, 
-    setMessages,
-    input, 
-    setInput, 
-    handleSubmit, 
-    isLoading, 
-  } = useChat({
-    api: tempId ? `/api/conversations/${tempId}/messages` : '/api/conversations/new/messages',
-    id: tempId || 'new-chat',
-    body: {
-      model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
-      mode: chatMode.toLowerCase(),
-    },
-    onFinish: (message) => {
-      // If we are on root and just finished the first message, we should have a real ID by now
-      // This logic depends on the backend returning a conversation_id in the stream or metadata
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    },
-    onError: (err) => {
-      toast.error(`ORCA Error: ${err.message}`);
-    }
-  });
 
   const startResizing = (e: React.MouseEvent) => {
     isResizing.current = true;

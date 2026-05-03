@@ -61,15 +61,26 @@ function ChatContent() {
 
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
-    web_search: '🔍 Searching the web',
-    scrape_page: '📄 Reading webpage',
-    linkedin_post: '📤 Posting to LinkedIn',
-    twitter_post: '📤 Posting to X/Twitter',
-    hubspot_create_deal: '💼 Creating deal in CRM',
-    github_create_pr: '🔧 Opening GitHub PR',
+  search_web: '🔍 Searching the web',
+  scrape_webpage: '📄 Reading webpage',
+  post_to_linkedin: '📤 Publishing to LinkedIn',
+  post_to_twitter: '📤 Publishing to X/Twitter',
+  send_email_campaign: '📧 Sending email campaign',
+  create_hubspot_contact: '👤 Adding contact to CRM',
+  create_hubspot_deal: '💼 Creating deal in CRM',
+  find_leads: '🔎 Researching leads',
+  send_slack_message: '💬 Sending Slack message',
+  send_customer_email: '📧 Sending customer email',
+  research_competitor: '🕵️ Researching competitor',
+  save_to_notion: '📝 Saving to Notion',
+  create_github_pr: '🔧 Opening GitHub PR',
+  trigger_deployment: '🚀 Triggering deployment',
+  security_scan: '🛡️ Running security scan',
+  research_business_opportunity: '💡 Researching opportunity',
+  analyze_company_health: '📊 Analyzing company health',
   };
 
-  // AI SDK useChat Hook
+  // 1. AI SDK useChat Hook
   const { 
     messages, 
     setMessages,
@@ -94,26 +105,7 @@ function ChatContent() {
     }
   });
 
-  const startResizing = (e: React.MouseEvent) => {
-    isResizing.current = true;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', stopResizing);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isResizing.current) return;
-    const newWidth = window.innerWidth - e.clientX;
-    if (newWidth > 320 && newWidth < 900) {
-      setSidebarWidth(newWidth);
-    }
-  };
-
-  const stopResizing = () => {
-    isResizing.current = false;
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', stopResizing);
-  };
-
+  // 2. Thinking Cycle Logic
   const getThinkingMessages = () => {
     if (chatMode === 'Planning') return ['Analyzing strategic objectives...', 'Architecting roadmap...', 'Strategizing growth vectors...', 'Refining organizational logic...'];
     if (pinnedAgent === 'CTO') return ['Scanning system architecture...', 'Generating technical blueprints...', 'Debugging protocol logic...', 'Validating code integrity...'];
@@ -134,6 +126,26 @@ function ChatContent() {
     }
     return () => clearInterval(interval);
   }, [isLoading, chatMode, pinnedAgent]);
+
+  const startResizing = (e: React.MouseEvent) => {
+    isResizing.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResizing);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth > 320 && newWidth < 900) {
+      setSidebarWidth(newWidth);
+    }
+  };
+
+  const stopResizing = () => {
+    isResizing.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', stopResizing);
+  };
 
   const adjustTextareaHeight = () => {
     if (inputRef.current) {
