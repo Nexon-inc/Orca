@@ -130,9 +130,10 @@ export async function POST(
         tools: Object.keys(tools).length > 0 ? tools : undefined,
         maxSteps: 5,
         onFinish: async ({ text, toolResults }: { text: string; toolResults: any }) => {
-          const resultMatch = text.match(/RESULT:\s*([\s\S]+?)(?:\n|$)/)
+          // Flexible regex for Directive and Result
+          const resultMatch = text.match(/(?:RESULT|RESULTS|OUTCOME):\s*([\s\S]+?)(?:\n|$)/i)
           const resultItems = resultMatch ? resultMatch[1].split('|').map((s: string) => s.trim()) : []
-          const directiveMatch = text.match(/DIRECTIVE_DOCUMENT:\s*([\s\S]+?)(?:\nRESULT:|\nCOORDINATION_NEEDED:|$)/)
+          const directiveMatch = text.match(/(?:DIRECTIVE_DOCUMENT|DIRECTIVE|MASTER_DIRECTIVE):\s*([\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i)
           const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
 
           await serviceClient.from('messages').insert({
@@ -162,10 +163,10 @@ export async function POST(
         try {
           return await streamText({ 
             ...streamOptions, 
-            model: google('gemini-3.1-flash-lite-preview'),
+            model: google('gemini-2.5-flash'),
             experimental_toolCallStreaming: true,
             onStepFinish: (step) => {
-              console.log(`[ORCA_STEP] ${step.stepType} (usage: ${step.usage.completionTokens} tokens)`)
+              console.log(`[ORCA_STEP] ${step.stepType} (tokens: ${step.usage.completionTokens})`)
             }
           })
         } catch (geminiErr: any) {
