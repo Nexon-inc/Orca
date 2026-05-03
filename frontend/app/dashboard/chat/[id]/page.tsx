@@ -58,7 +58,7 @@ function ChatContent() {
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
-  const [sidebarWidth, setSidebarWidth] = useState(400);
+  const [sidebarWidth, setSidebarWidth] = useState(600);
   const isResizing = useRef(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -361,7 +361,7 @@ function ChatContent() {
               <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase">{greeting} {userName}.</h1>
             </div>
           ) : (
-            <div className="w-full max-w-3xl flex flex-col gap-6 px-4 min-h-full">
+            <div className={`w-full ${activeDirectives ? 'max-w-5xl' : 'max-w-3xl'} flex flex-col gap-6 px-4 min-h-full transition-all duration-500`}>
               {messages.map(msg => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {(msg.role === 'user') ? (
