@@ -15,6 +15,11 @@
     "@langchain/core": "^1.1.32",
     "@langchain/google-genai": "^2.1.25",
     "@langchain/groq": "^1.1.5",
+    "ai": "^4.1.2",
+    "@ai-sdk/google": "^1.1.9",
+    "@ai-sdk/openai": "^1.1.9",
+    "@ai-sdk/groq": "^1.1.8",
+    "@ai-sdk/react": "^1.1.13",
 
     "@langchain/openai": "^0.3.11",
     "@mendable/firecrawl-js": "^1.1.1",
