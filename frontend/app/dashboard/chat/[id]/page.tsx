@@ -361,7 +361,7 @@ function ChatContent() {
                       </span>
                       <div className="flex gap-1.5 items-center">
                         <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">
-                          Synchronizing with departments...
+                          {getThinkingMessages()[thinkingStep]}
                         </span>
                       </div>
                     </div>
