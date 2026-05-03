@@ -67,25 +67,64 @@ export async function POST(
       .order('created_at', { ascending: true })
       .limit(10)
 
-    // 6. Save User Message immediately
-    await serviceClient.from('messages').insert({
-      conversation_id: conversationId,
-      sender_type: 'user',
-      content: content
-    })
+    // 6. Save User Message — deduplicated (prevent double-saves from retried requests)
+    const { data: lastMsg } = await serviceClient
+      .from('messages')
+      .select('content, created_at')
+      .eq('conversation_id', conversationId)
+      .eq('sender_type', 'user')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    const isDuplicate = lastMsg?.content?.trim() === content.trim() &&
+      (Date.now() - new Date(lastMsg.created_at).getTime()) < 30_000 // same message within 30s = retry
+
+    if (!isDuplicate) {
+      await serviceClient.from('messages').insert({
+        conversation_id: conversationId,
+        sender_type: 'user',
+        content: content
+      })
+    }
 
     // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth for context
     const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations)
     const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
 
-    // Build clean messages array from DB only — no frontend state pollution
+    // Build and normalize the messages array:
+    // - Convert DB rows to AI SDK format
+    // - CRITICAL: collapse consecutive same-role messages (model APIs hard-reject these)
+    const rawHistory = (history || []).map((m: any) => ({
+      role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: String(m.content || '')
+    }))
+
+    // Deduplicate: merge consecutive messages of the same role into one
+    const normalizedHistory = rawHistory.reduce((acc: any[], msg: any) => {
+      const last = acc[acc.length - 1]
+      if (last && last.role === msg.role) {
+        // Merge content instead of having two consecutive same-role messages
+        last.content = `${last.content}\n\n${msg.content}`
+      } else {
+        acc.push({ ...msg })
+      }
+      return acc
+    }, [])
+
+    // Ensure history ends with an assistant message (not user) before appending new user msg
+    // This prevents user→user consecutive issue if DB is out of sync
+    const lastHistoryRole = normalizedHistory[normalizedHistory.length - 1]?.role
+    const cleanHistory = lastHistoryRole === 'user'
+      ? normalizedHistory.slice(0, -1) // drop trailing user msg, we'll add the fresh one
+      : normalizedHistory
+
     const messages = [
-      ...(history || []).map((m: any) => ({
-        role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
-        content: String(m.content || '')
-      })),
+      ...cleanHistory,
       { role: 'user' as const, content }
     ]
+
+    console.log(`[ORCA] messages to streamText: ${messages.length} (${messages.map((m: any) => m.role).join(',')})`)
 
     // 8. Model Selection with Runtime Failover for Orca Intelligence
     const isOrcaIntel = !modelOverride || modelOverride === 'orca-intel'
