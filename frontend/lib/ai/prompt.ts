@@ -587,7 +587,5 @@ Brand voice: ${company.brand_voice || 'Professional'}
 ICP: ${company.icp || 'Not defined'}
 
 ${memoryBlock}
-
-${greeting}
 `.trim()
 }

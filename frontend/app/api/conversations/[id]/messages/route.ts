@@ -20,7 +20,10 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { content: rawContent, model: modelOverride } = await request.json()
+    const { messages: rawMessages, model: modelOverride } = await request.json()
+    const lastMessage = rawMessages[rawMessages.length - 1]
+    const rawContent = lastMessage?.content || ''
+    
     const supabase = await createServerSupabaseClient()
     const serviceClient = createServiceSupabaseClient()
 
