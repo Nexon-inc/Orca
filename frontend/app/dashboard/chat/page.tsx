@@ -65,12 +65,23 @@ function ChatContent() {
 
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
-    web_search: '🔍 Searching the web',
-    scrape_page: '📄 Reading webpage',
-    linkedin_post: '📤 Posting to LinkedIn',
-    twitter_post: '📤 Posting to X/Twitter',
-    hubspot_create_deal: '💼 Creating deal in CRM',
-    github_create_pr: '🔧 Opening GitHub PR',
+    search_web: '🔍 Searching the web',
+    scrape_webpage: '📄 Reading webpage',
+    post_to_linkedin: '📤 Publishing to LinkedIn',
+    post_to_twitter: '📤 Publishing to X/Twitter',
+    send_email_campaign: '📧 Sending email campaign',
+    create_hubspot_contact: '👤 Adding contact to CRM',
+    create_hubspot_deal: '💼 Creating deal in CRM',
+    find_leads: '🔎 Researching leads',
+    send_slack_message: '💬 Sending Slack message',
+    send_customer_email: '📧 Sending customer email',
+    research_competitor: '🕵️ Researching competitor',
+    save_to_notion: '📝 Saving to Notion',
+    create_github_pr: '🔧 Opening GitHub PR',
+    trigger_deployment: '🚀 Triggering deployment',
+    security_scan: '🛡️ Running security scan',
+    research_business_opportunity: '💡 Researching opportunity',
+    analyze_company_health: '📊 Analyzing company health',
   };
 
   // Temporary ID for root chat - will redirect on first message
