@@ -347,12 +347,28 @@ function ChatContent() {
                   )}
                 </div>
               ))}
-              {isLoading && (
-                <div className="flex gap-4 mb-6 w-full animate-pulse">
-                  <div className="flex-shrink-0 pt-1"><div className="w-8 h-8 rounded-xl bg-primary-container/10 flex items-center justify-center text-lg shadow-inner grayscale opacity-50">{pinnedAgent ? EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon : '🏦'}</div></div>
+              {isLoading && messages[messages.length - 1]?.role === 'user' && (
+                <div className="flex gap-4 mb-6 w-full animate-in fade-in duration-500">
+                  <div className="flex-shrink-0 pt-1">
+                    <div className="w-8 h-8 rounded-xl bg-primary-container/10 flex items-center justify-center text-lg shadow-inner grayscale animate-pulse">
+                      {pinnedAgent ? EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon : '🏦'}
+                    </div>
+                  </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2"><span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">{pinnedAgent || 'ATLAS'}</span><span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">{getThinkingMessages()[thinkingStep]}</span></div>
-                    <div className="space-y-2"><div className="h-2 w-3/4 bg-on-surface/5 rounded-full" /><div className="h-2 w-1/2 bg-on-surface/5 rounded-full" /></div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">
+                        {pinnedAgent || 'ATLAS'}
+                      </span>
+                      <div className="flex gap-1.5 items-center">
+                        <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">
+                          Synchronizing with departments...
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-1.5 w-3/4 bg-on-surface/5 rounded-full animate-pulse" />
+                      <div className="h-1.5 w-1/2 bg-on-surface/5 rounded-full animate-pulse [animation-delay:200ms]" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -379,9 +395,9 @@ function ChatContent() {
               <div><h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2><p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0,8)}</p></div>
               <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface"><span className="material-symbols-outlined text-sm">close</span></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-4 no-scrollbar bg-[#0f110f]">
-              <div className="p-4 lg:p-6 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl min-h-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-500">
-                <div className="prose prose-sm prose-invert max-w-none text-on-surface/80 font-body leading-loose whitespace-pre-wrap break-words">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0f110f]">
+              <div className="p-5 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-500">
+                <div className="prose prose-sm prose-invert max-w-none text-on-surface/90 font-body leading-relaxed whitespace-pre-wrap break-words">
                   {activeDirectives.metadata?.directive_raw || 
                    activeDirectives.content.split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
                 </div>
@@ -433,11 +449,17 @@ function ChatContent() {
               ))}
             </div>
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
-              <div className="px-6 py-4">
+              <div className="px-6 py-4 flex items-start gap-4">
+                <button className="mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60 transition-colors flex-shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">add</span>
+                </button>
                 <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-1 overflow-y-auto"
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-y-auto"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} rows={1} disabled={isLoading}
                 />
+                <button className="mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60 transition-colors flex-shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">mic</span>
+                </button>
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
                 <div className="flex items-center gap-2"><Dropdown value={chatMode} options={MODES} onChange={setChatMode} /><div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" /><Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} /></div>
