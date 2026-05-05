@@ -59,7 +59,7 @@ function ChatContent() {
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
   const [activeCoordinations, setActiveCoordinations] = useState<any[]>([]);
-  const [sidebarWidth, setSidebarWidth] = useState(400);
+  const [sidebarWidth, setSidebarWidth] = useState(600);
   const isResizing = useRef(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -647,7 +647,20 @@ function ChatContent() {
               {EXECUTIVE_PILLS.map(exec => {
                 const isWorking = activeCoordinations.some(c => c.to_agent?.name === exec.name);
                 return (
-                  <button key={exec.key} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
+                  <button key={exec.key} onClick={() => {
+                    const workingCoord = activeCoordinations.find(c => c.to_agent?.name === exec.name);
+                    if (workingCoord) {
+                      toast.info(`Jumping to ${exec.name}'s active thread...`);
+                      fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
+                          else setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
+                        });
+                    } else {
+                      setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
+                    }
+                  }}
                     className={`relative flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
                   >
                     {isWorking && (
