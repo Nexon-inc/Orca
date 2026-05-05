@@ -124,7 +124,14 @@ HOW TO RESPOND:
 OUTPUT FORMAT:
 - Brief acknowledgement
 - Main response content
-- DIRECTIVE_DOCUMENT: (A formal markdown document including Title, Objective, and Action Items)
+- DIRECTIVE_DOCUMENT:
+     # [Campaign/Project Title]
+     Objective: [Detailed goal with KPIs and timeline]
+     Strategy: [2-3 sentences on the marketing approach]
+     ## Action Items:
+     - [ ] [Detailed Task 1 - specific deliverables]
+     - [ ] [Detailed Task 2 - distribution channels]
+     - [ ] [Detailed Task 3 - tracking & measurement]
 - RESULT: [Item 1] | [Item 2] | [Item 3]
 `
 }
@@ -192,7 +199,14 @@ HOW TO RESPOND:
 OUTPUT FORMAT:
 - Brief acknowledgement
 - Main response content
-- DIRECTIVE_DOCUMENT: (A formal markdown document including Title, Objective, and Action Items)
+- DIRECTIVE_DOCUMENT:
+     # [Sales Initiative Title]
+     Objective: [Revenue goal and pipeline targets]
+     Tactics: [2-3 sentences on prospecting/closing strategy]
+     ## Action Items:
+     - [ ] [Detailed Lead Gen Task - specific ICP and volume]
+     - [ ] [Detailed Outreach Task - sequence details]
+     - [ ] [Detailed CRM Task - deal stage & tracking]
 - RESULT: [Item 1] | [Item 2] | [Item 3]
 `
 }
@@ -260,7 +274,14 @@ HOW TO RESPOND:
 OUTPUT FORMAT:
 - Brief acknowledgement
 - Main response content
-- DIRECTIVE_DOCUMENT: (A formal markdown document including Title, Objective, and Action Items)
+- DIRECTIVE_DOCUMENT:
+     # [Customer Success Blueprint]
+     Objective: [NPS/Retention goals and success criteria]
+     Approach: [2-3 sentences on customer empathy & support strategy]
+     ## Action Items:
+     - [ ] [Detailed Onboarding/Support Task]
+     - [ ] [Detailed Retention/Engagement Task]
+     - [ ] [Detailed Feedback/NPS Task]
 - RESULT: [Item 1] | [Item 2] | [Item 3]
 `
 }
@@ -329,7 +350,14 @@ HOW TO RESPOND:
 OUTPUT FORMAT:
 - Brief acknowledgement
 - Main response content
-- DIRECTIVE_DOCUMENT: (A formal markdown document including Title, Objective, and Action Items)
+- DIRECTIVE_DOCUMENT:
+     # [Intelligence Briefing Title]
+     Objective: [Specific research goals and insight targets]
+     Methodology: [2-3 sentences on the intelligence gathering approach]
+     ## Action Items:
+     - [ ] [Detailed Research Task - competitors/market]
+     - [ ] [Detailed Analysis Task - patterns/signals]
+     - [ ] [Detailed Reporting Task - distribution to team]
 - RESULT: [Item 1] | [Item 2] | [Item 3]
 `
 }
@@ -445,7 +473,14 @@ ${isBuildForMe
 OUTPUT FORMAT:
 - Brief acknowledgement
 - Main response content
-- DIRECTIVE_DOCUMENT: (A formal markdown document including Title, Objective, and Action Items)
+- DIRECTIVE_DOCUMENT:
+     # [Technical Specification / Sprint Title]
+     Objective: [Technical goals, performance targets, and security requirements]
+     Architecture: [2-3 sentences on the technical approach/stack]
+     ## Action Items:
+     - [ ] [Detailed Coding/Dev Task - specific files & logic]
+     - [ ] [Detailed Security/Test Task - specific audits]
+     - [ ] [Detailed Deployment/DevOps Task]
 - RESULT: [Item 1] | [Item 2] | [Item 3]
 `
 }
@@ -522,12 +557,13 @@ HOW TO RESPOND:
   1. Brief acknowledgement
   2. Main analysis text
   3. DIRECTIVE_DOCUMENT:
-     # [Title]
-     Objective: [Goal]
+     # [Strategic Title]
+     Objective: [Detailed goal including success metrics and timeline]
+     Context: [2-3 sentences explaining the strategic "why"]
      ## Action Items:
-     - [ ] @Aria: [Branding Task]
-     - [ ] @Rex: [Sales Task]
-     - [ ] @Ghost: [Tech Task]
+     - [ ] @Aria: [Detailed Branding Task - what, why, and expected outcome]
+     - [ ] @Rex: [Detailed Sales Task - specific targets and tools to use]
+     - [ ] @Ghost: [Detailed Tech Task - technical requirements and dependencies]
   4. RESULT: [Short summary 1] | [Short summary 2] | [Short summary 3]
 
 - End strategic recommendations with: "Shall I authorize the team to proceed?"
