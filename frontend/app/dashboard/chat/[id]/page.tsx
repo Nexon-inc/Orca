@@ -58,7 +58,8 @@ function ChatContent() {
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
-  const [sidebarWidth, setSidebarWidth] = useState(600);
+  const [activeCoordinations, setActiveCoordinations] = useState<any[]>([]);
+  const [sidebarWidth, setSidebarWidth] = useState(400);
   const isResizing = useRef(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -99,6 +100,7 @@ function ChatContent() {
     setInput,
     append,
     isLoading,
+    data,
   } = useChat({
     api: conversationId ? `/api/conversations/${conversationId}/messages` : '/api/conversations/none/messages',
     id: conversationId || 'init',
@@ -125,6 +127,45 @@ function ChatContent() {
       toast.error(`ORCA Error: ${err.message}`);
     }
   });
+
+  // Live Metadata Sync (Directives & Results) from Stream Data
+  useEffect(() => {
+    if (data && data.length > 0) {
+      const lastData = data[data.length - 1] as any;
+      if (lastData.type === 'metadata') {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          for (let i = newMessages.length - 1; i >= 0; i--) {
+            if (newMessages[i].role === 'assistant') {
+              newMessages[i].metadata = {
+                ...newMessages[i].metadata,
+                directive_raw: lastData.directive_raw,
+                result_items: lastData.result_items,
+                agent_name: lastData.agent_name
+              };
+              break;
+            }
+          }
+          return newMessages;
+        });
+      }
+    }
+  }, [data, setMessages]);
+
+  // Fetch active coordinations periodically
+  useEffect(() => {
+    if (!org?.id) return;
+    const fetchCoordinations = async () => {
+      try {
+        const res = await fetch(`/api/org/${org.id}/coordinations`);
+        const data = await res.json();
+        if (data.coordinations) setActiveCoordinations(data.coordinations);
+      } catch (err) {}
+    };
+    fetchCoordinations();
+    const interval = setInterval(fetchCoordinations, 10000);
+    return () => clearInterval(interval);
+  }, [org?.id]);
 
   const startResizing = (e: React.MouseEvent) => {
     isResizing.current = true;
@@ -437,9 +478,34 @@ function ChatContent() {
                           </div>
                         )}
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
-                          {chatMode !== 'Planning' && (
-                            <><button onClick={() => toast.success('Approved')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-primary-container transition-colors"><span className="material-symbols-outlined text-xs">check</span> Approve</button>
-                              <button onClick={() => toast.error('Rejected')} className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-on-surface hover:text-error transition-colors"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
+                          {chatMode.toLowerCase() !== 'automate' && (
+                            <><button onClick={() => {
+                                append({ role: 'user', content: '[APPROVAL_GRANTED] Please proceed with all directives and handoffs immediately.' });
+                                toast.success('Approved & Executing');
+                              }} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-primary-container hover:text-primary-container/80 transition-all bg-primary-container/10 px-3 py-1.5 rounded-lg border border-primary-container/20"><span className="material-symbols-outlined text-xs">check</span> Approve & Run</button>
+                              <button onClick={() => toast.error('Rejected')} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-on-surface/40 hover:text-error transition-all px-3 py-1.5"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
+                          )}
+
+                          {/* Jump to Executive Coordination Thread */}
+                          {(msg.content.includes('🔄') || msg.content.includes('Coordinating with')) && (
+                             <button 
+                               onClick={() => {
+                                 const match = msg.content.match(/Coordinating with ([^:\s]+)/) || msg.content.match(/@([A-Z]{3})/);
+                                 if (match) {
+                                   const agentName = match[1].replace('@', '');
+                                   toast.info(`Jumping to ${agentName}'s coordination thread...`);
+                                   fetch(`/api/agents/${agentName}/latest-conversation?orgId=${org?.id}`)
+                                     .then(res => res.json())
+                                     .then(data => {
+                                       if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
+                                       else toast.error('No active coordination thread found yet.');
+                                     });
+                                 }
+                               }}
+                               className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-primary-container hover:underline transition-all ml-2"
+                             >
+                               <span className="material-symbols-outlined text-xs">open_in_new</span> View Execution
+                             </button>
                           )}
                           <button
                             onClick={() => {
@@ -458,26 +524,30 @@ function ChatContent() {
                 </div>
               ))}
               {isLoading && messages[messages.length - 1]?.role === 'user' && (
-                <div className="flex gap-4 mb-6 w-full animate-in fade-in duration-500">
+                <div className="flex gap-4 mb-6 w-full animate-in fade-in duration-500 bg-primary-container/5 p-6 rounded-3xl border border-primary-container/10 shadow-inner">
                   <div className="flex-shrink-0 pt-1">
-                    <div className="w-8 h-8 rounded-xl bg-primary-container/10 flex items-center justify-center text-lg shadow-inner grayscale animate-pulse">
+                    <div className="w-10 h-10 rounded-2xl bg-primary-container/20 flex items-center justify-center text-xl shadow-inner grayscale animate-pulse">
                       {pinnedAgent ? EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon : '🏦'}
                     </div>
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-[11px] font-black font-headline text-on-surface uppercase tracking-wider opacity-30">
-                        {pinnedAgent || 'ATLAS'}
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-[12px] font-black font-headline text-primary-container uppercase tracking-[0.2em]">
+                        {pinnedAgent || 'ATLAS'} is thinking...
                       </span>
-                      <div className="flex gap-1.5 items-center">
-                        <span className="text-[9px] font-mono text-primary-container uppercase tracking-[0.2em] animate-pulse">
-                          {getThinkingMessages()[thinkingStep]}
-                        </span>
+                      <div className="flex gap-2 items-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary-container animate-bounce" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary-container animate-bounce [animation-delay:0.2s]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary-container animate-bounce [animation-delay:0.4s]" />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="h-1.5 w-3/4 bg-on-surface/5 rounded-full animate-pulse" />
-                      <div className="h-1.5 w-1/2 bg-on-surface/5 rounded-full animate-pulse [animation-delay:200ms]" />
+                    <div className="flex flex-col gap-2">
+                       <span className="text-[10px] font-mono text-primary-container/60 uppercase tracking-[0.1em] italic">
+                          {getThinkingMessages()[thinkingStep]}
+                        </span>
+                       <div className="h-1.5 w-full bg-primary-container/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary-container/40 animate-loading-bar" style={{ width: '40%' }} />
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -509,9 +579,6 @@ function ChatContent() {
                 <div className="prose prose-sm prose-invert max-w-none text-on-surface/90 font-body leading-relaxed whitespace-pre-wrap break-words">
                   {(activeDirectives.metadata?.directive_raw || activeDirectives.content)
                     .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0]
-                    .replace(/#{1,6}\s?/g, '') // Remove headers
-                    .replace(/\*\*/g, '') // Remove bold
-                    .replace(/\*/g, '') // Remove italic
                     .trim()}
                 </div>
               </div>
@@ -558,27 +625,9 @@ function ChatContent() {
                     );
                     const uniqueMentions = [...new Set(validExecs)];
                     
-                    if (uniqueMentions.length > 0) {
-                      toast.success(`AUTHORIZING: Dispatching executive orders to ${uniqueMentions.join(', ')}...`);
-                    } else {
-                      toast.success('AUTHORIZING: Dispatching general directive to executive team...');
-                    }
-                    
+                    toast.success('AUTHORIZING: Dispatching executive orders to entire team...');
+                    append({ role: 'user', content: '[APPROVAL_GRANTED] The board has authorized these directives. Execute immediately.' });
                     setActiveDirectives(null);
-                    
-                    // Dynamic background task coordination loop (STRICTLY EXECUTIVES ONLY)
-                    uniqueMentions.forEach((agent, index) => {
-                      setTimeout(() => {
-                        const execInfo = EXECUTIVE_PILLS.find(p => p.name === agent);
-                        const icon = execInfo?.icon || '🏛️';
-                        toast(`${agent} (${execInfo?.role}): Executing background directive...`, { icon });
-                      }, (index + 1) * 2000);
-                    });
-
-                    // Final confirmation of background persistence
-                    setTimeout(() => {
-                      toast.success('ORCA Systems: Executive autonomous loops confirmed.');
-                    }, (uniqueMentions.length + 1) * 2000);
                   }}
                   className="w-full py-4 bg-primary-container text-on-primary rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
@@ -595,13 +644,22 @@ function ChatContent() {
         >
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
             <div className="flex justify-center gap-2 mb-1">
-              {EXECUTIVE_PILLS.map(exec => (
-                <button key={exec.key} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
-                >
-                  <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> {exec.role}
-                </button>
-              ))}
+              {EXECUTIVE_PILLS.map(exec => {
+                const isWorking = activeCoordinations.some(c => c.to_agent?.name === exec.name);
+                return (
+                  <button key={exec.key} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
+                    className={`relative flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
+                  >
+                    {isWorking && (
+                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
+                      </span>
+                    )}
+                    <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> {exec.role}
+                  </button>
+                );
+              })}
             </div>
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
               <div className="px-6 py-4 flex items-start gap-4">
