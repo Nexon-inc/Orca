@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-import { streamText } from 'ai'
+import { streamText, StreamData } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createGroq } from '@ai-sdk/groq'
 import { createOpenAI } from '@ai-sdk/openai'
@@ -11,6 +11,8 @@ import { buildAgentSystemPrompt } from '@/lib/ai/prompt'
 import { buildToolsForAgent } from '@/lib/agents/tools'
 import { sanitizeInput } from '@/lib/security/sanitizeInput'
 import { checkRateLimit } from '@/lib/security/rateLimit'
+import { parseAndExecuteActions } from '@/lib/agents/parseActions'
+import { getAgentMemory } from '@/lib/agents/memory'
 
 export async function POST(
   request: Request,
@@ -24,6 +26,7 @@ export async function POST(
     const body = await request.json()
     const rawMessages = body.messages || []
     const modelOverride = body.model
+    const chatMode = body.mode || 'planning'
     const lastUserMessage = rawMessages.filter((m: any) => m.role === 'user').pop()
     const rawContent = body.content || lastUserMessage?.content || rawMessages[rawMessages.length - 1]?.content || ''
     
@@ -55,9 +58,8 @@ export async function POST(
     const { data: integrations } = await supabase.from('integrations').select('service_name').eq('org_id', orgId)
     const connectedIntegrations = integrations?.map(i => i.service_name) || []
 
-    // 4. Memory Context
-    const { data: memoryRow } = await supabase.from('llm_memories').select('*').eq('org_id', orgId).eq('agent_id', agent.id).single()
-    const memoryContext = memoryRow?.memory_data?.context_summary || ''
+    // 4. Memory Context — Dynamic retrieval from past operations
+    const memoryContext = await getAgentMemory(agent.id, orgId)
 
     // 5. History
     const { data: history } = await supabase
@@ -89,7 +91,7 @@ export async function POST(
     }
 
     // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth
-    const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations)
+    const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations, chatMode)
     const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
 
     const rawHistory = (history || []).map((m: any) => ({
@@ -122,6 +124,8 @@ export async function POST(
     // 8. Model Selection with Runtime Failover for Orca Intelligence
     const isOrcaIntel = !modelOverride || modelOverride === 'orca-intel'
 
+    const data = new StreamData()
+
     const getStreamResult = async () => {
       const streamOptions = {
         system: systemPrompt,
@@ -136,13 +140,30 @@ export async function POST(
           const directiveMatch = text.match(/(?:DIRECTIVE_DOCUMENT|DIRECTIVE|MASTER_DIRECTIVE):\s*([\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i)
           const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
 
+          const { cleanResponse } = await parseAndExecuteActions(text, orgId)
+
+          // Send to DB
           await serviceClient.from('messages').insert({
             conversation_id: conversationId,
             sender_type: 'agent',
-            content: text,
+            content: cleanResponse,
             result_items: resultItems,
-            metadata: { directive_raw: directiveRaw, tool_results: toolResults }
+            metadata: { 
+              directive_raw: directiveRaw, 
+              tool_results: toolResults,
+              agent_name: agent.name 
+            }
           })
+
+          // Send to Client via StreamData
+          data.append({
+            type: 'metadata',
+            directive_raw: directiveRaw,
+            result_items: resultItems,
+            agent_name: agent.name
+          })
+          
+          data.close()
         }
       }
 
@@ -188,6 +209,7 @@ export async function POST(
 
     const result = await getStreamResult()
     return result.toDataStreamResponse({
+      data,
       getErrorMessage: (err: any) => {
         console.error('[ORCA_ASYNC_STREAM_ERR]', err?.message, err?.stack)
         return String(err?.message || err)

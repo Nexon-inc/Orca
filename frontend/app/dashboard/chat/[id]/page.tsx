@@ -137,12 +137,18 @@ function ChatContent() {
           const newMessages = [...prev];
           for (let i = newMessages.length - 1; i >= 0; i--) {
             if (newMessages[i].role === 'assistant') {
-              newMessages[i].metadata = {
+              const updatedMetadata = {
                 ...newMessages[i].metadata,
                 directive_raw: lastData.directive_raw,
                 result_items: lastData.result_items,
                 agent_name: lastData.agent_name
               };
+              newMessages[i].metadata = updatedMetadata;
+              
+              // AUTO-UPDATE SIDEBAR: If this is the newest message, show its directive immediately
+              if (i === newMessages.length - 1) {
+                setActiveDirectives(newMessages[i]);
+              }
               break;
             }
           }
@@ -480,7 +486,7 @@ function ChatContent() {
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
                           {chatMode.toLowerCase() !== 'automate' && (
                             <><button onClick={() => {
-                                append({ role: 'user', content: '[APPROVAL_GRANTED] Please proceed with all directives and handoffs immediately.' });
+                                append({ role: 'user', content: 'Approved. Proceed.' });
                                 toast.success('Approved & Executing');
                               }} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-primary-container hover:text-primary-container/80 transition-all bg-primary-container/10 px-3 py-1.5 rounded-lg border border-primary-container/20"><span className="material-symbols-outlined text-xs">check</span> Approve & Run</button>
                               <button onClick={() => toast.error('Rejected')} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-on-surface/40 hover:text-error transition-all px-3 py-1.5"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
