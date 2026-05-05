@@ -274,6 +274,15 @@ function ChatContent() {
       if (historyInitialized.current) return;
       historyInitialized.current = true;
       try {
+        const orgRes = await fetch('/api/org');
+        const orgData = await orgRes.json();
+        if (orgData?.org) {
+          setOrg(orgData.org);
+        } else if (data?.messages?.[0]?.org_id) {
+          // Fallback: use org_id from messages if available
+          setOrg({ id: data.messages[0].org_id } as any);
+        }
+
         const userRes = await fetch('/api/user');
         const userData = await userRes.json();
         if (userData?.user) {
@@ -507,7 +516,12 @@ function ChatContent() {
                                  if (match) {
                                    const agentName = match[1].replace('@', '');
                                    toast.info(`Jumping to ${agentName}'s coordination thread...`);
-                                   fetch(`/api/agents/${agentName}/latest-conversation?orgId=${org?.id}`)
+                                   const targetOrgId = org?.id || (messages.length > 0 ? (messages[0] as any).org_id : null);
+                                   if (!targetOrgId) {
+                                     toast.error('Organization ID not found. Please refresh.');
+                                     return;
+                                   }
+                                   fetch(`/api/agents/${agentName}/latest-conversation?orgId=${targetOrgId}`)
                                      .then(res => res.json())
                                      .then(data => {
                                        if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
@@ -664,7 +678,9 @@ function ChatContent() {
                     const workingCoord = activeCoordinations.find(c => c.to_agent?.name === exec.name);
                     if (workingCoord) {
                       toast.info(`Jumping to ${exec.name}'s active thread...`);
-                      fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
+                      const targetOrgId = org?.id || (messages.length > 0 ? (messages[0] as any).org_id : null);
+                      if (!targetOrgId) return toast.error('Org ID not found');
+                      fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${targetOrgId}`)
                         .then(res => res.json())
                         .then(data => {
                           if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
