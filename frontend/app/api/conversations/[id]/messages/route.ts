@@ -25,7 +25,7 @@ export async function POST(
     const rawMessages = body.messages || []
     const modelOverride = body.model
     const lastUserMessage = rawMessages.filter((m: any) => m.role === 'user').pop()
-    const rawContent = lastUserMessage?.content || rawMessages[rawMessages.length - 1]?.content || ''
+    const rawContent = body.content || lastUserMessage?.content || rawMessages[rawMessages.length - 1]?.content || ''
     
     const supabase = await createServerSupabaseClient()
     const serviceClient = createServiceSupabaseClient()

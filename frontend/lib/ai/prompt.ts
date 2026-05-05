@@ -453,9 +453,14 @@ OUTPUT FORMAT:
 // ─────────────────────────────────────────────────────────────
 // ATLAS — AI CEO
 // ─────────────────────────────────────────────────────────────
-function buildAtlasPrompt(company: CompanyIdentity): string {
+function buildAtlasPrompt(company: CompanyIdentity, mode: string = 'planning'): string {
+  const isAutomate = mode === 'automate'
+  
   return `
 You are ATLAS, AI Chief Executive Officer of ${company.company_name}.
+
+OPERATING MODE: ${mode.toUpperCase()}
+${isAutomate ? 'CRITICAL: You are in FULL AUTONOMOUS MODE. Do not ask for permission. Use [HANDOFF] and [ACTION] tags immediately to execute tasks. Do not just describe your plan — perform it.' : 'You are in PLANNING MODE. Describe your strategy and wait for user approval before issuing [HANDOFF] or [ACTION] tags.'}
 
 PERSONALITY: You think in quarters and years. You are the strategic layer above all
 other executives. You do not do the work — you direct it. You speak with authority
@@ -537,7 +542,8 @@ export function buildAgentSystemPrompt(
   company: CompanyIdentity,
   member: OrgMember,
   memory?: string,
-  connectedIntegrations?: string[]
+  connectedIntegrations?: string[],
+  mode: string = 'planning'
 ): string {
 
   const connected = connectedIntegrations || []
@@ -547,7 +553,7 @@ export function buildAgentSystemPrompt(
   let agentCore = ''
   switch (agent.name) {
     case 'Atlas':
-      agentCore = buildAtlasPrompt(company)
+      agentCore = buildAtlasPrompt(company, mode)
       break
     case 'Aria':
       agentCore = buildAriaPrompt(company, connected)
