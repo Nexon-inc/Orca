@@ -137,6 +137,14 @@ function ChatContent() {
           const newMessages = [...prev];
           for (let i = newMessages.length - 1; i >= 0; i--) {
             if (newMessages[i].role === 'assistant') {
+              // CLEAN TAGS FROM CONTENT: Replace [HANDOFF] and [ACTION] with nice UI markers
+              const rawContent = newMessages[i].content;
+              const cleanContent = rawContent
+                .replace(/\[ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})\]/gi, (match, tool) => `\n> ✓ **Action executed:** ${tool.replace(/_/g, ' ')}\n`)
+                .replace(/\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi, (match, toAgent, reason) => `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`);
+              
+              newMessages[i].content = cleanContent;
+              
               const updatedMetadata = {
                 ...newMessages[i].metadata,
                 directive_raw: lastData.directive_raw,
@@ -145,7 +153,6 @@ function ChatContent() {
               };
               newMessages[i].metadata = updatedMetadata;
               
-              // AUTO-UPDATE SIDEBAR: If this is the newest message, show its directive immediately
               if (i === newMessages.length - 1) {
                 setActiveDirectives(newMessages[i]);
               }

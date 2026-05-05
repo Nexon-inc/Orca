@@ -10,8 +10,9 @@ export async function parseAndExecuteActions(
   orgId: string
 ): Promise<{ cleanResponse: string; actionsExecuted: string[] }> {
   
-  // Regex to find [ACTION: tool="tool_name" params={...}]
-  const actionRegex = /\[ACTION: tool="([^"]+)" params=({[^}]+})\]/g
+  // Flexible regex to find [ACTION: tool="tool_name" params={...}]
+  // Handles both double and single quotes, and optional spaces
+  const actionRegex = /\[ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})\]/gi
   const actionsExecuted: string[] = []
   let cleanResponse = agentResponse
   let match
@@ -21,11 +22,7 @@ export async function parseAndExecuteActions(
     
     try {
       const params = JSON.parse(paramsStr)
-      
-      // Derive serviceKey from tool name (e.g. "linkedin_post" -> "linkedin")
       const serviceKey = tool.split('_')[0]
-      
-      // Execute via Composio
       const result = await executeViaComposio(orgId, serviceKey, tool, params)
       
       if (result.success) {
@@ -45,12 +42,11 @@ export async function parseAndExecuteActions(
   }
 
   // Parse handoffs [HANDOFF: to="ExecName" reason="why" context="what they need to know"]
-  const handoffRegex = /\[HANDOFF: to="([^"]+)" reason="([^"]+)" context="([^"]+)"\]/g
+  const handoffRegex = /\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi
   while ((match = handoffRegex.exec(agentResponse)) !== null) {
     const [fullTag, toAgent, reason, context] = match
     
     try {
-      // Fire coordination event via Inngest
       await inngest.send({
         name: 'agent/coordination.requested',
         data: { orgId, toAgent, reason, context }
