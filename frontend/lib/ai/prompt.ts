@@ -668,7 +668,8 @@ export function buildAgentSystemPrompt(
   member: OrgMember,
   memory?: string,
   connectedIntegrations?: string[],
-  mode: string = 'planning'
+  mode: string = 'planning',
+  activeTemplate?: string | null
 ): string {
 
   const connected = connectedIntegrations || []
@@ -705,6 +706,10 @@ export function buildAgentSystemPrompt(
 
   const specializedInstructions = AGENT_INSTRUCTIONS[agent.name] || ''
 
+  const templateBlock = activeTemplate 
+    ? `\nTEMPLATE OPERATING RULES (ACTIVE: ${activeTemplate}):\nYou must follow the strategic patterns and workflows defined for the "${activeTemplate}" template. Make sure your actions align with this template's specific use case.\n`
+    : ''
+
   return `
 ${agentCore}
 
@@ -713,7 +718,7 @@ ${TEAM_REGISTRY}
 ${ACTION_SYSTEM}
 
 ${COORDINATION_SYSTEM}
-
+${templateBlock}
 SPECIALIZED_INSTRUCTIONS:
 ${specializedInstructions}
 

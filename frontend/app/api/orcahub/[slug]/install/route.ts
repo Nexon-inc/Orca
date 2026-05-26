@@ -83,6 +83,12 @@ export async function POST(
 
   const needsOnboarding = !identity || !identity.mission;
 
+  // 2.5 Record Installation
+  await supabase.from('orcahub_installs').upsert({
+    org_id: orgId,
+    template_slug: params.slug
+  }, { onConflict: 'org_id,template_slug' });
+
   // 3. System Notification
   await supabase.from('team_messages').insert({
     org_id: orgId,

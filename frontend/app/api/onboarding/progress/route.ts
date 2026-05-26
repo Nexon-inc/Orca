@@ -42,8 +42,14 @@ export async function POST(request: Request) {
 
   // Step 2 — department activation
   if (step === 2) {
-    // If manual, activate selected departments
-    if (data.selected_departments && !data.template_slug) {
+    if (data.template_slug) {
+      await supabase
+        .from('organizations')
+        .update({ active_template: data.template_slug })
+        .eq('id', orgId)
+    }
+
+    if (data.selected_departments) {
       // First, pause all departments for this org to reset
       await supabase
         .from('departments')

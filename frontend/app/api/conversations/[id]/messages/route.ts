@@ -56,6 +56,7 @@ export async function POST(
     // 3. Fetch Company & Member Data
     const { data: company } = await supabase.from('company_identity').select('*').eq('org_id', orgId).single()
     const { data: member } = await supabase.from('org_members').select('*').eq('user_id', user.id).eq('org_id', orgId).single()
+    const { data: orgData } = await supabase.from('organizations').select('active_template').eq('id', orgId).single()
     const { data: integrations } = await supabase.from('integrations').select('service_name').eq('org_id', orgId)
     const connectedIntegrations = integrations?.map(i => i.service_name) || []
 
@@ -92,7 +93,7 @@ export async function POST(
     }
 
     // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth
-    const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations, chatMode)
+    const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations, chatMode, orgData?.active_template)
     const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
 
     const rawHistory = (history || []).map((m: any) => ({

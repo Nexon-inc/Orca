@@ -382,13 +382,13 @@ function ChatContent() {
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading || !conversationId) return;
+    if (!(input || '').trim() || isLoading || !conversationId) return;
 
-    const currentInput = input;
+    const currentInput = input || '';
     setInput('');
 
     if (isFirstMessage.current) {
-      const titleSlug = currentInput.trim().split(/\s+/).slice(0, 6).join(' ');
+      const titleSlug = (currentInput || '').trim().split(/\s+/).slice(0, 6).join(' ');
       fetch(`/api/conversations/${conversationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1391,7 +1391,7 @@ function ChatContent() {
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
                 <div className="flex items-center gap-2"><Dropdown value={chatMode} options={MODES} onChange={setChatMode} /><div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" /><Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} /></div>
-                <button onClick={() => handleSendMessage()} disabled={!input.trim() || isLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${input.trim() && !isLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
+                <button onClick={() => handleSendMessage()} disabled={!(input || '').trim() || isLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${(input || '').trim() && !isLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
               </div>
             </div>
           </div>
