@@ -1,68 +1,124 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
+import { toast } from 'sonner';
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userPlan, setUserPlan] = useState('free');
-  const [showIdeation, setShowIdeation] = useState(false);
-  const [ideationInput, setIdeationInput] = useState('');
-  const [ideationResult, setIdeationResult] = useState<string | null>(null);
-  const [isIdeating, setIsIdeating] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<any | null>(null);
+  const [activeOrg, setActiveOrg] = useState<any | null>(null);
+
+  // New Project Form Modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    niche: '',
+    audience: '',
+    competitor: '',
+    operationalFocus: 'MVP Development'
+  });
+
+  // Strategy Modal
+  const [showStrategize, setShowStrategize] = useState(false);
+  const [strategizeInput, setStrategizeInput] = useState('');
+  const [strategizeResult, setStrategizeResult] = useState<string | null>(null);
+  const [isStrategizing, setIsStrategizing] = useState(false);
+
+  const fetchProjectsData = async () => {
+    try {
+      const [projRes, orgRes] = await Promise.all([
+        fetch('/api/projects/list'),
+        fetch('/api/org')
+      ]);
+      const projData = await projRes.json();
+      const orgData = await orgRes.json();
+      
+      const loadedProjects = projData.projects || [];
+      setProjects(loadedProjects);
+      
+      const plan = orgData.member?.organizations?.plan || 'free';
+      setUserPlan(plan);
+
+      // Current active organization is the one linked to their session
+      if (orgData.member?.organizations) {
+        const activeId = orgData.member.organizations.id;
+        setActiveOrg({
+          id: activeId,
+          name: orgData.member.organizations.name,
+          plan: orgData.member.organizations.plan,
+          deptCount: loadedProjects.find((p: any) => p.id === activeId)?.deptCount || 6,
+          agentCount: loadedProjects.find((p: any) => p.id === activeId)?.agentCount || 6
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch projects data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [projRes, orgRes] = await Promise.all([
-          fetch('/api/projects/list'),
-          fetch('/api/org')
-        ]);
-        const projData = await projRes.json();
-        const orgData = await orgRes.json();
-        
-        setProjects(projData.projects || []);
-        setUserPlan(orgData.member?.organizations?.plan || 'free');
-
-        // Automatically select the active organization as the "Main Project"
-        if (orgData.member?.organizations) {
-          setSelectedProject({
-            id: orgData.member.organizations.id,
-            name: orgData.member.organizations.name,
-            plan: orgData.member.organizations.plan,
-            deptCount: projData.projects?.[0]?.deptCount || 9,
-            agentCount: projData.projects?.[0]?.agentCount || 45
-          });
-        }
-      } catch (err) {
-        console.error('Failed to fetch projects:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+    fetchProjectsData();
   }, []);
 
-  const handleIdeate = async () => {
-    if (!ideationInput.trim()) return;
-    setIsIdeating(true);
-    setIdeationResult(null);
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+
+    setIsProvisioning(true);
+    try {
+      const res = await fetch('/api/projects/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`Welcome to ${formData.name}! Operational office provisioned successfully.`, {
+          duration: 6000
+        });
+        setShowCreateModal(false);
+        setFormData({
+          name: '',
+          niche: '',
+          audience: '',
+          competitor: '',
+          operationalFocus: 'MVP Development'
+        });
+        await fetchProjectsData();
+      } else {
+        toast.error(data.error || 'Failed to provision operational office');
+      }
+    } catch (err) {
+      toast.error('Network failure provisioning startup');
+    } finally {
+      setIsProvisioning(false);
+    }
+  };
+
+  const handleStrategize = async () => {
+    if (!strategizeInput.trim()) return;
+    setIsStrategizing(true);
+    setStrategizeResult(null);
 
     try {
       const res = await fetch('/api/projects/ideate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: ideationInput })
+        body: JSON.stringify({ prompt: strategizeInput })
       });
       const data = await res.json();
-      setIdeationResult(data.recommendation);
+      setStrategizeResult(data.recommendation);
     } catch (err) {
-      setIdeationResult("Failed to generate report. Please check your connectivity.");
+      setStrategizeResult("Failed to generate strategic report. Please verify connection.");
     } finally {
-      setIsIdeating(false);
+      setIsStrategizing(false);
     }
   };
 
@@ -72,246 +128,319 @@ export default function ProjectsPage() {
     <div className="flex h-screen bg-surface">
       <DashboardSidebar active="projects" />
 
-      <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg">
+      <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg overflow-y-auto no-scrollbar">
         <DashboardHeader />
 
-        <div className="flex-1 overflow-y-auto w-full max-w-5xl mx-auto p-12 no-scrollbar">
+        <div className="flex-1 w-full max-w-5xl mx-auto p-8 lg:p-12 space-y-12 pb-32">
           
-          <div className="flex items-center justify-between mb-12">
+          {/* Header Title Banner */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase border-b-2 border-primary-container inline-block pb-1">
-                {selectedProject ? selectedProject.name : 'PROJECTS'}
+              <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase flex items-center gap-3">
+                PROJECTS VAULT
+                <span className="text-[10px] font-mono border border-[#00c367]/20 px-2 py-0.5 rounded text-primary-container tracking-[0.2em] font-normal uppercase">
+                  Multi-Startup Control
+                </span>
               </h1>
-              <p className="font-body text-sm text-on-secondary-container mt-4">
-                {selectedProject 
-                  ? `Control center for ${selectedProject.name}. Track assignments and roadblocks.`
-                  : "Manage your organizations and launch new business ventures."}
+              <p className="font-body text-xs text-on-secondary-container mt-2 max-w-xl">
+                Start, run, and scale multiple startup ideas simultaneously. Switch workspaces instantly and watch your autonomous C-Suite align on deliverables.
               </p>
             </div>
             
-            <div className="flex gap-4">
-              {selectedProject && (
-                <button 
-                  onClick={() => setSelectedProject(null)}
-                  className="px-6 py-2.5 border border-outline-variant/20 text-on-surface/40 font-black uppercase text-[10px] tracking-widest rounded-sm hover:border-on-surface hover:text-on-surface transition-all"
-                >
-                  BACK_TO_LIST
-                </button>
-              )}
-              <button 
-                onClick={() => setShowIdeation(true)}
-                className="px-6 py-2.5 bg-primary-container text-on-primary font-black uppercase text-[10px] tracking-widest rounded-sm neon-glow flex items-center gap-2 hover:bg-primary-fixed transition-all"
-              >
-                <span className="material-symbols-outlined text-sm">psychology</span>
-                {selectedProject ? 'STRATEGIZE' : 'AI_IDEATION_ENGINE'}
-              </button>
-            </div>
+            <button 
+              onClick={() => {
+                if (!isPremium) {
+                  toast.error('Multiple Startup workspaces are a premium feature.');
+                } else {
+                  setShowCreateModal(true);
+                }
+              }}
+              className="px-5 py-3 bg-primary-container text-on-primary font-black uppercase text-[10px] tracking-widest rounded-xl hover:scale-[1.03] active:scale-[0.97] transition-all flex items-center justify-center gap-2 shadow-[0_12px_40px_rgba(0,195,103,0.2)]"
+            >
+              <span className="material-symbols-outlined text-[16px]">add_circle</span> Launch New Startup
+            </button>
           </div>
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <span className="text-[10px] font-mono text-on-surface/20 uppercase animate-pulse">Initializing_Sync...</span>
+            <div className="py-20 flex flex-col items-center gap-3 text-[10px] font-mono text-primary-container/40 uppercase tracking-widest animate-pulse">
+              <div className="w-6 h-6 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
+              Loading operational offices...
             </div>
-          ) : selectedProject ? (
-            /* PROJECT CONTROL CENTER VIEW */
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              
-              {/* Assignments / In-Flight Tasks */}
-              <div className="lg:col-span-2 flex flex-col gap-6">
-                <div className="p-1 px-3 bg-surface-container-high border-l-2 border-primary-container inline-block self-start">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary-container">ACTIVE_ASSIGNMENTS</span>
-                </div>
-                
-                <div className="space-y-4">
-                  {[
-                    { agent: 'Aria', role: 'CMO', task: 'Market Opportunity Analysis for Lagos expansion', status: '85%' },
-                    { agent: 'Ghost', role: 'CTO', task: 'Architecture design for high-throughput node clusters', status: '40%' },
-                    { agent: 'Rex', role: 'CSO', task: 'Security audit of smart contract entry points', status: 'PENDING' }
-                  ].map((item, idx) => (
-                    <div key={idx} className="p-5 bg-surface-container rounded-lg border border-outline-variant/10 flex items-center justify-between group hover:border-primary-container/20 transition-all shadow-sm">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded bg-[#131513] border border-outline-variant/20 flex items-center justify-center text-primary-container">
-                          <span className="material-symbols-outlined">{item.agent === 'Aria' ? 'campaign' : item.agent === 'Ghost' ? 'memory' : 'security'}</span>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-black uppercase text-on-surface tracking-tight">{item.agent} ({item.role})</p>
-                          <p className="text-[13px] font-body text-on-surface/50 mt-1">{item.task}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[9px] font-mono text-primary-container font-black">{item.status}</span>
-                        <div className="h-1 w-16 bg-surface-container-high rounded-full mt-2 overflow-hidden">
-                          <div className="h-full bg-primary-container shadow-[0_0_8px_rgba(0,195,103,0.5)]" style={{ width: item.status.includes('%') ? item.status : '5%' }}></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Research Questions / Roadblocks */}
-              <div className="flex flex-col gap-6">
-                <div className="p-1 px-3 bg-error/10 border-l-2 border-error inline-block self-start">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-error">ROADBLOCKS_DISCOVERED</span>
-                </div>
-
-                <div className="p-6 bg-[#1a1c1a] border border-error/20 rounded-xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <span className="material-symbols-outlined text-6xl text-error">warning</span>
+          ) : (
+            <>
+              {/* CURRENT ACTIVE PROJECT PANEL */}
+              {activeOrg && (
+                <div className="bg-[#0e110e] border border-outline-variant/10 rounded-2xl p-6 lg:p-8 space-y-6 relative overflow-hidden group shadow-2xl animate-in fade-in duration-500">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <span className="material-symbols-outlined text-8xl text-primary-container">dashboard</span>
                   </div>
                   
-                  <h3 className="text-[11px] font-black text-on-surface uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-error">help</span>
-                    Atlas Requires Input
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div className="p-4 bg-surface/50 rounded-lg border border-outline-variant/5">
-                      <p className="text-[12px] font-body text-on-surface/70 leading-relaxed italic">
-                        "Regarding the logistics platform, what is the specific regulatory hurdle in the West African market we are prioritizing?"
-                      </p>
-                      <button className="mt-3 w-full py-2 bg-error/10 border border-error/30 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-on-error transition-all">
-                        ANSWER_NOW
+                  {/* Title & Plan Status */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/10 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-primary-container uppercase tracking-widest font-mono">CURRENTLY_WORKED_ON</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      </div>
+                      <h2 className="text-2xl font-black font-headline text-white mt-1 uppercase tracking-tight">
+                        {activeOrg.name}
+                      </h2>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <span className="text-[9px] font-mono border border-white/10 px-2 py-1 bg-white/5 rounded text-on-surface/50 uppercase tracking-widest">
+                        {activeOrg.plan.toUpperCase()} TIER
+                      </span>
+                      <button 
+                        onClick={() => router.push('/dashboard/chat')}
+                        className="px-4 py-2 bg-primary-container/10 border border-primary-container/20 text-primary-container font-black text-[9px] uppercase tracking-widest rounded-lg hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">forum</span> Open Workspace
                       </button>
                     </div>
                   </div>
-                </div>
 
-                <div className="p-6 bg-surface-container-high rounded-xl border border-outline-variant/10">
-                  <h3 className="text-[11px] font-black text-on-surface/40 uppercase tracking-widest mb-4">MILESTONES</h3>
-                  <div className="space-y-4">
-                    {['Identity Definition', 'ICP Mapping', 'Market Sizing', 'Agent Handoffs'].map((m, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <span className={`material-symbols-outlined text-sm ${i < 2 ? 'text-primary-container' : 'text-on-surface/10'}`}>
-                          {i < 2 ? 'check_circle' : 'radio_button_unchecked'}
-                        </span>
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${i < 2 ? 'text-on-surface/80' : 'text-on-surface/20'}`}>{m}</span>
+                  {/* Active Grid Control Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* Progress details */}
+                    <div className="space-y-4">
+                      <div className="text-[10px] font-black uppercase text-on-surface/40 tracking-wider">C-Suite Alignment</div>
+                      <div className="space-y-3">
+                        {[
+                          { agent: 'Atlas', role: 'CEO', status: 'Running', progress: '100%' },
+                          { agent: 'Ghost', role: 'CTO', status: 'Building', progress: '65%' },
+                          { agent: 'Aria', role: 'CMO', status: 'Positioning', progress: '40%' }
+                        ].map((a, i) => (
+                          <div key={i} className="flex items-center justify-between text-[11px]">
+                            <span className="font-semibold text-on-surface/80">{a.agent} ({a.role})</span>
+                            <span className="font-mono text-primary-container font-bold text-[10px]">{a.progress}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Roadblock Alerts */}
+                    <div className="bg-[#181d18] border border-outline-variant/10 p-4 rounded-xl space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="text-[9px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">warning</span> Needs Input
+                        </div>
+                        <p className="text-[11px] text-on-surface/60 font-body leading-relaxed mt-2 italic">
+                          "Atlas is requesting clarification on target customer persona parameters."
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => router.push('/dashboard/chat')}
+                        className="w-full mt-2 py-2 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[8px] font-black uppercase tracking-widest hover:bg-amber-400 hover:text-black transition-all rounded-lg"
+                      >
+                        Answer CEO
+                      </button>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="space-y-4">
+                      <div className="text-[10px] font-black uppercase text-on-surface/40 tracking-wider">Workspace Health</div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-white/5 border border-white/5 rounded-xl text-center">
+                          <div className="text-xl font-black font-headline text-white">{activeOrg.deptCount}</div>
+                          <div className="text-[8px] font-mono text-on-surface/40 uppercase mt-1">Departments</div>
+                        </div>
+                        <div className="p-3 bg-white/5 border border-white/5 rounded-xl text-center">
+                          <div className="text-xl font-black font-headline text-white">{activeOrg.agentCount}</div>
+                          <div className="text-[8px] font-mono text-on-surface/40 uppercase mt-1">C-Suite Officers</div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* ALL STARTUP WORKSPACES SECTION */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-on-surface/30">Active Startup Portfolios</h3>
+                  <p className="text-[10px] font-body text-on-secondary-container mt-1">Click any startup project below to view details or switch workspaces.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {projects.map(project => {
+                    const isActive = activeOrg?.id === project.id;
+                    return (
+                      <div 
+                        key={project.id} 
+                        className={`p-6 border rounded-xl bg-surface-container-high/40 hover:bg-surface-container-high/70 hover:border-primary-container/30 transition-all duration-300 group flex flex-col justify-between min-h-[190px] relative overflow-hidden ${
+                          isActive ? 'border-primary-container shadow-[0_4px_25px_rgba(0,195,103,0.04)] bg-primary-container/[0.02]' : 'border-outline-variant/10'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <span className="text-[8px] font-mono uppercase bg-white/5 px-2 py-0.5 border border-white/10 rounded text-on-surface/40 font-bold tracking-widest">
+                              {project.plan.toUpperCase()}
+                            </span>
+                            {isActive && (
+                              <span className="text-[8px] font-mono font-bold text-primary-container tracking-widest flex items-center gap-1 uppercase">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active
+                              </span>
+                            )}
+                          </div>
+                          
+                          <h4 className="text-lg font-black font-headline text-on-surface uppercase tracking-tight group-hover:text-primary-container transition-colors truncate">
+                            {project.name}
+                          </h4>
+                          
+                          <div className="text-[9px] font-mono text-on-surface/30 uppercase mt-1">
+                            {project.deptCount} DEPTS · {project.agentCount} ACTIVE OFFICERS
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 mt-6 pt-4 border-t border-outline-variant/10">
+                          <button 
+                            onClick={() => {
+                              toast.info(`Activating operational workspace: ${project.name}...`);
+                              // Simulating workspace switch
+                              router.push('/dashboard/chat');
+                            }}
+                            className={`px-4 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                              isActive
+                                ? 'bg-primary-container text-on-primary hover:scale-[1.02]'
+                                : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/60 hover:text-on-surface hover:border-outline-variant/40'
+                            }`}
+                          >
+                            Open Workspace
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Empty / New Startup Card */}
+                  <div 
+                    onClick={() => {
+                      if (!isPremium) {
+                        toast.error('Launch multiple startup projects is a premium tier benefit. Upgrade to launch.');
+                      } else {
+                        setShowCreateModal(true);
+                      }
+                    }}
+                    className="p-6 bg-surface-container-low/20 rounded-xl border border-outline-variant/10 border-dashed hover:border-primary-container/30 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center min-h-[190px] gap-3 group text-center"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface/30 group-hover:text-primary-container group-hover:border-primary-container/30 transition-all duration-300">
+                      <span className="material-symbols-outlined text-lg">add</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black font-label uppercase tracking-widest text-on-surface/40 group-hover:text-on-surface transition-colors block">
+                        Provision New Startup
+                      </span>
+                      <span className="text-[8px] font-mono text-on-surface/20 uppercase tracking-wide block mt-1">
+                        {!isPremium ? 'Upgrade to Unlock Multiple' : 'Launch New Venture'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-
-            </div>
-          ) : (
-            /* PROJECT LIST VIEW */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map(project => (
-                <div 
-                  key={project.id} 
-                  onClick={() => setSelectedProject(project)}
-                  className="p-6 bg-surface-container rounded-lg border border-outline-variant/10 hover:bg-surface-bright hover:border-primary-container/20 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2 h-2 rounded-full bg-primary-container neon-glow"></span>
-                    <span className="text-[9px] font-mono uppercase tracking-widest text-primary-container/60">
-                      {project.plan.toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <div className="text-xl font-black font-headline text-on-surface uppercase tracking-tighter mb-1 truncate">
-                    {project.name}
-                  </div>
-                  
-                  <div className="text-[10px] font-mono text-on-surface/30 uppercase tracking-wide mb-6">
-                    {project.deptCount} DEPTS · {project.agentCount} AGENTS
-                  </div>
-                  
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-outline-variant/10">
-                    <button className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest bg-primary-container/10 border border-primary-container/40 text-primary-container rounded-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
-                      OPEN →
-                    </button>
-                    <button className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest border border-outline-variant/20 text-on-surface/40 rounded-sm hover:border-outline-variant/40 hover:text-on-surface transition-colors">
-                      SETTINGS
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              <div className="p-6 bg-surface-container-low rounded-lg border border-outline-variant/10 border-dashed hover:border-primary-container/30 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px] gap-3 group">
-                <span className="material-symbols-outlined text-2xl text-on-surface/20 group-hover:text-primary-container transition-colors">add</span>
-                <span className="text-[10px] font-black font-label uppercase tracking-widest text-on-surface/30 group-hover:text-on-surface transition-colors">
-                  NEW_PROJECT
-                </span>
-              </div>
-            </div>
+            </>
           )}
         </div>
 
-        {/* Ideation Modal */}
-        {showIdeation && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-surface/80 backdrop-blur-md">
-            <div className="w-full max-w-2xl bg-[#1a1c1a] border border-[#2d312d] rounded-xl overflow-hidden shadow-2xl relative">
+        {/* INTENSIVE STARTUP INTAKE WIZARD MODAL */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-surface/85 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-[#0e110e] border border-outline-variant/15 rounded-2xl overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300">
               
-              {!isPremium ? (
-                <div className="p-12 text-center flex flex-col items-center gap-6">
-                  <span className="material-symbols-outlined text-5xl text-primary-container">lock</span>
-                  <h2 className="text-2xl font-black font-headline text-on-surface uppercase">Premium Feature</h2>
-                  <p className="text-sm font-body text-on-surface/60 leading-relaxed">
-                    The AI Ideation Engine is only available to <span className="text-primary-container font-black">BUILDER</span> and <span className="text-primary-container font-black">PRO</span> tiers. Upgrade to let Atlas research and launch your next venture.
-                  </p>
-                  <button className="mt-4 px-8 py-3 bg-primary-container text-on-primary font-black uppercase text-[11px] tracking-widest rounded-sm neon-glow">
-                    UPGRADE_NOW
-                  </button>
-                  <button 
-                    onClick={() => setShowIdeation(false)}
-                    className="mt-2 text-[10px] font-black text-on-surface/30 uppercase tracking-widest hover:text-on-surface"
-                  >
-                    CLOSE
-                  </button>
+              {/* Header */}
+              <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between bg-[#121512]">
+                <div>
+                  <h2 className="text-sm font-black font-headline text-on-surface uppercase tracking-wider">INTAKE: PROVISION NEW STARTUP</h2>
+                  <p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Set startup parameters to align the operational C-Suite</p>
                 </div>
-              ) : (
-                <>
-                  <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between">
-                    <h2 className="text-lg font-black font-headline text-on-surface uppercase tracking-tight">AI IDEATION ENGINE</h2>
-                    <button onClick={() => setShowIdeation(false)} className="material-symbols-outlined text-on-surface/40 hover:text-on-surface">close</button>
-                  </div>
+                <button onClick={() => setShowCreateModal(false)} className="material-symbols-outlined text-on-surface/40 hover:text-on-surface text-sm">close</button>
+              </div>
 
-                  <div className="p-8">
-                    {ideationResult ? (
-                      <div className="flex flex-col gap-6">
-                        <div className="p-6 bg-surface-container-high rounded-lg text-sm text-on-surface font-mono whitespace-pre-wrap leading-relaxed border border-primary-container/20">
-                          {ideationResult}
-                        </div>
-                        <div className="flex gap-4">
-                          <button 
-                            onClick={() => setIdeationResult(null)}
-                            className="flex-1 py-3 border border-outline-variant/20 text-[10px] font-black uppercase text-on-surface/40 hover:text-on-surface hover:border-on-surface"
-                          >
-                            RE-GENERATE
-                          </button>
-                          <button className="flex-1 py-3 bg-primary-container text-on-primary text-[10px] font-black uppercase neon-glow">
-                            DEPLOY_PROJECT
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-6">
-                        <p className="text-sm font-body text-on-surface/60">
-                          Describe a seedling idea or ask Atlas to suggest a niche based on current market trends.
-                        </p>
-                        <textarea 
-                          value={ideationInput}
-                          onChange={(e) => setIdeationInput(e.target.value)}
-                          placeholder="Ex: I want to build a decentralized logistics platform for Africa..."
-                          className="w-full bg-[#131513] border border-[#2d312d] rounded-lg p-4 text-sm text-on-surface font-body resize-none h-32 focus:border-primary-container/30 transition-all outline-none"
-                        />
-                        <button 
-                          onClick={handleIdeate}
-                          disabled={isIdeating || !ideationInput.trim()}
-                          className={`w-full py-4 text-[11px] font-black uppercase tracking-widest transition-all ${
-                            isIdeating || !ideationInput.trim()
-                            ? 'bg-surface-container-high text-on-surface/20 cursor-not-allowed'
-                            : 'bg-primary-container text-on-primary neon-glow hover:bg-primary-fixed'
-                          }`}
-                        >
-                          {isIdeating ? 'RESEARCHING_MARKETS...' : 'INITIALIZE_BRAINSTORM'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+              {/* Form */}
+              <form onSubmit={handleCreateProject} className="p-6 space-y-5">
+                
+                {/* 1. Name */}
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black font-mono text-primary-container uppercase tracking-widest block">1. Startup / Venture Name</label>
+                  <input 
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Ex: Apex Logistics"
+                    className="w-full bg-[#131513] border border-outline-variant/15 rounded-lg p-3 text-xs text-on-surface font-body outline-none focus:border-primary-container/30 transition-all"
+                  />
+                </div>
+
+                {/* 2. Niche */}
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black font-mono text-primary-container uppercase tracking-widest block">2. Target Market / Niche</label>
+                  <input 
+                    type="text"
+                    required
+                    value={formData.niche}
+                    onChange={(e) => setFormData(prev => ({ ...prev, niche: e.target.value }))}
+                    placeholder="Ex: Decentralized cargo routing for local fleets"
+                    className="w-full bg-[#131513] border border-outline-variant/15 rounded-lg p-3 text-xs text-on-surface font-body outline-none focus:border-primary-container/30 transition-all"
+                  />
+                </div>
+
+                {/* 3. Audience */}
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black font-mono text-primary-container uppercase tracking-widest block">3. Primary Target Audience</label>
+                  <input 
+                    type="text"
+                    required
+                    value={formData.audience}
+                    onChange={(e) => setFormData(prev => ({ ...prev, audience: e.target.value }))}
+                    placeholder="Ex: Independent truck owners and cargo forwarders"
+                    className="w-full bg-[#131513] border border-outline-variant/15 rounded-lg p-3 text-xs text-on-surface font-body outline-none focus:border-primary-container/30 transition-all"
+                  />
+                </div>
+
+                {/* 4. Competitor */}
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black font-mono text-primary-container uppercase tracking-widest block">4. Main Competitor or Alternative</label>
+                  <input 
+                    type="text"
+                    required
+                    value={formData.competitor}
+                    onChange={(e) => setFormData(prev => ({ ...prev, competitor: e.target.value }))}
+                    placeholder="Ex: Traditional logistics brokers and spreadsheet management"
+                    className="w-full bg-[#131513] border border-outline-variant/15 rounded-lg p-3 text-xs text-on-surface font-body outline-none focus:border-primary-container/30 transition-all"
+                  />
+                </div>
+
+                {/* 5. Operational Focus */}
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black font-mono text-primary-container uppercase tracking-widest block">5. Primary Operational Focus</label>
+                  <select 
+                    value={formData.operationalFocus}
+                    onChange={(e) => setFormData(prev => ({ ...prev, operationalFocus: e.target.value }))}
+                    className="w-full bg-[#131513] border border-outline-variant/15 rounded-lg p-3 text-xs text-on-surface font-body outline-none focus:border-primary-container/30 transition-all cursor-pointer"
+                  >
+                    <option value="MVP Development">MVP Development & Database Scaffolding</option>
+                    <option value="B2B Sales Outreach">B2B Prospecting & Cold Email Sequences</option>
+                    <option value="Social Launch & Growth">Viral Hook Generation & Social Marketing</option>
+                    <option value="Operational Scaling">Ops Optimization & Workflows</option>
+                  </select>
+                </div>
+
+                {/* Submit button */}
+                <button 
+                  type="submit"
+                  disabled={isProvisioning || !formData.name.trim()}
+                  className={`w-full py-4 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all mt-4 ${
+                    isProvisioning || !formData.name.trim()
+                    ? 'bg-surface-container-high text-on-surface/20 cursor-not-allowed border border-outline-variant/5'
+                    : 'bg-primary-container text-on-primary shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.01] active:scale-[0.99]'
+                  }`}
+                >
+                  {isProvisioning ? 'Atlas is provisioning C-Suite offices...' : 'Launch Operational Office'}
+                </button>
+              </form>
             </div>
           </div>
         )}
