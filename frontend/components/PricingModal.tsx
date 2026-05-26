@@ -5,6 +5,7 @@ import { animate, stagger } from 'animejs';
 import { X } from 'lucide-react';
 
 interface Plan {
+  id: string;
   name: string;
   tagline: string;
   monthlyPrice: number;
@@ -49,56 +50,64 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
 
   const plans: Plan[] = [
     {
+      id: 'free',
       name: 'FREE',
       tagline: 'Permanent access to core automation.',
       monthlyPrice: 0,
       annualPrice: 0,
       features: [
-        '2 active executives',
-        'Core automation tools',
-        '50 tasks per month',
-        '1 team member',
-        '3 active integrations',
-        'Basic OrcaHub templates',
-        'Community support'
+        '2 active executive agents',
+        '20 autonomous tasks per month',
+        '1 team workspace slot',
+        'Core business integrations',
+        'Standard OrcaHub OS templates',
+        'Basic departmental monitoring',
+        'Community forum support'
       ],
       cta: 'Get Started Free'
     },
     {
-      name: 'BUILDER',
-      tagline: 'The complete solo founder toolkit.',
-      monthlyPrice: 29,
-      annualPrice: 24,
+      id: 'starter',
+      name: 'STARTER',
+      tagline: 'The absolute solo founder launchpad.',
+      monthlyPrice: 99,
+      annualPrice: 79,
       features: [
-        'All 5 departments',
-        'Full executive team (6 executives)',
-        '500 tasks per month',
-        '3 team members',
-        'All available integrations',
-        'Executive coordination feed',
-        'Full OrcaHub marketplace access',
-        'Email support'
+        'All 5 department channels',
+        '6 autonomous C-Suite executives',
+        '1000 autonomous tasks per month',
+        '3 active team seats',
+        'All standard integrations activated',
+        'C-Suite real-time coordination feed',
+        'Code generation & Ghost CTO mode',
+        'Full OrcaHub marketplace templates',
+        'Standard business intelligence reporting',
+        'Daily executive task backups',
+        'Email support (24hr response SLA)'
+      ],
+      cta: 'Start Free Trial'
+    },
+    {
+      id: 'pro',
+      name: 'GROWTH (PRO)',
+      tagline: 'Autonomous operations + AI CEO Mode + OOO Autopilot.',
+      monthlyPrice: 299,
+      annualPrice: 249,
+      features: [
+        'AI CEO Mode (Atlas organizational lead)',
+        'Unlimited autonomous tasks',
+        '10 team seats with department assigning',
+        'All available integrations with webhook alerts',
+        'Bring Your Own LLM',
+        'Per-executive custom model bindings',
+        'Out-of-Office (OOO) Autopilot Mode (5-Day Sprints)',
+        'Unlimited historical briefings archiving',
+        'White-label department briefs',
+        'Dedicated database schema isolation',
+        'Priority chat support (1hr response SLA)'
       ],
       cta: 'Start Free Trial',
       highlighted: true
-    },
-    {
-      name: 'PRO',
-      tagline: 'Infinite scale + AI CEO Mode.',
-      monthlyPrice: 59,
-      annualPrice: 49,
-      features: [
-        'All 5 departments',
-        'Full executive team + AI CEO Mode (Atlas)',
-        'Unlimited tasks',
-        '10 team members',
-        'All available integrations',
-        'Bring your own LLM (OpenAI, Anthropic, etc)',
-        'Per-executive model assignment',
-        'Full API access',
-        'Priority support'
-      ],
-      cta: 'Start Free Trial'
     }
   ];
 
@@ -190,13 +199,13 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {plans.map((plan) => (
               <div
-                key={plan.name}
-                className={`pricing-card-anim opacity-0 p-8 sm:p-10 rounded-[2.5rem] flex flex-col gap-6 sm:gap-8 transition-all duration-500 group relative overflow-hidden backdrop-blur-xl border ${plan.highlighted || (currentPlan?.toUpperCase() === plan.name) ? 'border-green bg-green/[0.03] shadow-[0_0_40px_rgba(0,255,135,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+                key={plan.id}
+                className={`pricing-card-anim opacity-0 p-8 sm:p-10 rounded-[2.5rem] flex flex-col gap-6 sm:gap-8 transition-all duration-500 group relative overflow-hidden backdrop-blur-xl border ${plan.highlighted || (currentPlan?.toLowerCase() === plan.id) ? 'border-green bg-green/[0.03] shadow-[0_0_40px_rgba(0,255,135,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
               >
-                {(plan.highlighted || (currentPlan?.toUpperCase() === plan.name)) && (
+                {(plan.highlighted || (currentPlan?.toLowerCase() === plan.id)) && (
                   <div className="absolute top-0 right-10 -translate-y-1/2 py-2 px-4 bg-green rounded-full shadow-[0_4px_20px_rgba(0,255,135,0.2)]">
                     <span className="font-dm-mono text-[9px] font-black text-bg uppercase tracking-widest">
-                      {currentPlan?.toUpperCase() === plan.name ? 'YOUR PLAN' : 'MOST POPULAR'}
+                      {currentPlan?.toLowerCase() === plan.id ? 'YOUR PLAN' : 'MOST POPULAR'}
                     </span>
                   </div>
                 )}
@@ -212,7 +221,7 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
                 </div>
 
                 <div className="flex items-baseline gap-2">
-                  <span className="text-[44px] sm:text-[54px] font-syne font-[800] text-white leading-none tracking-tighter">
+                   <span className="text-[44px] sm:text-[54px] font-syne font-[800] text-white leading-none tracking-tighter">
                     ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
                   </span>
                   <span className="font-dm-mono text-[12px] sm:text-[14px] text-white/30 font-black uppercase tracking-widest">
@@ -230,14 +239,14 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
                 </ul>
 
                 <button 
-                  onClick={() => isLocked ? handleCheckout(plan.name) : handleStartTrial(plan.name)}
+                  onClick={() => isLocked ? handleCheckout(plan.id) : handleStartTrial(plan.id)}
                   className={`w-full py-4 sm:py-5 px-6 rounded-2xl font-syne font-[800] text-[13px] sm:text-[15px] transition-all duration-300 uppercase tracking-widest ${
                     plan.highlighted 
-                      ? 'btn-primary shadow-[0_4px_20px_rgba(0,255,135,0.2)]' 
+                      ? 'btn-primary shadow-[0_4px_20px_rgba(0,255,135,0.25)]' 
                       : 'bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95'
                   }`}
                 >
-                  {isLocked && currentPlan?.toUpperCase() === plan.name ? 'Renew & Complete Setup' : plan.cta} →
+                  {isLocked && currentPlan?.toLowerCase() === plan.id ? 'Renew & Complete Setup' : plan.cta} →
                 </button>
               </div>
             ))}

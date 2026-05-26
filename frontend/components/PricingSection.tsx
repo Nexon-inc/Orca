@@ -65,60 +65,62 @@ export default function PricingSection() {
       annualTotal: 0,
       savings: 0,
       features: [
-        '2 active executives',
-        'Core automation tools',
-        '50 tasks per month',
-        '1 team member (just you)',
-        '3 active integrations',
-        'Basic OrcaHub templates',
-        'Community support'
+        '2 active executive agents',
+        '20 autonomous tasks per month',
+        '1 team workspace slot',
+        'Core business integrations',
+        'Standard OrcaHub OS templates',
+        'Basic departmental monitoring',
+        'Community forum support'
       ],
       cta: 'Get Started Free'
     },
     {
-      id: 'builder',
-      name: 'BUILDER',
-      tagline: 'The complete solo founder toolkit.',
-      monthlyPrice: 29,
-      annualPrice: 24,
-      annualTotal: 290,
-      savings: 58,
+      id: 'starter',
+      name: 'STARTER',
+      tagline: 'The absolute solo founder launchpad.',
+      monthlyPrice: 99,
+      annualPrice: 79,
+      annualTotal: 790,
+      savings: 398,
       features: [
-        'All 5 departments',
-        'Full executive team (6 executives)',
-        '500 tasks per month',
-        '3 team members',
-        'All available integrations',
-        'Executive coordination feed',
-        'Ghost CTO / Vibe coding (both modes)',
-        'Full OrcaHub marketplace access',
-        'Email support'
+        'All 5 department channels',
+        '6 autonomous C-Suite executives',
+        '1000 autonomous tasks per month',
+        '3 active team seats',
+        'All standard integrations activated',
+        'C-Suite real-time coordination feed',
+        'Code generation & Ghost CTO mode',
+        'Full OrcaHub marketplace templates',
+        'Standard business intelligence reporting',
+        'Daily executive task backups',
+        'Email support (24hr response SLA)'
       ],
-      cta: 'Start Free Trial',
-      highlighted: true
+      cta: 'Start Free Trial'
     },
     {
       id: 'pro',
-      name: 'PRO',
-      tagline: 'Infinite scale for growing operations.',
-      monthlyPrice: 59,
-      annualPrice: 49,
-      annualTotal: 590,
-      savings: 118,
+      name: 'GROWTH (PRO)',
+      tagline: 'Autonomous operations + AI CEO Mode + OOO Autopilot.',
+      monthlyPrice: 299,
+      annualPrice: 249,
+      annualTotal: 2490,
+      savings: 1098,
       features: [
-        'All 5 departments',
-        'Full executive team + AI CEO Mode (Atlas)',
-        'Unlimited tasks',
-        '10 team members',
-        'All available integrations',
-        'Bring your own LLM (OpenAI, Anthropic, etc)',
-        'Per-executive model assignment',
-        '5-hop executive coordination chains',
-        'Full API access',
-        'White-label option',
-        'Priority support'
+        'AI CEO Mode (Atlas organizational lead)',
+        'Unlimited autonomous tasks',
+        '10 team seats with department assigning',
+        'All available integrations with webhook alerts',
+        'Bring Your Own LLM',
+        'Per-executive custom model bindings',
+        'Out-of-Office (OOO) Autopilot Mode (5-Day Sprints)',
+        'Unlimited historical briefings archiving',
+        'White-label department briefs',
+        'Dedicated database schema isolation',
+        'Priority chat support (1hr response SLA)'
       ],
-      cta: 'Start Free Trial'
+      cta: 'Start Free Trial',
+      highlighted: true
     }
   ];
 
@@ -156,7 +158,7 @@ export default function PricingSection() {
                 <span className="text-3xl">🔥</span>
                 <div className="text-left">
                   <h4 className="font-syne font-black text-white text-[16px] uppercase tracking-widest">Founding Member Offer</h4>
-                  <p className="text-white/40 text-[10px] uppercase font-black tracking-widest leading-none mt-1">Get Builder plan at $19/mo locked forever. {foundingStatus.remaining} spots left.</p>
+                  <p className="text-white/40 text-[10px] uppercase font-black tracking-widest leading-none mt-1">Get Starter plan at $19/mo locked forever. {foundingStatus.remaining} spots left.</p>
                 </div>
               </div>
               <button 

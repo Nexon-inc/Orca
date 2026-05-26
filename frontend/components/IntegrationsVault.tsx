@@ -28,12 +28,16 @@ const INTEGRATIONS_CATALOG = [
     { service_key: 'github', name: 'GitHub', auth_method: 'oauth', color: '#24292e' },
     { service_key: 'vercel', name: 'Vercel', auth_method: 'apikey', color: '#000000' },
     { service_key: 'sentry', name: 'Sentry', auth_method: 'apikey', color: '#362D59' },
+    { service_key: 'aws', name: 'AWS', auth_method: 'apikey', color: '#FF9900' },
+    { service_key: 'linear', name: 'Linear', auth_method: 'oauth', color: '#5E6AD2' },
+    { service_key: 'mongodb', name: 'MongoDB', auth_method: 'apikey', color: '#47A248' },
   ]},
   { id: 'ops', name: 'Operations', tools: [
     { service_key: 'notion', name: 'Notion', auth_method: 'oauth', color: '#000000' },
     { service_key: 'slack', name: 'Slack', auth_method: 'oauth', color: '#4A154B' },
     { service_key: 'google_calendar', name: 'Calendar', auth_method: 'oauth', color: '#4285F4' },
     { service_key: 'google_drive', name: 'Google Drive', auth_method: 'oauth', color: '#0F9D58' },
+    { service_key: 'jira', name: 'Jira', auth_method: 'oauth', color: '#0052CC' },
   ]},
   { id: 'finance', name: 'Finance & Legal', tools: [
     { service_key: 'quickbooks', name: 'QuickBooks', auth_method: 'oauth', color: '#2CA01C' },

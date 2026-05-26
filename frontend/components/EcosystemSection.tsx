@@ -29,14 +29,11 @@ const products = [
 
 const providers = [
   { name: 'ORCA Intelligence', label: 'Default Engine', plan: 'All plans' },
-  { name: 'OpenAI GPT-4o', label: 'Bring your own key', plan: 'All plans' },
-  { name: 'Anthropic Claude', label: 'Bring your own key', plan: 'All plans' },
-  { name: 'Google Gemini', label: 'Bring your own key', plan: 'All plans' },
-  { name: 'DeepSeek', label: 'Bring your own key', plan: 'All plans' },
-  { name: 'Mistral AI', label: 'Bring your own key', plan: 'All plans' },
-  { name: 'Groq Cloud', label: 'Bring your own key', plan: 'All plans' },
-  { name: 'xAI Grok', label: 'Bring your own key', plan: 'All plans' },
-  { name: 'Ollama', label: 'Bring your own key', plan: 'All plans' }
+  { name: 'High-Reasoning LLM', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Fast Coding LLM', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Creative Writing LLM', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Vision / Multimodal LLM', label: 'Bring your own key', plan: 'All plans' },
+  { name: 'Local / Private LLM', label: 'Bring your own model', plan: 'All plans' }
 ];
 
 export default function EcosystemSection() {

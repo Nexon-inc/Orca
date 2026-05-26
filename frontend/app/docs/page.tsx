@@ -123,7 +123,7 @@ export default function DocsPage() {
 
               <div className="p-8 rounded-3xl border border-blue-500/20 bg-blue-500/5">
                  <h4 className="text-blue-400 mb-4 italic">API Access</h4>
-                 <p className="text-sm">API access is available on the Enterprise plan. See the Custom API section in Integrations for setup instructions.</p>
+                 <p className="text-sm">API access is available on the Growth (Pro) plan. See the Custom API section in Integrations for setup instructions.</p>
               </div>
             </div>
           </div>
@@ -272,12 +272,11 @@ export default function DocsPage() {
 
              <div className="pt-12 space-y-6">
                 <h3 className="text-white text-lg font-syne italic uppercase">PLAN ACCESS</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                    {[
                      { plan: 'Free', access: '2 Depts' },
-                     { plan: 'Builder', access: 'All 5' },
-                     { plan: 'Pro', access: 'All 5' },
-                     { plan: 'Enterprise', access: 'All 5 + Custom' },
+                     { plan: 'Starter', access: 'All 5' },
+                     { plan: 'Growth (Pro)', access: 'All 5' },
                    ].map(p => (
                      <div key={p.plan} className="p-4 rounded-xl bg-surface/50 border border-white/5 text-center">
                         <div className="text-[10px] text-white/20 font-black uppercase mb-1">{p.plan}</div>

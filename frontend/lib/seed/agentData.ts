@@ -14,6 +14,6 @@ export const DEPARTMENT_SEED_DATA = [
   { key: 'marketing', name: 'Marketing',            icon: '📣' },
   { key: 'sales',     name: 'Sales & Revenue',      icon: '💼' },
   { key: 'cs',        name: 'Customer Success',     icon: '🤝' },
-  { key: 'tech',      name: 'Tech & Vibe Coding',   icon: '🛡️' },
+  { key: 'tech',      name: 'Tech & Code generation',   icon: '🛡️' },
   { key: 'intel',     name: 'Intelligence & Research', icon: '🔍' },
 ]

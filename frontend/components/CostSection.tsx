@@ -125,8 +125,8 @@ export default function CostSection() {
                    </div>
                    <div className="flex flex-col gap-4">
                       <div className="flex flex-col">
-                        <span className="font-dm-mono text-[11px] text-text-muted">$199/mo</span>
-                        <span className="font-syne font-bold text-green text-[14px]">PRO PLAN</span>
+                        <span className="font-dm-mono text-[11px] text-text-muted">$249/mo</span>
+                        <span className="font-syne font-bold text-green text-[14px]">GROWTH (PRO) PLAN</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="font-dm-mono text-[11px] text-text-muted">$0/mo</span>
@@ -134,7 +134,7 @@ export default function CostSection() {
                       </div>
                    </div>
                    <div className="pt-6 border-t border-white/5">
-                      <span className="font-syne font-bold text-green text-[24px]">$2,388</span>
+                      <span className="font-syne font-bold text-green text-[24px]">$2,988</span>
                       <p className="font-dm-mono text-[9px] text-text-muted mt-1 uppercase">ANNUAL RECURRING COST</p>
                    </div>
                 </div>
@@ -143,7 +143,7 @@ export default function CostSection() {
               {/* Bottom line */}
               <div className="p-4 rounded-xl bg-green/5 border border-green/10 text-center">
                 <p className="font-dm-mono text-[12px] text-green">
-                   SAVINGS: $597,612 PER YEAR
+                   SAVINGS: $597,012 PER YEAR
                 </p>
               </div>
             </div>

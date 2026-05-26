@@ -31,7 +31,7 @@ export default function TermsPage() {
     },
     {
       title: '04. Subscriptions and Billing',
-      content: 'ORCA offers Starter, Pro, and Enterprise plans. All paid plans include a 14-day free trial. We use Paystack for payment processing. You may cancel at any time; cancellation takes effect at the end of your current billing period. We offer a full refund within 7 days of your first payment.'
+      content: 'ORCA offers Free, Starter, and Growth (Pro) plans. All paid plans include a 14-day free trial. We use Paystack for payment processing. You may cancel at any time; cancellation takes effect at the end of your current billing period. We offer a full refund within 7 days of your first payment.'
     },
     {
       title: '05. Acceptable Use',

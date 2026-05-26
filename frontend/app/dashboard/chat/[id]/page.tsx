@@ -55,11 +55,28 @@ function ChatContent() {
     { key: 'cto', role: 'CTO', icon: '👻', title: 'Ghost (Tech)', name: 'Ghost' },
   ];
 
+  const EXECUTIVE_DESCRIPTIONS: Record<string, string> = {
+    ceo: 'Oversees organizational roadmap, delegates tasks, and synthesizes department outcomes.',
+    cmo: 'Refines brand positioning, creates marketing campaigns, and analyzes target audience signals.',
+    cso: 'Manages sales pipelines, qualifies leads, and optimizes outreach sequences for maximum conversions.',
+    cco: 'Tracks client satisfaction metrics, drafts customer playbooks, and monitors retention strategies.',
+    cio: 'Gathers competitive intelligence, parses market feeds, and compiles research briefings.',
+    cto: 'Scopes technical architectures, prototypes codebases, and conducts automated security audits.',
+  };
+
+  const getExecutiveStatus = (exec: any) => {
+    if (isLoading && pinnedAgent === exec.role) return 'Thinking';
+    const isWorking = activeCoordinations.some(c => c.to_agent?.name === exec.name);
+    if (isWorking) return 'Executing';
+    return 'Idle';
+  };
+
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
   const [activeCoordinations, setActiveCoordinations] = useState<any[]>([]);
-  const [briefingTab, setBriefingTab] = useState<'preview' | 'code'>('preview');
+  const [briefingTab, setBriefingTab] = useState<'preview' | 'code' | 'tasks'>('preview');
+  const [hoveredExec, setHoveredExec] = useState<string | null>(null);
   const [autoHighlight, setAutoHighlight] = useState(false);
   const [manualHighlights, setManualHighlights] = useState<{ text: string; color: 'green' | 'yellow' }[]>([]);
   const [isExportingToDrive, setIsExportingToDrive] = useState(false);
@@ -114,22 +131,22 @@ function ChatContent() {
       model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
       mode: chatMode.toLowerCase(),
     },
-    onResponse: (response) => {
+    onResponse: (response: any) => {
       if (!response.ok) {
-        response.text().then(text => {
+        response.text().then((text: any) => {
           console.error('[ORCA_RAW_ERROR]', text);
           toast.error(`Server Error: ${text.slice(0, 150)}`);
         });
       }
     },
-    onFinish: (message) => {
+    onFinish: (message: any) => {
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       if (isFirstMessage.current && conversationId) {
         isFirstMessage.current = false;
         window.dispatchEvent(new Event('conversation_created')); // refresh sidebar
       }
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast.error(`ORCA Error: ${err.message}`);
     }
   });
@@ -139,15 +156,15 @@ function ChatContent() {
     if (data && data.length > 0) {
       const lastData = data[data.length - 1] as any;
       if (lastData.type === 'metadata') {
-        setMessages(prev => {
-          const newMessages = [...prev];
+        setMessages((prev: any) => {
+          const newMessages = [...prev] as any[];
           for (let i = newMessages.length - 1; i >= 0; i--) {
             if (newMessages[i].role === 'assistant') {
               // CLEAN TAGS FROM CONTENT: Replace [HANDOFF] and [ACTION] with nice UI markers
               const rawContent = newMessages[i].content;
               const cleanContent = rawContent
-                .replace(/\[ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})\]/gi, (match, tool) => `\n> ✓ **Action executed:** ${tool.replace(/_/g, ' ')}\n`)
-                .replace(/\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi, (match, toAgent, reason) => `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`);
+                .replace(/\[ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})\]/gi, (match: any, tool: any) => `\n> ✓ **Action executed:** ${tool.replace(/_/g, ' ')}\n`)
+                .replace(/\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi, (match: any, toAgent: any, reason: any) => `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`);
               
               newMessages[i].content = cleanContent;
               
@@ -248,7 +265,7 @@ function ChatContent() {
     recognition.interimResults = false;
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setInput(prev => prev ? `${prev} ${transcript}` : transcript);
+      setInput((prev: any) => prev ? `${prev} ${transcript}` : transcript);
       inputRef.current?.focus();
     };
     recognition.onend = () => setIsListening(false);
@@ -764,7 +781,7 @@ function ChatContent() {
             </div>
           ) : (
             <div className={`w-full ${activeDirectives ? 'max-w-5xl' : 'max-w-3xl'} flex flex-col gap-6 px-4 min-h-full transition-all duration-500`}>
-              {messages.map(msg => (
+              {messages.map((msg: any) => (
                 <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {(msg.role === 'user') ? (
                     <div className="flex flex-col items-end mb-6">
@@ -954,9 +971,15 @@ function ChatContent() {
               </button>
               <button
                 onClick={() => setBriefingTab('code')}
-                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${briefingTab === 'code' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
+                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all mr-6 ${briefingTab === 'code' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
               >
                 <span className="material-symbols-outlined text-[15px]">code</span> Raw Markdown
+              </button>
+              <button
+                onClick={() => setBriefingTab('tasks')}
+                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${briefingTab === 'tasks' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
+              >
+                <span className="material-symbols-outlined text-[15px]">splitscreen</span> Tasks & Logs
               </button>
             </div>
 
@@ -1004,11 +1027,13 @@ function ChatContent() {
 
             {/* Sidebar Content Pane */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar bg-[#0f110f] relative selection:bg-[#00c3672d]">
-              {briefingTab === 'preview' ? (
+              {briefingTab === 'preview' && (
                 <div className="p-6 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-300 select-text">
                   {renderBriefingMarkdown(activeDirectives.metadata?.directive_raw || activeDirectives.content)}
                 </div>
-              ) : (
+              )}
+
+              {briefingTab === 'code' && (
                 <div className="relative h-full flex flex-col">
                   <button
                     onClick={() => {
@@ -1027,6 +1052,138 @@ function ChatContent() {
                       .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
                     className="w-full h-[85%] bg-[#080908] border border-outline-variant/10 rounded-2xl p-6 font-mono text-[10px] text-on-surface/70 leading-relaxed outline-none resize-none"
                   />
+                </div>
+              )}
+
+              {briefingTab === 'tasks' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  {/* C-Suite System Status grid */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-primary-container mb-3 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-xs">grid_view</span> C-Suite Status Board
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {EXECUTIVE_PILLS.map(exec => {
+                        const status = getExecutiveStatus(exec);
+                        const statusColor = status === 'Executing' ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' : status === 'Thinking' ? 'text-amber-300 border-amber-500/30 bg-amber-500/10' : 'text-on-surface/40 border-outline-variant/10 bg-white/5';
+                        const dotColor = status === 'Executing' ? 'bg-emerald-400' : status === 'Thinking' ? 'bg-amber-300' : 'bg-on-surface/20';
+
+                        return (
+                          <div key={exec.key} className="p-3 bg-[#121412] border border-outline-variant/10 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{exec.icon}</span>
+                              <div>
+                                <h4 className="text-[10px] font-bold text-white uppercase tracking-wider">{exec.name}</h4>
+                                <p className="text-[8px] font-mono text-on-surface/40 uppercase tracking-widest">{exec.role}</p>
+                              </div>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[8px] font-mono uppercase tracking-widest border flex items-center gap-1.5 ${statusColor}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${status !== 'Idle' ? 'animate-pulse' : ''}`} />
+                              {status}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Active Handoffs */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-primary-container mb-3 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-xs">sync_alt</span> Active Handoffs & Coordinations
+                    </h3>
+                    {activeCoordinations.length === 0 ? (
+                      <div className="p-4 bg-[#121412] border border-outline-variant/5 rounded-xl text-center text-on-surface/40 text-[10px] font-mono uppercase tracking-widest">
+                        No active handoffs in progress
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {activeCoordinations.map(coord => {
+                          const fromPill = EXECUTIVE_PILLS.find(p => p.name === coord.from_agent?.name);
+                          const toPill = EXECUTIVE_PILLS.find(p => p.name === coord.to_agent?.name);
+
+                          return (
+                            <div key={coord.id} className="p-4 bg-[#121412] border border-outline-variant/10 rounded-xl space-y-3 relative overflow-hidden group">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="flex items-center gap-1 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                                    <span className="text-xs">{fromPill?.icon || '🏦'}</span>
+                                    <span className="text-[9px] font-mono text-white font-bold">{coord.from_agent?.name || 'User'}</span>
+                                  </div>
+                                  <span className="material-symbols-outlined text-xs text-primary-container">arrow_forward</span>
+                                  <div className="flex items-center gap-1 bg-primary-container/10 border border-primary-container/20 px-2 py-0.5 rounded">
+                                    <span className="text-xs">{toPill?.icon || '🏦'}</span>
+                                    <span className="text-[9px] font-mono text-primary-container font-bold">{coord.to_agent?.name || 'Agent'}</span>
+                                  </div>
+                                </div>
+                                <span className="flex h-2 w-2 relative">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-on-surface/80 leading-relaxed font-body">
+                                {coord.description}
+                              </p>
+                              <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                <span className="text-[8px] font-mono text-on-surface/40 uppercase tracking-widest">
+                                  {new Date(coord.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    if (coord.to_agent?.name) {
+                                      toast.info(`Jumping to ${coord.to_agent.name}'s active thread...`);
+                                      fetch(`/api/agents/${coord.to_agent.name}/latest-conversation?orgId=${org?.id}`)
+                                        .then(res => res.json())
+                                        .then(data => {
+                                          if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
+                                          else toast.error('Could not locate coordination workspace');
+                                        });
+                                    }
+                                  }}
+                                  className="text-[8px] font-black uppercase tracking-widest text-primary-container hover:underline flex items-center gap-1"
+                                >
+                                  View Workspace <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tool Execution Logs */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-primary-container mb-3 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-xs">terminal</span> Tool Execution Logs
+                    </h3>
+                    <div className="bg-[#080908] border border-outline-variant/10 rounded-xl overflow-hidden p-4 font-mono text-[9px] text-[#a9b1d6] leading-relaxed max-h-[250px] overflow-y-auto no-scrollbar space-y-2.5">
+                      {messages.flatMap((m: any) => m.toolInvocations || []).length === 0 ? (
+                        <div className="text-on-surface/30 italic uppercase text-center py-4">No tools executed in this conversation yet</div>
+                      ) : (
+                        messages.flatMap((m: any) => (m.toolInvocations || []).map((ti: any, idx: number) => {
+                          const statusLabel = ti.state === 'result' ? 'SUCCESS' : 'RUNNING';
+                          const statusColor = ti.state === 'result' ? 'text-emerald-400' : 'text-amber-300';
+                          return (
+                            <div key={ti.toolCallId || idx} className="border-b border-white/5 pb-2 last:border-b-0 last:pb-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-primary-container font-bold">{ti.toolName.toUpperCase()}</span>
+                                <span className={`font-bold ${statusColor}`}>[{statusLabel}]</span>
+                              </div>
+                              <div className="text-[8px] text-on-surface/40 mb-1">
+                                Args: {JSON.stringify(ti.args)}
+                              </div>
+                              {ti.state === 'result' && (
+                                <div className="text-[8px] text-[#737aa2] max-h-16 overflow-y-auto no-scrollbar">
+                                  Result: {JSON.stringify(ti.result).slice(0, 150)}...
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }))
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1072,7 +1229,7 @@ function ChatContent() {
               <button
                 onClick={() => {
                   const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
-                  const mentions = Array.from(content.matchAll(/@([A-Z][a-z]+)/g)).map(m => m[1]);
+                  const mentions = Array.from(content.matchAll(/@([A-Z][a-z]+)/g)).map((m: any) => m[1]);
                   const validExecs = mentions.filter(name =>
                     EXECUTIVE_PILLS.some(p => p.name === name)
                   );
@@ -1096,31 +1253,95 @@ function ChatContent() {
             <div className="flex justify-center gap-2 mb-1">
               {EXECUTIVE_PILLS.map(exec => {
                 const isWorking = activeCoordinations.some(c => c.to_agent?.name === exec.name);
+                const status = getExecutiveStatus(exec);
                 return (
-                  <button key={exec.key} onClick={() => {
-                    const workingCoord = activeCoordinations.find(c => c.to_agent?.name === exec.name);
-                    if (workingCoord) {
-                      toast.info(`Jumping to ${exec.name}'s active thread...`);
-                      fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
-                        .then(res => res.json())
-                        .then(data => {
-                          if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
-                          else setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
-                        });
-                    } else {
-                      setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
-                    }
-                  }}
-                    className={`relative flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
+                  <div
+                    key={exec.key}
+                    className="relative"
+                    onMouseEnter={() => setHoveredExec(exec.key)}
+                    onMouseLeave={() => setHoveredExec(null)}
                   >
-                    {isWorking && (
-                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
-                      </span>
+                    <button onClick={() => {
+                      const workingCoord = activeCoordinations.find(c => c.to_agent?.name === exec.name);
+                      if (workingCoord) {
+                        toast.info(`Jumping to ${exec.name}'s active thread...`);
+                        fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
+                          .then(res => res.json())
+                          .then(data => {
+                            if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
+                            else setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
+                          });
+                      } else {
+                        setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
+                      }
+                    }}
+                      className={`relative flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
+                    >
+                      {isWorking && (
+                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
+                        </span>
+                      )}
+                      <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> {exec.role}
+                    </button>
+
+                    {/* Premium Hover Tooltip */}
+                    {hoveredExec === exec.key && (
+                      <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-64 bg-[#121412] border border-[#262a26] p-4 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] text-left normal-case pointer-events-auto z-[60] animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">{exec.icon}</span>
+                            <div>
+                              <h4 className="text-[10px] font-bold text-white uppercase tracking-wider">{exec.name}</h4>
+                              <p className="text-[8px] font-mono text-on-surface/40 uppercase tracking-widest">{exec.role}</p>
+                            </div>
+                          </div>
+                          <span className={`px-1.5 py-0.5 rounded text-[7px] font-mono uppercase tracking-widest border flex items-center gap-1 ${
+                            status === 'Executing' ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' :
+                            status === 'Thinking' ? 'text-amber-300 border-amber-500/30 bg-amber-500/10' :
+                            'text-on-surface/40 border-outline-variant/10 bg-white/5'
+                          }`}>
+                            <span className={`w-1 h-1 rounded-full ${
+                              status === 'Executing' ? 'bg-emerald-400' :
+                              status === 'Thinking' ? 'bg-amber-300' : 'bg-on-surface/20'
+                            } ${status !== 'Idle' ? 'animate-pulse' : ''}`} />
+                            {status}
+                          </span>
+                        </div>
+                        
+                        <p className="text-[10px] text-on-surface/70 leading-relaxed mb-3">
+                          {status === 'Executing' ? (
+                            <span>
+                              Currently working: <span className="text-white font-medium">{activeCoordinations.find(c => c.to_agent?.name === exec.name)?.description}</span>
+                            </span>
+                          ) : status === 'Thinking' ? (
+                            <span>Analyzing directives and processing background pipeline...</span>
+                          ) : (
+                            <span>{EXECUTIVE_DESCRIPTIONS[exec.key]}</span>
+                          )}
+                        </p>
+
+                        {status === 'Executing' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toast.info(`Jumping to ${exec.name}'s active thread...`);
+                              fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                  if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
+                                  else toast.error('Could not locate coordination workspace');
+                                });
+                            }}
+                            className="w-full py-1.5 bg-primary-container/20 border border-primary-container/30 hover:bg-primary-container/30 rounded-lg text-[8px] font-black text-primary-container uppercase tracking-widest transition-all flex items-center justify-center gap-1"
+                          >
+                            Jump to Workspace <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                          </button>
+                        )}
+                      </div>
                     )}
-                    <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> {exec.role}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -1130,7 +1351,7 @@ function ChatContent() {
                 <input ref={fileInputRef} type="file" accept="image/*,.pdf,.txt,.md,.csv" className="hidden" onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    setInput(prev => prev ? `${prev} [Attached: ${file.name}]` : `[Attached: ${file.name}]`);
+                    setInput((prev: any) => prev ? `${prev} [Attached: ${file.name}]` : `[Attached: ${file.name}]`);
                     toast.success(`Attached: ${file.name}`);
                     setShowAddMenu(false);
                   }

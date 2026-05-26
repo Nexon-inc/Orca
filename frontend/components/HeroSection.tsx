@@ -193,19 +193,19 @@ export default function HeroSection() {
       <div className="relative z-20 max-w-5xl mx-auto w-full text-center">
         <div ref={badgeRef} className="mb-10 opacity-0">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 font-dm-mono text-[11px] text-white">
-            <span className="text-[14px]">⬡</span> AI Company OS — Now in Early Access
+            <span className="text-[14px]">⬡</span> AI Company OS
           </span>
         </div>
 
         <h1 ref={headlineRef} className="mb-6 font-syne font-[800] tracking-tight leading-[1.1] text-white">
-          <div className="line opacity-0 text-[36px] sm:text-[52px] lg:text-[60px]">Your competitors have teams.</div>
-          <div className="line opacity-0 text-[36px] sm:text-[52px] lg:text-[60px] text-green">You have ORCA.</div>
+          <div className="line opacity-0 text-[36px] sm:text-[52px] lg:text-[60px]">Scale your business on autopilot.</div>
+          <div className="line opacity-0 text-[36px] sm:text-[52px] lg:text-[60px] text-green">ORCA does the work.</div>
         </h1>
 
         <div ref={subheadRef} className="mb-10 opacity-0">
           <p className="max-w-xl mx-auto font-dm-mono text-[13px] text-text-muted leading-relaxed uppercase tracking-[0.2em] opacity-80">
-            6 AI executives. 5 departments. Fully autonomous. <br />
-            Built for solo founders who are tired of doing everything alone.
+            Deploy autonomous AI executives that actually execute. <br />
+            Marketing, Sales, and Tech—working 24/7 to grow your empire.
           </p>
         </div>
 

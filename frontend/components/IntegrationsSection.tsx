@@ -20,6 +20,13 @@ const integrations = [
   { name: 'Crunchbase', category: 'Research', status: 'API' },
   { name: 'Apollo.io', category: 'Sales', status: 'API' },
   { name: 'Google Trends', category: 'Marketing', status: 'API' },
+  { name: 'Zendesk', category: 'CS', status: 'Core' },
+  { name: 'Mailchimp', category: 'Marketing', status: 'Core' },
+  { name: 'Typeform', category: 'CS', status: 'API' },
+  { name: 'QuickBooks', category: 'Finance', status: 'Core' },
+  { name: 'Ahrefs', category: 'Marketing', status: 'API' },
+  { name: 'Semrush', category: 'Marketing', status: 'API' },
+  { name: 'Perplexity AI', category: 'Intel', status: 'API' },
 ];
 
 export default function IntegrationsSection() {
