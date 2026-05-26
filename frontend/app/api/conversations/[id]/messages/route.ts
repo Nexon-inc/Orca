@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-import { streamText, StreamData } from 'ai'
+import { streamText, createDataStreamResponse } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createGroq } from '@ai-sdk/groq'
 import { createOpenAI } from '@ai-sdk/openai'
@@ -125,109 +125,107 @@ export async function POST(
     // 8. Model Selection with Runtime Failover for Orca Intelligence
     const isOrcaIntel = !modelOverride || modelOverride === 'orca-intel'
 
-    const data = new StreamData()
+    return createDataStreamResponse({
+      execute: async (dataStream) => {
+        const geminiKey = process.env.GEMINI_API_KEY
+        const groqKey = process.env.GROQ_API_KEY
 
-    const getStreamResult = async () => {
-      const streamOptions = {
-        system: systemPrompt,
-        // @ts-ignore
-        messages,
-        tools: Object.keys(tools).length > 0 ? tools : undefined,
-        maxSteps: 5,
-        onFinish: async ({ text, toolResults }: { text: string; toolResults: any }) => {
-          // Flexible regex for Directive and Result
-          const resultMatch = text.match(/(?:RESULT|RESULTS|OUTCOME):\s*([\s\S]+?)(?:\n|$)/i)
-          const resultItems = resultMatch ? resultMatch[1].split('|').map((s: string) => s.trim()) : []
-          const directiveMatch = text.match(/(?:DIRECTIVE_DOCUMENT|DIRECTIVE|MASTER_DIRECTIVE):\s*([\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i)
-          const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
+        const streamOptions = {
+          system: systemPrompt,
+          // @ts-ignore
+          messages,
+          tools: Object.keys(tools).length > 0 ? tools : undefined,
+          maxSteps: 5,
+          onFinish: async ({ text, toolResults }: { text: string; toolResults: any }) => {
+            // Flexible regex for Directive and Result
+            const resultMatch = text.match(/(?:RESULT|RESULTS|OUTCOME):\s*([\s\S]+?)(?:\n|$)/i)
+            const resultItems = resultMatch ? resultMatch[1].split('|').map((s: string) => s.trim()) : []
+            const directiveMatch = text.match(/(?:DIRECTIVE_DOCUMENT|DIRECTIVE|MASTER_DIRECTIVE):\s*([\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i)
+            const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
 
-          const { cleanResponse } = await parseAndExecuteActions(text, orgId, agent.id, user.id)
+            const { cleanResponse } = await parseAndExecuteActions(text, orgId, agent.id, user.id)
 
-          // Send to DB
-          await serviceClient.from('messages').insert({
-            conversation_id: conversationId,
-            sender_type: 'agent',
-            content: cleanResponse,
-            result_items: resultItems,
-            metadata: { 
-              directive_raw: directiveRaw, 
-              tool_results: toolResults,
-              agent_name: agent.name 
-            }
-          })
-
-          // Trigger background memory update event to compact conversation history into Markdown
-          try {
-            await inngest.send({
-              name: 'agent/memory.update',
-              data: {
-                org_id: orgId,
-                agent_id: agent.id,
-                conversation_id: conversationId
+            // Send to DB
+            await serviceClient.from('messages').insert({
+              conversation_id: conversationId,
+              sender_type: 'agent',
+              content: cleanResponse,
+              result_items: resultItems,
+              metadata: { 
+                directive_raw: directiveRaw, 
+                tool_results: toolResults,
+                agent_name: agent.name 
               }
             })
-          } catch (err) {
-            console.error('Failed to trigger memory update event:', err)
+
+            // Trigger background memory update event to compact conversation history into Markdown
+            try {
+              await inngest.send({
+                name: 'agent/memory.update',
+                data: {
+                  org_id: orgId,
+                  agent_id: agent.id,
+                  conversation_id: conversationId
+                }
+              })
+            } catch (err) {
+              console.error('Failed to trigger memory update event:', err)
+            }
+
+            // Send to Client via dataStream writeData (replaces StreamData.append)
+            dataStream.writeData({
+              type: 'metadata',
+              directive_raw: directiveRaw,
+              result_items: resultItems,
+              agent_name: agent.name
+            })
+          }
+        }
+
+        const getStream = async () => {
+          if (!isOrcaIntel) {
+            const openrouter = createOpenAI({
+              baseURL: 'https://openrouter.ai/api/v1',
+              apiKey: process.env.OPENROUTER_API_KEY
+            })
+            return streamText({ ...streamOptions, model: openrouter(modelOverride) })
           }
 
-          // Send to Client via StreamData
-          data.append({
-            type: 'metadata',
-            directive_raw: directiveRaw,
-            result_items: resultItems,
-            agent_name: agent.name
-          })
-          
-          data.close()
-        }
-      }
-
-      if (!isOrcaIntel) {
-        const openrouter = createOpenAI({
-          baseURL: 'https://openrouter.ai/api/v1',
-          apiKey: process.env.OPENROUTER_API_KEY
-        })
-        return streamText({ ...streamOptions, model: openrouter(modelOverride) })
-      }
-
-      // Orca Intelligence: Gemini primary → Groq fallback
-      const geminiKey = process.env.GEMINI_API_KEY
-      const groqKey = process.env.GROQ_API_KEY
-
-      if (geminiKey) {
-        const google = createGoogleGenerativeAI({ apiKey: geminiKey })
-        try {
-          return await streamText({ 
-            ...streamOptions, 
-            model: google('gemini-2.5-flash'),
-            experimental_toolCallStreaming: true,
-            onStepFinish: (step) => {
-              console.log(`[ORCA_STEP] ${step.stepType} (tokens: ${step.usage.completionTokens})`)
+          if (geminiKey) {
+            const google = createGoogleGenerativeAI({ apiKey: geminiKey })
+            try {
+              return await streamText({ 
+                ...streamOptions, 
+                model: google('gemini-2.5-flash'),
+                experimental_toolCallStreaming: true,
+                onStepFinish: (step) => {
+                  console.log(`[ORCA_STEP] ${step.stepType} (tokens: ${step.usage.completionTokens})`)
+                }
+              })
+            } catch (geminiErr: any) {
+              console.warn('GEMINI_FAILOVER:', geminiErr.message)
+              if (!groqKey) throw geminiErr
+              console.log('ORCA_INTEL: Switching to Groq fallback')
+              const groq = createGroq({ apiKey: groqKey })
+              return await streamText({ ...streamOptions, model: groq('llama-3.3-70b-versatile') })
             }
-          })
-        } catch (geminiErr: any) {
-          console.warn('GEMINI_FAILOVER:', geminiErr.message)
-          if (!groqKey) throw geminiErr
-          console.log('ORCA_INTEL: Switching to Groq fallback')
-          const groq = createGroq({ apiKey: groqKey })
-          return await streamText({ ...streamOptions, model: groq('llama-3.3-70b-versatile') })
+          }
+
+          if (groqKey) {
+            const groq = createGroq({ apiKey: groqKey })
+            return await streamText({ ...streamOptions, model: groq('llama-3.3-70b-versatile') })
+          }
+
+          throw new Error('No AI provider API key configured.')
         }
-      }
 
-      if (groqKey) {
-        const groq = createGroq({ apiKey: groqKey })
-        return await streamText({ ...streamOptions, model: groq('llama-3.3-70b-versatile') })
-      }
-
-      throw new Error('No AI provider API key configured. Please set GEMINI_API_KEY or GROQ_API_KEY in your Vercel environment variables.')
-    }
-
-    const result = await getStreamResult()
-    return result.toDataStreamResponse({
-      data,
-      getErrorMessage: (err: any) => {
-        console.error('[ORCA_ASYNC_STREAM_ERR]', err?.message, err?.stack)
-        return String(err?.message || err)
+        try {
+          const result = await getStream()
+          result.mergeIntoDataStream(dataStream)
+        } catch (streamErr: any) {
+          console.error('[ORCA_ASYNC_STREAM_ERR]', streamErr?.message)
+          dataStream.writeMessageAnnotation({ error: String(streamErr?.message || streamErr) })
+        }
       }
     })
   } catch (err: any) {

@@ -429,6 +429,59 @@ function ChatContent() {
       .trim();
 
     const lines = cleanContent.split('\n');
+    const blocks: { type: string; content: string; lang?: string }[] = [];
+    let currentCodeBlock: { lang: string; lines: string[] } | null = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      if (trimmed.startsWith('```')) {
+        if (currentCodeBlock) {
+          blocks.push({
+            type: 'code',
+            content: currentCodeBlock.lines.join('\n'),
+            lang: currentCodeBlock.lang
+          });
+          currentCodeBlock = null;
+        } else {
+          const lang = trimmed.slice(3).trim() || 'typescript';
+          currentCodeBlock = { lang, lines: [] };
+        }
+        continue;
+      }
+
+      if (currentCodeBlock !== null) {
+        currentCodeBlock.lines.push(line);
+        continue;
+      }
+
+      if (trimmed.startsWith('# ')) {
+        blocks.push({ type: 'h1', content: trimmed.slice(2) });
+      } else if (trimmed.startsWith('## ')) {
+        blocks.push({ type: 'h2', content: trimmed.slice(3) });
+      } else if (trimmed.startsWith('### ')) {
+        blocks.push({ type: 'h3', content: trimmed.slice(4) });
+      } else if (trimmed.startsWith('- [ ] ') || trimmed.startsWith('- [x] ') || trimmed.startsWith('* [ ] ') || trimmed.startsWith('* [x] ')) {
+        blocks.push({ type: 'checklist', content: trimmed });
+      } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        blocks.push({ type: 'list', content: trimmed.slice(2) });
+      } else if (trimmed === '---') {
+        blocks.push({ type: 'hr', content: '' });
+      } else if (trimmed === '') {
+        blocks.push({ type: 'empty', content: '' });
+      } else {
+        blocks.push({ type: 'p', content: line });
+      }
+    }
+
+    if (currentCodeBlock !== null) {
+      blocks.push({
+        type: 'code',
+        content: currentCodeBlock.lines.join('\n'),
+        lang: currentCodeBlock.lang
+      });
+    }
 
     const applyHighlights = (text: string): React.ReactNode[] | string => {
       if (!text) return [];
@@ -536,39 +589,37 @@ function ChatContent() {
       });
     };
 
-    return lines.map((line, lineIdx) => {
-      const trimmed = line.trim();
-
-      if (trimmed.startsWith('# ')) {
+    return blocks.map((block, blockIdx) => {
+      if (block.type === 'h1') {
         return (
-          <h1 key={lineIdx} className="text-lg font-black text-white font-headline border-b border-outline-variant/10 pb-2 mb-4 mt-6 uppercase tracking-[0.1em]">
-            {applyHighlights(trimmed.slice(2))}
+          <h1 key={blockIdx} className="text-lg font-black text-white font-headline border-b border-outline-variant/10 pb-2 mb-4 mt-6 uppercase tracking-[0.1em]">
+            {applyHighlights(block.content)}
           </h1>
         );
       }
 
-      if (trimmed.startsWith('## ')) {
+      if (block.type === 'h2') {
         return (
-          <h2 key={lineIdx} className="text-sm font-extrabold text-primary-container font-headline mb-3 mt-5 uppercase tracking-wider flex items-center gap-2">
+          <h2 key={blockIdx} className="text-sm font-extrabold text-primary-container font-headline mb-3 mt-5 uppercase tracking-wider flex items-center gap-2">
             <span className="w-1.5 h-3 bg-primary-container/60 rounded-sm" />
-            {applyHighlights(trimmed.slice(3))}
+            {applyHighlights(block.content)}
           </h2>
         );
       }
 
-      if (trimmed.startsWith('### ')) {
+      if (block.type === 'h3') {
         return (
-          <h3 key={lineIdx} className="text-xs font-black text-on-surface/80 font-headline uppercase tracking-widest mb-2 mt-4">
-            {applyHighlights(trimmed.slice(4))}
+          <h3 key={blockIdx} className="text-xs font-black text-on-surface/80 font-headline uppercase tracking-widest mb-2 mt-4">
+            {applyHighlights(block.content)}
           </h3>
         );
       }
 
-      if (trimmed.startsWith('- [ ] ') || trimmed.startsWith('- [x] ') || trimmed.startsWith('* [ ] ') || trimmed.startsWith('* [x] ')) {
-        const isChecked = trimmed.includes('[x]');
-        const text = trimmed.slice(6);
+      if (block.type === 'checklist') {
+        const isChecked = block.content.includes('[x]');
+        const text = block.content.slice(6);
         return (
-          <div key={lineIdx} className="flex items-start gap-3 my-2 text-xs text-on-surface/80 pl-1">
+          <div key={blockIdx} className="flex items-start gap-3 my-2 text-xs text-on-surface/80 pl-1">
             <span className={`material-symbols-outlined text-[15px] mt-0.5 select-none ${isChecked ? 'text-primary-container' : 'text-on-surface/20'}`}>
               {isChecked ? 'check_box' : 'check_box_outline_blank'}
             </span>
@@ -579,30 +630,83 @@ function ChatContent() {
         );
       }
 
-      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      if (block.type === 'list') {
         return (
-          <div key={lineIdx} className="flex items-start gap-2 my-1 text-xs text-on-surface/80 pl-3">
+          <div key={blockIdx} className="flex items-start gap-2 my-1 text-xs text-on-surface/80 pl-3">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-container/40 mt-1.5 flex-shrink-0" />
-            <span>{applyHighlights(trimmed.slice(2))}</span>
+            <span>{applyHighlights(block.content)}</span>
           </div>
         );
       }
 
-      if (trimmed === '') {
-        return <div key={lineIdx} className="h-3" />;
+      if (block.type === 'empty') {
+        return <div key={blockIdx} className="h-3" />;
       }
 
-      if (trimmed.startsWith('```')) {
-        return null; 
+      if (block.type === 'hr') {
+        return <hr key={blockIdx} className="my-5 border-outline-variant/10" />;
       }
 
-      if (trimmed === '---') {
-        return <hr key={lineIdx} className="my-5 border-outline-variant/10" />;
+      if (block.type === 'code') {
+        const codeText = block.content;
+        const language = block.lang || 'typescript';
+
+        let fileName = `file.${language === 'javascript' ? 'js' : language === 'typescript' ? 'ts' : language === 'sql' ? 'sql' : language === 'json' ? 'json' : 'txt'}`;
+        if (codeText.includes('interface ') || codeText.includes('export const ')) {
+          fileName = `types.ts`;
+        }
+        if (codeText.includes('CREATE TABLE') || codeText.includes('SELECT ')) {
+          fileName = `schema.sql`;
+        }
+
+        return (
+          <div key={blockIdx} className="my-5 border border-outline-variant/10 rounded-xl overflow-hidden bg-[#080908] shadow-lg animate-in fade-in duration-300">
+            <div className="bg-[#121412] px-4 py-2.5 border-b border-outline-variant/5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[15px] text-primary-container">code</span>
+                <span className="text-[10px] font-mono text-on-surface/80 font-semibold">{fileName}</span>
+                <span className="text-[8px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-on-surface/40 uppercase font-bold">{language}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(codeText);
+                    toast.success('Code copied to clipboard');
+                  }}
+                  className="p-1 hover:bg-white/5 rounded text-on-surface/50 hover:text-primary-container transition-all flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold"
+                  title="Copy Code"
+                >
+                  <span className="material-symbols-outlined text-xs">content_copy</span> Copy
+                </button>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([codeText], { type: 'text/plain;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', fileName);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    toast.success(`${fileName} downloaded`);
+                  }}
+                  className="p-1 hover:bg-white/5 rounded text-on-surface/50 hover:text-primary-container transition-all flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold"
+                  title="Download File"
+                >
+                  <span className="material-symbols-outlined text-xs">download</span> Download
+                </button>
+              </div>
+            </div>
+            <pre className="p-4 overflow-x-auto text-[11px] font-mono text-[#a9b1d6] leading-relaxed max-h-[350px] overflow-y-auto no-scrollbar selection:bg-[#00c3672d]">
+              <code>{codeText}</code>
+            </pre>
+          </div>
+        );
       }
 
       return (
-        <p key={lineIdx} className="text-xs text-on-surface/80 leading-relaxed font-body my-1">
-          {applyHighlights(line)}
+        <p key={blockIdx} className="text-xs text-on-surface/80 leading-relaxed font-body my-1">
+          {applyHighlights(block.content)}
         </p>
       );
     });
