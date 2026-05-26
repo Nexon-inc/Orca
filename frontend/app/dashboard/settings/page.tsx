@@ -29,13 +29,20 @@ export default function SettingsPage() {
       }
     });
 
-    // Check URL hash to open section by scrolling
-    if (window.location.hash) {
-      setTimeout(() => {
-         const el = document.getElementById(window.location.hash.substring(1));
-         if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 500);
-    }
+    const handleHashScroll = () => {
+      if (window.location.hash) {
+        const el = document.getElementById(window.location.hash.substring(1));
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    // Run on initial mount (after short timeout to allow layout to settle)
+    setTimeout(handleHashScroll, 500);
+
+    window.addEventListener('hashchange', handleHashScroll);
+    return () => {
+      window.removeEventListener('hashchange', handleHashScroll);
+    };
   }, []);
 
   const handleCancelSubscription = async () => {

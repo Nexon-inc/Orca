@@ -131,7 +131,7 @@ export default function DashboardSidebar({ active }: SidebarProps) {
           <h3 className="text-[9px] font-black text-on-surface/30 uppercase font-mono mb-2">RECENT_SESSIONS</h3>
           <div className="flex flex-col gap-1 -mx-1">
             {recents.length > 0 ? (
-              recents.map(conv => (
+              recents.slice(0, 5).map(conv => (
                 <Link 
                   key={conv.id}
                   href={`/dashboard/chat/${conv.id}`}
@@ -157,28 +157,6 @@ export default function DashboardSidebar({ active }: SidebarProps) {
       {/* Spacer to push profile to bottom if recents is small */}
       <div className="mt-auto"></div>
 
-      {/* Popover Settings Menu */}
-      {showUserMenu && (
-        <div className={`mb-4 w-full bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 z-50 flex flex-col`} style={{ minWidth: isCollapsed ? '160px' : 'auto' }}>
-          <div className="px-4 py-2 border-b border-[#2d312d]/50 mb-1">
-            <div className="text-[9px] text-on-surface/50 font-mono tracking-widest uppercase">Signed In As</div>
-            <div className="text-[10px] font-black text-on-surface truncate">{user?.email || 'user@nexonic.ai'}</div>
-          </div>
-          <a href="/dashboard/settings#setup" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer block">
-            <span className="material-symbols-outlined text-[14px]">settings</span> Setup & Env
-          </a>
-          <a href="/dashboard/settings#billing" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer block">
-            <span className="material-symbols-outlined text-[14px]">credit_card</span> Billing
-          </a>
-          <a href="/dashboard/settings#account" onClick={() => setShowUserMenu(false)} className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3 cursor-pointer block">
-            <span className="material-symbols-outlined text-[14px]">manage_accounts</span> Account
-          </a>
-          <button onClick={handleLogout} className="w-full text-left px-4 py-2 mt-1 text-[10px] font-black text-error/80 hover:text-error hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
-            <span className="material-symbols-outlined text-[14px]">logout</span> Disconnect
-          </button>
-        </div>
-      )}
-
       {/* 4. User Profile */}
       <div 
         ref={menuRef}
@@ -201,6 +179,44 @@ export default function DashboardSidebar({ active }: SidebarProps) {
               </span>
             </div>
           </>
+        )}
+
+        {/* Popover Settings Menu */}
+        {showUserMenu && (
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`bg-[#1a1c1a] border border-[#2d312d] rounded-xl shadow-2xl py-2 z-50 flex flex-col text-left ${
+              isCollapsed 
+                ? 'fixed left-20 bottom-8 w-48 animate-in slide-in-from-left-2 duration-150' 
+                : 'absolute bottom-14 left-0 right-0 w-full animate-in slide-in-from-bottom-2 duration-150'
+            }`}
+          >
+            <div className="px-4 py-2 border-b border-[#2d312d]/50 mb-1">
+              <div className="text-[8px] text-on-surface/50 font-mono tracking-widest uppercase">Signed In As</div>
+              <div className="text-[9px] font-black text-on-surface truncate">{user?.email || 'user@nexonic.ai'}</div>
+            </div>
+            <button 
+              onClick={() => { setShowUserMenu(false); router.push('/dashboard/settings#setup'); }}
+              className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer block"
+            >
+              <span className="material-symbols-outlined text-[14px]">settings</span> Setup & Env
+            </button>
+            <button 
+              onClick={() => { setShowUserMenu(false); router.push('/dashboard/settings#billing'); }}
+              className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer block"
+            >
+              <span className="material-symbols-outlined text-[14px]">credit_card</span> Billing
+            </button>
+            <button 
+              onClick={() => { setShowUserMenu(false); router.push('/dashboard/settings#account'); }}
+              className="w-full text-left px-4 py-2 text-[10px] font-black text-on-surface/60 hover:text-primary-container hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors border-b border-[#2d312d]/50 pb-3 cursor-pointer block"
+            >
+              <span className="material-symbols-outlined text-[14px]">manage_accounts</span> Account
+            </button>
+            <button onClick={handleLogout} className="w-full text-left px-4 py-2 mt-1 text-[10px] font-black text-error/80 hover:text-error hover:bg-white/5 uppercase tracking-widest flex items-center gap-2 transition-colors">
+              <span className="material-symbols-outlined text-[14px]">logout</span> Disconnect
+            </button>
+          </div>
         )}
       </div>
     </aside>
