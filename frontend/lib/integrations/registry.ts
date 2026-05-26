@@ -85,7 +85,19 @@ export const INTEGRATION_REGISTRY: IntegrationConfig[] = [
     apikey_test_header: 'Authorization', apikey_test_prefix: 'Bearer ',
     agents: ['Ghost'], plan_required: 'builder' },
 
-  // --- INTELLIGENCE & RESEARCH ---------------------------------
+  // --- OTHERS & CLOUD ECOSYSTEMS -------------------------------
+  { name: 'TikTok', service_key: 'tiktok', department_key: 'marketing', auth_method: 'oauth',
+    oauth_authorize_url: 'https://www.tiktok.com/v2/auth/authorize/',
+    oauth_token_url: 'https://open.tiktokapis.com/v2/oauth/token/',
+    oauth_scopes: ['user.info.basic', 'video.list', 'video.publish'],
+    oauth_client_id_env: 'TIKTOK_CLIENT_ID', oauth_client_secret_env: 'TIKTOK_CLIENT_SECRET',
+    agents: ['Aria'], plan_required: 'builder' },
+  { name: 'Google Drive', service_key: 'google_drive', department_key: 'ops', auth_method: 'oauth',
+    oauth_authorize_url: 'https://accounts.google.com/o/oauth2/v2/auth',
+    oauth_token_url: 'https://oauth2.googleapis.com/token',
+    oauth_scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly'],
+    oauth_client_id_env: 'GOOGLE_CLIENT_ID', oauth_client_secret_env: 'GOOGLE_CLIENT_SECRET',
+    agents: ['Atlas', 'Ghost', 'Aria', 'Purity'], plan_required: 'builder' },
 ]
 
 export function getIntegrationConfig(serviceKey: string): IntegrationConfig | undefined {

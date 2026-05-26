@@ -36,4 +36,4 @@ function walk(dir) {
   });
 }
 
-walk('c:/Users/John Kyalo/Desktop/REPOS/Orca/frontend');
+walk('c:/Users/John Kyalo/Desktop/Tests/Orca/frontend');

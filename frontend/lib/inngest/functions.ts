@@ -111,8 +111,8 @@ export const agentCoordinationFn = inngest.createFunction(
     // 2. Find the target agent
     const { data: targetAgent } = await supabase
       .from('agents')
-      .select('id, name')
-      .eq('org_id', org_id)
+      .select('id, name, departments!inner(org_id)')
+      .eq('departments.org_id', org_id)
       .eq('acronym', target_agent_acronym)
       .single()
 
@@ -141,8 +141,7 @@ export const agentCoordinationFn = inngest.createFunction(
         org_id,
         agent_id: targetAgent.id,
         user_id: event.data.user_id, // Inherit user_id for permission checks
-        title: `Internal Bridge: ${reason.slice(0, 30)}...`,
-        created_by_agent_id: from_agent_id
+        department_key: target_department_key
       })
       .select()
       .single()

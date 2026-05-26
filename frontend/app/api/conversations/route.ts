@@ -11,12 +11,11 @@ export async function GET() {
   const { data: conversations } = await serviceClient
     .from('conversations')
     .select(`
-      id, department_key, created_at, updated_at,
+      id, title, department_key, created_at, updated_at,
       agents (id, name, icon, acronym, role_description)
     `)
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
-    .order('created_at', { ascending: false })
     .order('created_at', { ascending: false })
 
   return NextResponse.json({ conversations })

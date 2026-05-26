@@ -13,6 +13,7 @@ import { sanitizeInput } from '@/lib/security/sanitizeInput'
 import { checkRateLimit } from '@/lib/security/rateLimit'
 import { parseAndExecuteActions } from '@/lib/agents/parseActions'
 import { getAgentMemory } from '@/lib/agents/memory'
+import { inngest } from '@/lib/inngest/client'
 
 export async function POST(
   request: Request,
@@ -140,7 +141,7 @@ export async function POST(
           const directiveMatch = text.match(/(?:DIRECTIVE_DOCUMENT|DIRECTIVE|MASTER_DIRECTIVE):\s*([\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i)
           const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
 
-          const { cleanResponse } = await parseAndExecuteActions(text, orgId)
+          const { cleanResponse } = await parseAndExecuteActions(text, orgId, agent.id, user.id)
 
           // Send to DB
           await serviceClient.from('messages').insert({
@@ -154,6 +155,20 @@ export async function POST(
               agent_name: agent.name 
             }
           })
+
+          // Trigger background memory update event to compact conversation history into Markdown
+          try {
+            await inngest.send({
+              name: 'agent/memory.update',
+              data: {
+                org_id: orgId,
+                agent_id: agent.id,
+                conversation_id: conversationId
+              }
+            })
+          } catch (err) {
+            console.error('Failed to trigger memory update event:', err)
+          }
 
           // Send to Client via StreamData
           data.append({

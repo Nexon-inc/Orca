@@ -9,6 +9,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.67",
+    "@ai-sdk/groq": "^3.0.38",
+    "@ai-sdk/openai": "^3.0.58",
+    "@ai-sdk/react": "^3.0.176",
     "@hookform/resolvers": "^3.9.1",
     "@langchain/anthropic": "^0.3.11",
     "@langchain/community": "^0.3.10",
@@ -20,7 +24,6 @@
     "@ai-sdk/openai": "^1.1.9",
     "@ai-sdk/groq": "^1.1.8",
     "@ai-sdk/react": "^1.1.13",
-
     "@langchain/openai": "^0.3.11",
     "@mendable/firecrawl-js": "^1.1.1",
     "@octokit/rest": "^22.0.1",
@@ -60,6 +63,7 @@
     "@types/nodemailer": "^7.0.11",
     "@vercel/analytics": "1.6.1",
     "adm-zip": "^0.5.16",
+    "ai": "^6.0.174",
     "animejs": "^4.3.6",
     "autoprefixer": "^10.4.20",
     "axios": "^1.13.6",
@@ -70,7 +74,7 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.6.0",
     "highlight.js": "^11.11.1",
-    "inngest": "^3.54.0",
+    "inngest": "^3.54.2",
     "input-otp": "1.4.2",
     "js-tiktoken": "^1.0.12",
     "lucide-react": "^0.564.0",
@@ -92,7 +96,7 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.0",

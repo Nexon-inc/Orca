@@ -1,5 +1,6 @@
 import { executeViaComposio } from './composioExecutor'
 import { inngest } from '@/lib/inngest/client'
+import { createServiceSupabaseClient } from '@/lib/supabase/server'
 
 /**
  * Parses an AI response for [ACTION:] and [HANDOFF:] tags.
@@ -7,7 +8,9 @@ import { inngest } from '@/lib/inngest/client'
  */
 export async function parseAndExecuteActions(
   agentResponse: string,
-  orgId: string
+  orgId: string,
+  fromAgentId?: string,
+  userId?: string
 ): Promise<{ cleanResponse: string; actionsExecuted: string[] }> {
   
   // Flexible regex to find [ACTION: tool="tool_name" params={...}]
@@ -47,9 +50,64 @@ export async function parseAndExecuteActions(
     const [fullTag, toAgent, reason, context] = match
     
     try {
+      const supabase = createServiceSupabaseClient()
+      
+      // Safely map frontend role shortcuts to exact internal Agent names for all 6 executives
+      const roleToName: Record<string, string> = {
+        'CEO': 'Atlas',
+        'CMO': 'Aria',
+        'CSO': 'Rex',
+        'CCO': 'Purity',
+        'CIO': 'Roman',
+        'CTO': 'Ghost'
+      }
+      const actualName = roleToName[toAgent.toUpperCase()] || toAgent
+
+      // Query the target agent and their department from Supabase
+      const { data: targetAgent } = await supabase
+        .from('agents')
+        .select('id, acronym, departments!inner(key)')
+        .eq('departments.org_id', orgId)
+        .ilike('name', actualName)
+        .limit(1)
+        .single()
+
+      // Comprehensive static fallbacks for all 6 executives
+      const nameToAcronym: Record<string, string> = {
+        'Atlas': 'CEO',
+        'Aria': 'CMO',
+        'Rex': 'CSO',
+        'Purity': 'CCO',
+        'Roman': 'CIO',
+        'Ghost': 'CTO'
+      }
+      const nameToDept: Record<string, string> = {
+        'Atlas': 'ops',
+        'Aria': 'marketing',
+        'Rex': 'sales',
+        'Purity': 'cs',
+        'Roman': 'intel',
+        'Ghost': 'tech'
+      }
+
+      const targetAcronym = targetAgent?.acronym || nameToAcronym[actualName] || 'CEO'
+      const targetDeptKey = (targetAgent?.departments as any)?.key || nameToDept[actualName] || 'ops'
+      const targetAgentId = targetAgent?.id || null
+
       await inngest.send({
         name: 'agent/coordination.requested',
-        data: { orgId, toAgent, reason, context }
+        data: {
+          org_id: orgId,
+          orgId, // backwards compatibility
+          from_agent_id: fromAgentId,
+          target_department_key: targetDeptKey,
+          target_agent_acronym: targetAcronym,
+          target_agent_id: targetAgentId,
+          toAgent, // backwards compatibility
+          reason,
+          context,
+          user_id: userId
+        }
       })
       
       cleanResponse = cleanResponse.replace(fullTag,

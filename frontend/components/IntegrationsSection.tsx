@@ -5,16 +5,21 @@ import { animate, stagger } from 'animejs';
 
 const integrations = [
   { name: 'HubSpot', category: 'Sales', status: 'Core' },
+  { name: 'Salesforce', category: 'Sales', status: 'Core' },
   { name: 'LinkedIn', category: 'Marketing', status: 'Social' },
   { name: 'X / Twitter', category: 'Marketing', status: 'Social' },
+  { name: 'TikTok', category: 'Marketing', status: 'Social' },
   { name: 'Meta (IG/FB)', category: 'Marketing', status: 'Social' },
-  { name: 'Brevo', category: 'Marketing', status: 'API' },
   { name: 'Google Workspace', category: 'Admin', status: 'Core' },
-  { name: 'Hunter.io', category: 'Sales', status: 'API' },
   { name: 'Slack', category: 'CS', status: 'Core' },
   { name: 'Notion', category: 'CS / Intel', status: 'Core' },
   { name: 'GitHub', category: 'Tech', status: 'Core' },
-  { name: 'Vercel', category: 'Tech', status: 'API' },
+  { name: 'Zoom', category: 'Ops', status: 'API' },
+  { name: 'Shopify', category: 'Finance', status: 'Core' },
+  { name: 'Stripe', category: 'Finance', status: 'Core' },
+  { name: 'Crunchbase', category: 'Research', status: 'API' },
+  { name: 'Apollo.io', category: 'Sales', status: 'API' },
+  { name: 'Google Trends', category: 'Marketing', status: 'API' },
 ];
 
 export default function IntegrationsSection() {

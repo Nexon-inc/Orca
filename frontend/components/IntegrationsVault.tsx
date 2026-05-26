@@ -8,6 +8,7 @@ const INTEGRATIONS_CATALOG = [
     { service_key: 'linkedin', name: 'LinkedIn', auth_method: 'oauth', color: '#0A66C2' },
     { service_key: 'twitter', name: 'X / Twitter', auth_method: 'oauth', color: '#000000' },
     { service_key: 'meta', name: 'Meta', auth_method: 'oauth', color: '#0082FB' },
+    { service_key: 'tiktok', name: 'TikTok', auth_method: 'oauth', color: '#EE1D52' },
     { service_key: 'mailchimp', name: 'Mailchimp', auth_method: 'oauth', color: '#FFE01B' },
     { service_key: 'ahrefs', name: 'Ahrefs', auth_method: 'apikey', color: '#FF7043' },
     { service_key: 'semrush', name: 'Semrush', auth_method: 'apikey', color: '#FF642D' },
@@ -32,6 +33,7 @@ const INTEGRATIONS_CATALOG = [
     { service_key: 'notion', name: 'Notion', auth_method: 'oauth', color: '#000000' },
     { service_key: 'slack', name: 'Slack', auth_method: 'oauth', color: '#4A154B' },
     { service_key: 'google_calendar', name: 'Calendar', auth_method: 'oauth', color: '#4285F4' },
+    { service_key: 'google_drive', name: 'Google Drive', auth_method: 'oauth', color: '#0F9D58' },
   ]},
   { id: 'finance', name: 'Finance & Legal', tools: [
     { service_key: 'quickbooks', name: 'QuickBooks', auth_method: 'oauth', color: '#2CA01C' },
@@ -80,11 +82,6 @@ function IntegrationsInner() {  const searchParams = useSearchParams();
         setLoading(false);
       });
   }, [searchParams]);
-
-  useEffect(() => {
-    // Animation logic removed to ensure build stability. 
-    // Content will now appear immediately with CSS transitions.
-  }, [loading]);
 
   const handleConnect = (tool: any) => {
     if (tool.auth_method === 'oauth') {

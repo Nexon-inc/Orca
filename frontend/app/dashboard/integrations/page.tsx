@@ -10,12 +10,15 @@ const INTEGRATIONS_CATALOG = [
     { service_key: 'linkedin', name: 'LinkedIn', auth_method: 'oauth', color: '#0A66C2' },
     { service_key: 'twitter', name: 'X / Twitter', auth_method: 'oauth', color: '#000000' },
     { service_key: 'meta', name: 'Meta', auth_method: 'oauth', color: '#0082FB' },
+    { service_key: 'tiktok', name: 'TikTok', auth_method: 'oauth', color: '#000000' },
     { service_key: 'mailchimp', name: 'Mailchimp', auth_method: 'oauth', color: '#FFE01B' },
     { service_key: 'ahrefs', name: 'Ahrefs', auth_method: 'apikey', color: '#FF7043' },
     { service_key: 'semrush', name: 'Semrush', auth_method: 'apikey', color: '#FF642D' },
+    { service_key: 'google_trends', name: 'Google Trends', auth_method: 'apikey', color: '#4285F4' },
   ]},
   { id: 'sales', name: 'Sales & Outreach', tools: [
     { service_key: 'hubspot', name: 'HubSpot', auth_method: 'oauth', color: '#FF7A59' },
+    { service_key: 'salesforce', name: 'Salesforce', auth_method: 'oauth', color: '#00A1E0' },
     { service_key: 'apollo', name: 'Apollo.io', auth_method: 'apikey', color: '#1D2C4D' },
     { service_key: 'hunter', name: 'Hunter.io', auth_method: 'apikey', color: '#FF6347' },
     { service_key: 'gmail_outreach', name: 'Gmail Outreach', auth_method: 'oauth', color: '#EA4335' },
@@ -24,22 +27,29 @@ const INTEGRATIONS_CATALOG = [
     { service_key: 'intercom', name: 'Intercom', auth_method: 'oauth', color: '#6AFDEF' },
     { service_key: 'zendesk', name: 'Zendesk', auth_method: 'oauth', color: '#03363D' },
     { service_key: 'typeform', name: 'Typeform', auth_method: 'oauth', color: '#000000' },
+    { service_key: 'g2', name: 'G2 Sentiment', auth_method: 'apikey', color: '#FF492C' },
   ]},
   { id: 'tech', name: 'Engineering & Dev', tools: [
     { service_key: 'github', name: 'GitHub', auth_method: 'oauth', color: '#24292e' },
     { service_key: 'vercel', name: 'Vercel', auth_method: 'apikey', color: '#000000' },
     { service_key: 'sentry', name: 'Sentry', auth_method: 'apikey', color: '#362D59' },
+    { service_key: 'shodan', name: 'Shodan', auth_method: 'apikey', color: '#FF4C4C' },
   ]},
   { id: 'ops', name: 'Operations', tools: [
     { service_key: 'notion', name: 'Notion', auth_method: 'oauth', color: '#000000' },
     { service_key: 'slack', name: 'Slack', auth_method: 'oauth', color: '#4A154B' },
     { service_key: 'google_calendar', name: 'Calendar', auth_method: 'oauth', color: '#4285F4' },
+    { service_key: 'zoom', name: 'Zoom', auth_method: 'oauth', color: '#2D8CFF' },
   ]},
   { id: 'finance', name: 'Finance & Legal', tools: [
+    { service_key: 'stripe', name: 'Stripe', auth_method: 'oauth', color: '#635BFF' },
     { service_key: 'quickbooks', name: 'QuickBooks', auth_method: 'oauth', color: '#2CA01C' },
+    { service_key: 'shopify', name: 'Shopify', auth_method: 'oauth', color: '#95BF47' },
     { service_key: 'docusign', name: 'DocuSign', auth_method: 'oauth', color: '#FF0000' },
+    { service_key: 'alphavantage', name: 'Alpha Vantage', auth_method: 'apikey', color: '#00A3A3' },
   ]},
   { id: 'intel', name: 'Intelligence & Research', tools: [
+    { service_key: 'crunchbase', name: 'Crunchbase', auth_method: 'apikey', color: '#1451E5' },
     { service_key: 'perplexity', name: 'Perplexity AI', auth_method: 'apikey', color: '#20B8CD' },
   ]}
 ];

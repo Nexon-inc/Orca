@@ -42,7 +42,7 @@ function ChatContent() {
     { name: 'GPT-4o', id: 'openai/gpt-4o' },
     { name: 'Llama 3.1 405B', id: 'meta-llama/llama-3.1-405b-instruct' },
     { name: 'Gemini 1.5 Pro (Native)', id: 'google/gemini-1.5-pro' },
-    { name: 'DeepSeek V3 (OR)', id: 'deepseek/deepseek-chat' }
+    { name: 'DeepSeek V3 ', id: 'deepseek/deepseek-chat' }
   ];
 
   const EXECUTIVE_PILLS = [

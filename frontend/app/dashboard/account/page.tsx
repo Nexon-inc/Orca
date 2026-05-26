@@ -95,7 +95,7 @@ export default function AccountPage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`acc-tab-anim px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap relative ${activeTab === tab.id ? 'bg-green text-bg shadow-lg' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap relative ${activeTab === tab.id ? 'bg-green text-bg shadow-lg' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
                     >
                       {tab.name}
                     </button>
@@ -104,7 +104,7 @@ export default function AccountPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar p-8">
-              <div className="max-w-4xl w-full mx-auto acc-tab-anim opacity-0 pb-20">
+              <div className="max-w-4xl w-full mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
                 {activeTab === 'profile' && (
                   <div className="space-y-16">
@@ -161,10 +161,10 @@ export default function AccountPage() {
                                onChange={(e) => setIdentity({ ...identity, industry: e.target.value })}
                                className="w-full bg-surface border border-white/10 rounded-2xl p-4 text-white font-syne focus:border-green/50 outline-none transition-all"
                              >
-                                <option>AI & Robotics</option>
-                                <option>E-commerce</option>
-                                <option>Fintech</option>
-                                <option>Software / SaaS</option>
+                                 <option>AI & Robotics</option>
+                                 <option>E-commerce</option>
+                                 <option>Fintech</option>
+                                 <option>Software / SaaS</option>
                              </select>
                           </div>
                        </div>

@@ -1,14 +1,24 @@
 import { serve } from 'inngest/next'
 import { inngest } from '@/lib/inngest/client'
-import { handleCoordinationRequest } from '@/lib/inngest/functions/coordination'
+import { 
+  approvalReminderFn, 
+  agentDailyResetFn, 
+  oauthStateCleanupFn, 
+  agentCoordinationFn,
+  agentMemoryUpdateFn,
+  conversationTitleFn 
+} from '@/lib/inngest/functions'
 import { handleWeeklyReports } from '@/lib/inngest/functions/reports'
-import { handleAgentReset } from '@/lib/inngest/functions/reset'
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
-    handleCoordinationRequest,
+    approvalReminderFn,
+    agentDailyResetFn,
+    oauthStateCleanupFn,
+    agentCoordinationFn,
+    agentMemoryUpdateFn,
+    conversationTitleFn,
     handleWeeklyReports,
-    handleAgentReset,
   ],
 })

@@ -59,6 +59,12 @@ function ChatContent() {
   const [thinkingStep, setThinkingStep] = useState(0);
   const [activeDirectives, setActiveDirectives] = useState<any | null>(null);
   const [activeCoordinations, setActiveCoordinations] = useState<any[]>([]);
+  const [briefingTab, setBriefingTab] = useState<'preview' | 'code'>('preview');
+  const [autoHighlight, setAutoHighlight] = useState(false);
+  const [manualHighlights, setManualHighlights] = useState<{ text: string; color: 'green' | 'yellow' }[]>([]);
+  const [isExportingToDrive, setIsExportingToDrive] = useState(false);
+  const [driveDocUrl, setDriveDocUrl] = useState<string | null>(null);
+  const [activeHighlightColor, setActiveHighlightColor] = useState<'green' | 'yellow'>('green');
   const [sidebarWidth, setSidebarWidth] = useState(600);
   const isResizing = useRef(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -274,15 +280,6 @@ function ChatContent() {
       if (historyInitialized.current) return;
       historyInitialized.current = true;
       try {
-        const orgRes = await fetch('/api/org');
-        const orgData = await orgRes.json();
-        if (orgData?.org) {
-          setOrg(orgData.org);
-        } else if (data?.messages?.[0]?.org_id) {
-          // Fallback: use org_id from messages if available
-          setOrg({ id: data.messages[0].org_id } as any);
-        }
-
         const userRes = await fetch('/api/user');
         const userData = await userRes.json();
         if (userData?.user) {
@@ -409,7 +406,246 @@ function ChatContent() {
       </div>
     );
   };
+  const applyManualHighlight = () => {
+    if (typeof window !== 'undefined') {
+      const selectedText = window.getSelection()?.toString().trim();
+      if (selectedText) {
+        if (!manualHighlights.some(h => h.text.toLowerCase() === selectedText.toLowerCase())) {
+          setManualHighlights(prev => [...prev, { text: selectedText, color: activeHighlightColor }]);
+          toast.success(`Highlighted selection in ${activeHighlightColor}`);
+        }
+      } else {
+        toast.error('Please highlight some text in the document preview first.');
+      }
+    }
+  };
 
+  const renderBriefingMarkdown = (rawContent: string) => {
+    if (!rawContent) return null;
+
+    const cleanContent = rawContent
+      .split('RESULT:')[0]
+      .split('DIRECTIVE_DOCUMENT:')[0]
+      .trim();
+
+    const lines = cleanContent.split('\n');
+
+    const applyHighlights = (text: string): React.ReactNode[] | string => {
+      if (!text) return [];
+
+      let segments: { text: string; highlight?: 'green' | 'yellow' }[] = [{ text }];
+
+      if (autoHighlight) {
+        const autoGreenPatterns = [
+          /\b(100%|\+\d+%\.?\d*|\d+x|shaved \d+%|validated|milestones? completed|reference customers?|TAM|SAM|SOM|LTV|ROI|growth|conversions?|wins?)\b/gi,
+          /\b(apexlogistics|novacreative|zetaretail)\b/gi
+        ];
+        const autoYellowPatterns = [
+          /\b(action items?|warning|caution|risk|blockers?|critical|danger|strictly|must|should|action needed|attention required)\b/gi,
+          /(@Ghost|@Aria|@Rex|@Purity|@Roman|@Atlas)/gi
+        ];
+
+        autoGreenPatterns.forEach(pattern => {
+          const newSegments: typeof segments = [];
+          segments.forEach(seg => {
+            if (seg.highlight) {
+              newSegments.push(seg);
+              return;
+            }
+            const parts = seg.text.split(pattern);
+            const matches = seg.text.match(pattern) || [];
+            let matchIdx = 0;
+            parts.forEach((part, i) => {
+              newSegments.push({ text: part });
+              if (i < parts.length - 1) {
+                newSegments.push({ text: matches[matchIdx++], highlight: 'green' });
+              }
+            });
+          });
+          segments = newSegments.filter(s => s.text);
+        });
+
+        autoYellowPatterns.forEach(pattern => {
+          const newSegments: typeof segments = [];
+          segments.forEach(seg => {
+            if (seg.highlight) {
+              newSegments.push(seg);
+              return;
+            }
+            const parts = seg.text.split(pattern);
+            const matches = seg.text.match(pattern) || [];
+            let matchIdx = 0;
+            parts.forEach((part, i) => {
+              newSegments.push({ text: part });
+              if (i < parts.length - 1) {
+                newSegments.push({ text: matches[matchIdx++], highlight: 'yellow' });
+              }
+            });
+          });
+          segments = newSegments.filter(s => s.text);
+        });
+      }
+
+      manualHighlights.forEach(hl => {
+        const newSegments: typeof segments = [];
+        segments.forEach(seg => {
+          if (seg.highlight) {
+            newSegments.push(seg);
+            return;
+          }
+          if (seg.text.toLowerCase().includes(hl.text.toLowerCase())) {
+            const pattern = new RegExp(`(${hl.text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+            const parts = seg.text.split(pattern);
+            const matches = seg.text.match(pattern) || [];
+            let matchIdx = 0;
+            parts.forEach((part, i) => {
+              newSegments.push({ text: part });
+              if (i < parts.length - 1) {
+                newSegments.push({ text: matches[matchIdx++], highlight: hl.color });
+              }
+            });
+          } else {
+            newSegments.push(seg);
+          }
+        });
+        segments = newSegments.filter(s => s.text);
+      });
+
+      return segments.map((seg, idx) => {
+        if (seg.highlight === 'green') {
+          return (
+            <span
+              key={idx}
+              className="bg-emerald-500/20 text-emerald-400 px-1 rounded-sm border border-emerald-400/20 font-semibold inline-block"
+            >
+              {seg.text}
+            </span>
+          );
+        }
+        if (seg.highlight === 'yellow') {
+          return (
+            <span
+              key={idx}
+              className="bg-amber-500/20 text-amber-300 px-1 rounded-sm border border-amber-400/20 font-semibold inline-block"
+            >
+              {seg.text}
+            </span>
+          );
+        }
+        return seg.text;
+      });
+    };
+
+    return lines.map((line, lineIdx) => {
+      const trimmed = line.trim();
+
+      if (trimmed.startsWith('# ')) {
+        return (
+          <h1 key={lineIdx} className="text-lg font-black text-white font-headline border-b border-outline-variant/10 pb-2 mb-4 mt-6 uppercase tracking-[0.1em]">
+            {applyHighlights(trimmed.slice(2))}
+          </h1>
+        );
+      }
+
+      if (trimmed.startsWith('## ')) {
+        return (
+          <h2 key={lineIdx} className="text-sm font-extrabold text-primary-container font-headline mb-3 mt-5 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-3 bg-primary-container/60 rounded-sm" />
+            {applyHighlights(trimmed.slice(3))}
+          </h2>
+        );
+      }
+
+      if (trimmed.startsWith('### ')) {
+        return (
+          <h3 key={lineIdx} className="text-xs font-black text-on-surface/80 font-headline uppercase tracking-widest mb-2 mt-4">
+            {applyHighlights(trimmed.slice(4))}
+          </h3>
+        );
+      }
+
+      if (trimmed.startsWith('- [ ] ') || trimmed.startsWith('- [x] ') || trimmed.startsWith('* [ ] ') || trimmed.startsWith('* [x] ')) {
+        const isChecked = trimmed.includes('[x]');
+        const text = trimmed.slice(6);
+        return (
+          <div key={lineIdx} className="flex items-start gap-3 my-2 text-xs text-on-surface/80 pl-1">
+            <span className={`material-symbols-outlined text-[15px] mt-0.5 select-none ${isChecked ? 'text-primary-container' : 'text-on-surface/20'}`}>
+              {isChecked ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+            <span className={isChecked ? 'line-through opacity-40' : ''}>
+              {applyHighlights(text)}
+            </span>
+          </div>
+        );
+      }
+
+      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        return (
+          <div key={lineIdx} className="flex items-start gap-2 my-1 text-xs text-on-surface/80 pl-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-container/40 mt-1.5 flex-shrink-0" />
+            <span>{applyHighlights(trimmed.slice(2))}</span>
+          </div>
+        );
+      }
+
+      if (trimmed === '') {
+        return <div key={lineIdx} className="h-3" />;
+      }
+
+      if (trimmed.startsWith('```')) {
+        return null; 
+      }
+
+      if (trimmed === '---') {
+        return <hr key={lineIdx} className="my-5 border-outline-variant/10" />;
+      }
+
+      return (
+        <p key={lineIdx} className="text-xs text-on-surface/80 leading-relaxed font-body my-1">
+          {applyHighlights(line)}
+        </p>
+      );
+    });
+  };
+
+  const handleExportToGoogleDrive = async () => {
+    if (!activeDirectives) return;
+    setIsExportingToDrive(true);
+    try {
+      const rawText = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
+        .split('RESULT:')[0]
+        .split('DIRECTIVE_DOCUMENT:')[0]
+        .trim();
+      const title = `ORCA Briefing - ${activeDirectives.id.substring(0, 8)}`;
+
+      const res = await fetch('/api/integrations/google/drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          briefingId: activeDirectives.id,
+          title,
+          content: rawText
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDriveDocUrl(data.fileUrl);
+        toast.success(data.message || 'Exported successfully!', {
+          action: {
+            label: 'Open Doc ↗',
+            onClick: () => window.open(data.fileUrl, '_blank')
+          }
+        });
+      } else {
+        toast.error(data.error || 'Failed to export to Google Drive.');
+      }
+    } catch (err) {
+      toast.error('Network failure while exporting to Google Drive.');
+    } finally {
+      setIsExportingToDrive(false);
+    }
+  };
   return (
     <div className="flex h-screen bg-surface">
       <DashboardSidebar active="chat" />
@@ -516,12 +752,7 @@ function ChatContent() {
                                  if (match) {
                                    const agentName = match[1].replace('@', '');
                                    toast.info(`Jumping to ${agentName}'s coordination thread...`);
-                                   const targetOrgId = org?.id || (messages.length > 0 ? (messages[0] as any).org_id : null);
-                                   if (!targetOrgId) {
-                                     toast.error('Organization ID not found. Please refresh.');
-                                     return;
-                                   }
-                                   fetch(`/api/agents/${agentName}/latest-conversation?orgId=${targetOrgId}`)
+                                   fetch(`/api/agents/${agentName}/latest-conversation?orgId=${org?.id}`)
                                      .then(res => res.json())
                                      .then(data => {
                                        if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
@@ -590,6 +821,7 @@ function ChatContent() {
             style={{ width: `${sidebarWidth}px` }}
             className="bg-surface-container-low border-l border-outline-variant/10 flex flex-col h-screen animate-in slide-in-from-right duration-500 z-40 relative"
           >
+            {/* Drag Handle for Resizing */}
             <div
               onMouseDown={startResizing}
               className="absolute left-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-primary-container/40 active:bg-primary-container transition-colors z-50 group"
@@ -597,70 +829,157 @@ function ChatContent() {
               <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-8 w-[2px] bg-outline-variant/20 group-hover:bg-primary-container/40 rounded-full" />
             </div>
 
+            {/* Sidebar Header */}
             <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container">
-              <div><h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2><p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0, 8)}</p></div>
-              <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface"><span className="material-symbols-outlined text-sm">close</span></button>
+              <div>
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2>
+                <p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0, 8)}</p>
+              </div>
+              <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface">
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0f110f]">
-              <div className="p-5 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-500">
-                <div className="prose prose-sm prose-invert max-w-none text-on-surface/90 font-body leading-relaxed whitespace-pre-wrap break-words">
-                  {(activeDirectives.metadata?.directive_raw || activeDirectives.content)
-                    .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0]
-                    .trim()}
+
+            {/* Claude-style Artifact Tabs */}
+            <div className="flex border-b border-outline-variant/5 bg-[#121412] px-6">
+              <button
+                onClick={() => setBriefingTab('preview')}
+                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all mr-6 ${briefingTab === 'preview' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
+              >
+                <span className="material-symbols-outlined text-[15px]">description</span> Document
+              </button>
+              <button
+                onClick={() => setBriefingTab('code')}
+                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${briefingTab === 'code' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
+              >
+                <span className="material-symbols-outlined text-[15px]">code</span> Raw Markdown
+              </button>
+            </div>
+
+            {/* Premium Highlighter Toolbar */}
+            <div className="bg-[#161916] border-b border-outline-variant/5 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+              {/* Auto Highlight Switcher */}
+              <button
+                onClick={() => setAutoHighlight(!autoHighlight)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[8px] font-black uppercase tracking-widest transition-all ${autoHighlight ? 'bg-primary-container/10 border-primary-container text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.15)]' : 'bg-surface-container-high border-outline-variant/15 text-on-surface/40 hover:text-on-surface/75'}`}
+              >
+                <span className="material-symbols-outlined text-xs">{autoHighlight ? 'toggle_on' : 'toggle_off'}</span>
+                Auto Highlight
+              </button>
+
+              {/* Manual Highlights Controls */}
+              <div className="flex items-center gap-2">
+                <span className="text-[8px] font-black uppercase tracking-widest text-on-surface/30">Highlight Select:</span>
+                <button
+                  onClick={() => setActiveHighlightColor('green')}
+                  className={`w-4 h-4 rounded-full bg-emerald-500 border transition-all ${activeHighlightColor === 'green' ? 'scale-125 border-white ring-2 ring-emerald-400/30' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  title="Green Highlighter"
+                />
+                <button
+                  onClick={() => setActiveHighlightColor('yellow')}
+                  className={`w-4 h-4 rounded-full bg-amber-500 border transition-all ${activeHighlightColor === 'yellow' ? 'scale-125 border-white ring-2 ring-amber-400/30' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  title="Yellow Highlighter"
+                />
+                <button
+                  onClick={applyManualHighlight}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-container/10 border border-primary-container/20 rounded-lg text-[8px] font-black uppercase tracking-widest text-primary-container hover:bg-primary-container/20 transition-all ml-1"
+                >
+                  <span className="material-symbols-outlined text-xs">ink_highlighter</span> Apply
+                </button>
+                {manualHighlights.length > 0 && (
+                  <button
+                    onClick={() => { setManualHighlights([]); toast.success('Cleared all highlights'); }}
+                    className="flex items-center justify-center p-1.5 bg-white/5 border border-white/10 rounded-lg text-[8px] font-black text-on-surface/40 hover:text-error transition-all"
+                    title="Clear Highlights"
+                  >
+                    <span className="material-symbols-outlined text-xs">delete</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Sidebar Content Pane */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar bg-[#0f110f] relative selection:bg-[#00c3672d]">
+              {briefingTab === 'preview' ? (
+                <div className="p-6 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-300 select-text">
+                  {renderBriefingMarkdown(activeDirectives.metadata?.directive_raw || activeDirectives.content)}
                 </div>
-              </div>
+              ) : (
+                <div className="relative h-full flex flex-col">
+                  <button
+                    onClick={() => {
+                      const rawText = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
+                        .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim();
+                      navigator.clipboard.writeText(rawText);
+                      toast.success('Raw markdown copied to clipboard');
+                    }}
+                    className="absolute top-4 right-4 bg-[#1e221e] border border-outline-variant/20 rounded-lg px-3 py-2 text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-[#282d28] transition-colors flex items-center gap-1.5 z-10"
+                  >
+                    <span className="material-symbols-outlined text-xs">content_copy</span> Copy Raw
+                  </button>
+                  <textarea
+                    readOnly
+                    value={(activeDirectives.metadata?.directive_raw || activeDirectives.content)
+                      .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
+                    className="w-full h-[85%] bg-[#080908] border border-outline-variant/10 rounded-2xl p-6 font-mono text-[10px] text-on-surface/70 leading-relaxed outline-none resize-none"
+                  />
+                </div>
+              )}
+            </div>
 
-              <div className="flex flex-col gap-3 pb-8">
+            {/* Bottom Actions Drawer */}
+            <div className="p-6 border-t border-outline-variant/10 bg-surface-container space-y-3">
+              {/* Document Download & Share Grid */}
+              <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => {
-                    const content = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
-                      .replace(/#{1,6}\s?/g, '').replace(/\*\*/g, '').replace(/\*/g, '');
-                    const printWindow = window.open('', '_blank');
-                    if (printWindow) {
-                      printWindow.document.write(`
-                        <html>
-                          <head><title>ORCA Executive Directive</title>
-                          <style>
-                            body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-                            h1 { color: #00c367; border-bottom: 2px solid #00c367; padding-bottom: 10px; }
-                            pre { white-space: pre-wrap; font-size: 14px; }
-                          </style></head>
-                          <body>
-                            <h1>EXECUTIVE DIRECTIVE — ${activeDirectives.id.substring(0, 8)}</h1>
-                            <pre>${content}</pre>
-                            <script>window.onload = () => { window.print(); window.close(); }</script>
-                          </body>
-                        </html>
-                      `);
-                      printWindow.document.close();
-                    }
-                  }}
-                  className="w-full py-3 bg-surface-container-high border border-outline-variant/20 text-on-surface font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2"
+                  disabled={isExportingToDrive}
+                  onClick={handleExportToGoogleDrive}
+                  className="py-3 bg-[#0f9d58]/10 hover:bg-[#0f9d58]/20 border border-[#0f9d58]/30 rounded-xl font-black text-[9px] uppercase tracking-widest text-[#0f9d58] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span> Download as PDF
+                  {isExportingToDrive ? (
+                    <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="material-symbols-outlined text-[16px]">cloud_upload</span>
+                  )}
+                  {isExportingToDrive ? 'Exporting...' : 'Send to Drive'}
                 </button>
 
                 <button
                   onClick={() => {
-                    // Dynamic Orchestration: Detect all @Mentions in the directive
-                    const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
-                    const mentions = Array.from(content.matchAll(/@([A-Z][a-z]+)/g)).map(m => m[1]);
-                    
-                    // STRICT FILTER: Only allow official executives
-                    const validExecs = mentions.filter(name => 
-                      EXECUTIVE_PILLS.some(p => p.name === name)
-                    );
-                    const uniqueMentions = [...new Set(validExecs)];
-                    
-                    toast.success('AUTHORIZING: Dispatching executive orders to entire team...');
-                    append({ role: 'user', content: '[APPROVAL_GRANTED] The board has authorized these directives. Execute immediately.' });
-                    setActiveDirectives(null);
+                    const rawText = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
+                      .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim();
+                    const blob = new Blob([rawText], { type: 'text/markdown;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `ORCA_Executive_Briefing_${activeDirectives.id.substring(0, 8)}.md`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    toast.success('Markdown file downloaded successfully');
                   }}
-                  className="w-full py-4 bg-primary-container text-on-primary rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  className="py-3 bg-surface-container-high border border-outline-variant/20 text-on-surface font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2"
                 >
-                  <span className="material-symbols-outlined">bolt</span> Authorize & Execute
+                  <span className="material-symbols-outlined text-[16px]">download</span> Download MD
                 </button>
               </div>
+
+              {/* CEO Direct Action Execution Trigger */}
+              <button
+                onClick={() => {
+                  const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
+                  const mentions = Array.from(content.matchAll(/@([A-Z][a-z]+)/g)).map(m => m[1]);
+                  const validExecs = mentions.filter(name =>
+                    EXECUTIVE_PILLS.some(p => p.name === name)
+                  );
+                  toast.success('AUTHORIZING: Dispatching executive orders to entire team...');
+                  append({ role: 'user', content: '[APPROVAL_GRANTED] The board has authorized these directives. Execute immediately.' });
+                  setActiveDirectives(null);
+                }}
+                className="w-full py-4 bg-primary-container text-on-primary rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined">bolt</span> Authorize & Execute
+              </button>
             </div>
           </div>
         )}
@@ -678,9 +997,7 @@ function ChatContent() {
                     const workingCoord = activeCoordinations.find(c => c.to_agent?.name === exec.name);
                     if (workingCoord) {
                       toast.info(`Jumping to ${exec.name}'s active thread...`);
-                      const targetOrgId = org?.id || (messages.length > 0 ? (messages[0] as any).org_id : null);
-                      if (!targetOrgId) return toast.error('Org ID not found');
-                      fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${targetOrgId}`)
+                      fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
                         .then(res => res.json())
                         .then(data => {
                           if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
