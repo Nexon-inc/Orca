@@ -1,54 +1,48 @@
-# Project Update: Unified Orca & UI Enhancements
+# Technical Summary & API Handshake Diagnostic Walkthrough
 
-I have successfully merged the backend and frontend into a single Next.js 14 project and implemented all 8 major UI/UX updates specified in `update.md`.
-
-## 🏗️ Technical Consolidation
-- **Unified Structure**: Merged `app/api`, `lib`, and `types` into a single root.
-- **Middleware Sync**: Consolidated auth logic and session checks.
-- **Environment Sync**: Merged `.env.local` variables and replaced `NEXT_PUBLIC_BACKEND_URL` with relative paths.
-
-## ✨ UI/UX Updates (Implementated)
-
-### 1. Agent Input Refinement
-- Textarea now starts at 52px and auto-expands to 120px max with internal scrolling.
-- Matches modern chat standards (Claude/ChatGPT style).
-
-### 2. File Upload System
-- Added a `+` menu with department-specific suggested uploads (e.g., "Brand guidelines" for Marketing).
-- Implemented file previews and payload handling for images, PDFs, and data files.
-
-### 3. Agent-Specific Quick Prompts
-- Replaced generic pills with highly specific prompts for each of the 45+ agents (e.g., Aria: "Write 5 tweets", Ghost: "Scan repository").
-
-### 2. Autonomous Agent Communication Network
-Resolved 400/404 routing errors on the agent platform. Fixed background execution of cross-agent task orchestration, making sure agent resolution correctly falls back and routes department tasks securely without throwing errors or locking up the chat.
-
-## Chat Dashboard RLS & State Fixes
-- **Backend RLS Fix**: Modified `/api/conversations/route.ts` and `/api/conversations/[id]/messages/route.ts` to use `createServiceSupabaseClient()` for inserting new conversations and messages. This bypasses the PostgreSQL Row-Level Security "new row violates row-level security policy" error that occurred because Supabase does not have an active INSERT policy for users on those tables.
-- **Frontend State Fix**: Updated the `/dashboard/chat/page.tsx` component to optimistically append the user's message to the chat state *before* creating the conversation. If creation fails, the message is gracefully rolled back and the user's input is restored.
-- **Toast Notifications**: Replaced chat-based error messages with clean, non-intrusive popup notifications using `sonner` `toast.error()` when models fail or are unavailable.
-- **Model Resolution Bug**: Addressed a bug where `activeModel.id` was incorrectly referenced on a string primitive, which contributed to payload errors.
-
-## Next Steps
-
-### 5. Onboarding Step 0: Plan Selection
-- New initial step for choosing between Starter, Pro, and Enterprise tiers.
-- Integrated with the onboarding progress API to persist plan choice.
-
-### 6. Teams Invitation System
-- **Email Invites**: Multi-email input with role and department assignment.
-- **Invite Links**: Replaced generic join logic with a shareable organization-specific invite link.
-
-### 7. High-Fidelity Integration Icons
-- Replaced placeholder circles with authentic brand SVGs for Slack, Discord, HubSpot, Shopify, Intercom, Notion, and GitHub.
-
-### 8. Review Center (Command Center)
-- Rebranded "Approvals" to **Review Center**.
-- **Split-Pane View**: Left side shows the proposal; Right side shows AI Reasoning/Impact.
-- **Improved Actions**: Switched to "Deploy" and "Fine-tune" nomenclature.
-
-## 📁 Repository Sync
-- All changes have been mirrored from `Tests/Orca` to your main project folder: `REPOS/Orca`.
+This document outlines the specialized upgrades made to the **Ghost (CTO)** agent prompt, the architectural breakdown of **Inngest Serverless Job Concurrency**, the construction of the **API Test Suite**, and the final connection matrix diagnostics.
 
 ---
-*Note: Some backend dependencies (`inngest`, `resend`, `openai`, etc.) may need a final `npm install` in your environment as the installation process encountered timeouts during the session. All code logic is ready for deployment.*
+
+## 1. Upgraded Ghost (CTO) Prompt System
+The core prompting framework in [prompt.ts](file:///c:/Users/John%20Kyalo/Desktop/Tests/Orca/frontend/lib/ai/prompt.ts) was augmented to expand the specialized technical knowledge base of **Ghost**:
+* **Next.js & Frontend Architecture:** Expert-level capability for Next.js App Router architectures, React 19 concurrent features, and vanilla CSS design systems centered on HSL typography tokens.
+* **Backend & Security Protocols:** Strict compliance with OWASP guidelines, PostgreSQL Row Level Security (RLS) constraints, AES-256 data encryption for connected API secrets, and stateful multi-user session management.
+* **Distributed Runtimes:** Deep technical competency in configuring and debugging Inngest background jobs, handling rate limits, backoff retries, and atomic distributed state updates.
+
+---
+
+## 2. Inngest Concurrency & Scaling Briefing
+* **Durable & Concurrent:** Inngest operations run entirely as stateless, serverless HTTP POST handshakes routed through the `/api/inngest` endpoint.
+* **Thread Independence:** Because these workflows are managed as independent webhooks, Next.js handles them concurrently in the serverless environment. Multiple concurrent growth or optimization jobs will never block main event-loop threads.
+* **Fault Tolerance:** If any job triggers an API rate limit or exception, Inngest statefully persists execution milestones, implements exponential backoff, and automatically resumes once limits lift.
+
+---
+
+## 3. Automation API Key Testing Suite (`/test`)
+A new, programmatic testing suite has been established at [run_tests.mjs](file:///c:/Users/John%20Kyalo/Desktop/Tests/Orca/test/run_tests.mjs). This suite manually reads `frontend/.env.local` to isolate developer credentials and initiates direct, non-destructive connection handshakes.
+
+### Test Coverage Matrix & Diagnostics
+
+The following diagnostic table details the real-world connection handshakes performed:
+
+| API / Service Platform | Configured Key | Status | Diagnostic Message / Resolution |
+| :--- | :--- | :--- | :--- |
+| **Gemini AI API** | `GEMINI_API_KEY` | **`[PASS]`** | Successfully retrieved 50 active models (immune to model deprecations). |
+| **Groq AI API** | `GROQ_API_KEY` | **`[PASS]`** | Connection successful via `llama-3.3-70b-versatile`. |
+| **Supabase Database** | `SUPABASE_SERVICE_ROLE_KEY` | **`[PASS]`** | Schema query validated successfully (39 API paths mapped). |
+| **Composio Platform** | `COMPOSIO_API_KEY` | **`[PASS]`** | Auth configurations successfully retrieved (Status: 200). |
+| **Firecrawl Scraper** | `FIRECRAWL_API_KEY` | **`[PASS]`** | Scrape mapping successful (scoped 4 validation URLs). |
+| **Brevo Email API** | `BREVO_API_KEY` | **`[FAIL]`** | **IP Blocked:** Key is valid, but the local IP address `102.213.49.105` must be whitelisted under [Brevo Security](https://app.brevo.com/security/authorised_ips). |
+| **Tavily Search** | `TAVILY_API_KEY` | **`[PASS]`** | Connection validated. Retrieved testing search records. |
+| **Hunter.io API** | `HUNTER_API_KEY` | **`[PASS]`** | Verified user: `kalefrancis989@gmail.com` (Plan: Free). |
+| **NewsAPI Platform** | `NEWSAPI_KEY` | **`[PASS]`** | Active headlines queried (33 total results reported). |
+| **SerpAPI Engine** | `SERPAPI_KEY` | **`[PASS]`** | Google Search search metadata queries are fully active. |
+| **Paystack Gateway** | `PAYSTACK_SECRET_KEY` | **`[PASS]`** | Payment gateway transaction list connection validated. |
+| **Gmail SMTP Server** | `GMAIL_APP_PASSWORD` | **`[FAIL]`** | **Connection Timeout:** Node.js forced to IPv4, but port `465` is blocked outbound by local network/firewall policies. |
+| **Inngest Event Key** | `INNGEST_EVENT_KEY` | **`[PASS]`** | Event pipeline active. Test event dispatched successfully via `inn.gs`. |
+
+---
+
+## 4. Mirror & Parity Verification
+All upgraded configurations and test files have been fully synchronized with robust error checks from the `Tests` directory directly to `REPOS/Orca` to maintain absolute parity across all environments.
