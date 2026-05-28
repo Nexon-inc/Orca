@@ -20,7 +20,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import IntegrationsVault from './IntegrationsVault';
 
-export default function DashboardHeader() {
+interface DashboardHeaderProps {
+  floating?: boolean;
+  activeDirectives?: any;
+}
+
+export default function DashboardHeader({ floating = false, activeDirectives = null }: DashboardHeaderProps) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,24 +38,30 @@ export default function DashboardHeader() {
     ]);
   }, []);
 
+  if (activeDirectives) return null;
+
   return (
-    <header className="h-11 flex items-center justify-end px-5 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-4">
+    <header className={
+      floating 
+        ? "absolute top-4 right-4 z-40 h-10 px-3 bg-[#0a0c0a]/60 backdrop-blur-md border border-outline-variant/10 rounded-full flex items-center justify-end gap-2 shadow-lg transition-all duration-300"
+        : "h-11 flex items-center justify-end px-5 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-4"
+    }>
       {/* New Chat Button */}
       <button 
         onClick={() => router.push('/dashboard/chat')}
-        className="w-9 h-9 flex items-center justify-center bg-primary-container text-on-primary rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg group"
+        className={`${floating ? 'w-7 h-7' : 'w-9 h-9'} flex items-center justify-center bg-primary-container text-on-primary rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg group`}
         title="New Chat"
       >
-        <span className="material-symbols-outlined text-xl font-bold">add</span>
+        <span className={`material-symbols-outlined ${floating ? 'text-lg' : 'text-xl'} font-bold`}>add</span>
       </button>
 
-      <div className="h-4 w-[1px] bg-outline-variant/20 mx-2" />
+      <div className="h-4 w-[1px] bg-outline-variant/20 mx-1" />
 
       {/* Integrations Quick Access */}
       <Dialog>
         <DialogTrigger asChild>
-          <button className="w-9 h-9 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors rounded-lg hover:bg-white/5 group" title="Integrations Vault">
-            <span className="material-symbols-outlined text-[22px]">hub</span>
+          <button className={`${floating ? 'w-7 h-7 rounded-full' : 'w-9 h-9 rounded-lg'} flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors hover:bg-white/5 group`} title="Integrations Vault">
+            <span className={`material-symbols-outlined ${floating ? 'text-[18px]' : 'text-[22px]'}`}>hub</span>
           </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[1200px] w-full bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
@@ -65,10 +76,10 @@ export default function DashboardHeader() {
       {/* Notifications Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="w-9 h-9 flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors relative rounded-lg hover:bg-white/5 group" title="Notifications">
-            <span className="material-symbols-outlined text-[22px]">notifications</span>
+          <button className={`${floating ? 'w-7 h-7 rounded-full' : 'w-9 h-9 rounded-lg'} flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors relative hover:bg-white/5 group`} title="Notifications">
+            <span className={`material-symbols-outlined ${floating ? 'text-[18px]' : 'text-[22px]'}`}>notifications</span>
             {notifications.some(n => n.important) && (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-[#0a0c0a]"></span>
+              <span className={`absolute ${floating ? 'top-1.5 right-1.5 w-1.5 h-1.5' : 'top-2 right-2 w-2 h-2'} bg-error rounded-full border-2 border-[#0a0c0a]`}></span>
             )}
           </button>
         </DropdownMenuTrigger>

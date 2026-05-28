@@ -264,7 +264,7 @@ function ChatContent() {
           style={{ marginRight: activeDirectives ? `${sidebarWidth}px` : 0 }}
           className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 justify-center`}
         >
-          <DashboardHeader />
+          <DashboardHeader floating={true} activeDirectives={activeDirectives} />
           <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
             <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase animate-in fade-in zoom-in duration-700">{greeting} {userName}.</h1>
             <p className="text-[10px] font-mono text-on-surface/20 uppercase tracking-[0.4em] mt-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">Choose an executive to begin operation</p>

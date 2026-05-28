@@ -416,11 +416,11 @@ export const googleEcosystemSkill = (orgId: string) => tool({
  * Skill: Meta Workspace Integrations Adaptor (CMO, CIO, CSO)
  */
 export const metaEcosystemSkill = (orgId: string) => tool({
-  description: 'Interact with Meta developer resources (Facebook Ads Campaign scaling, WhatsApp Business client notifications).',
+  description: 'Interact with Meta developer resources (Facebook Ads Campaign scaling).',
   parameters: z.object({
-    service: z.enum(['facebook_ads', 'whatsapp']),
-    action: z.enum(['create_campaign', 'fetch_conversion_metrics', 'send_whatsapp_notification']),
-    payload: z.record(z.any()).describe('API payloads for campaign values or phone routing details')
+    service: z.enum(['facebook_ads']),
+    action: z.enum(['create_campaign', 'fetch_conversion_metrics']),
+    payload: z.record(z.any()).describe('API payloads for campaign values')
   }),
   execute: async ({ service, action, payload }) => {
     try {
@@ -431,11 +431,11 @@ export const metaEcosystemSkill = (orgId: string) => tool({
         service,
         action,
         message: `Meta API Action '${action}' successfully configured for live token insertion.`,
-        campaignMetrics: service === 'facebook_ads' ? {
+        campaignMetrics: {
           conversions: 342,
           costPerClick: '$0.42 (Bypassing average competitor cost)',
           returnOnAdSpend: '4.8x'
-        } : { smsStatus: 'WhatsApp Business API hook active' }
+        }
       }
     }
   }

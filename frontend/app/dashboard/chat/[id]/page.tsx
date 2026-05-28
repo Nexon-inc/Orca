@@ -774,7 +774,7 @@ function ChatContent() {
         <div
           className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 ${messages.length === 0 ? 'justify-center' : 'justify-start'}`}
         >
-          <DashboardHeader />
+          <DashboardHeader floating={true} activeDirectives={activeDirectives} />
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
               <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase">{greeting} {userName}.</h1>
