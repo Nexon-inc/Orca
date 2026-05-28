@@ -304,8 +304,8 @@ function ChatContent() {
   const adjustTextareaHeight = () => {
     setTimeout(() => {
       if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 240)}px`;
+        inputRef.current.style.height = '0px';
+        inputRef.current.style.height = `${Math.min(Math.max(inputRef.current.scrollHeight, 44), 240)}px`;
       }
     }, 0);
   };
@@ -1409,11 +1409,11 @@ function ChatContent() {
                 <textarea ref={inputRef} value={input} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = `${Math.min(target.scrollHeight, 240)}px`;
+                    target.style.height = '0px';
+                    target.style.height = `${Math.min(Math.max(target.scrollHeight, 44), 240)}px`;
                   }}
                   className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-hidden"
-                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} rows={1} disabled={isLoading}
+                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} disabled={isLoading}
                 />
                 <button
                   onClick={handleVoiceInput}
