@@ -230,9 +230,11 @@ function ChatContent() {
     initialize();
   }, []);
 
+  const isChatLoading = isLoading && messages && messages.length > 0;
+
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!(input || '').trim() || isLoading) return;
+    if (!(input || '').trim() || isChatLoading) return;
 
     if (!tempId) {
       try {
@@ -338,7 +340,7 @@ function ChatContent() {
                     target.style.height = `${Math.min(Math.max(target.scrollHeight, 44), 240)}px`;
                   }}
                   className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-hidden"
-                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} disabled={isLoading}
+                  placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} disabled={isChatLoading}
                 />
                 <button onClick={handleVoiceInput} className={`mt-1.5 h-8 w-8 flex items-center justify-center rounded-lg transition-colors flex-shrink-0 ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'hover:bg-white/5 text-on-surface/20 hover:text-on-surface/60'}`}>
                   <span className="material-symbols-outlined text-[20px]">{isListening ? 'mic_off' : 'mic'}</span>
@@ -346,7 +348,7 @@ function ChatContent() {
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
                 <div className="flex items-center gap-2"><Dropdown value={chatMode} options={MODES} onChange={setChatMode} /><div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" /><Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} /></div>
-                <button onClick={() => handleSendMessage()} disabled={!(input || '').trim() || isLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${(input || '').trim() && !isLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
+                <button onClick={() => handleSendMessage()} disabled={!(input || '').trim() || isChatLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${(input || '').trim() && !isChatLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
               </div>
             </div>
           </div>
