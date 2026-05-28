@@ -275,6 +275,33 @@ function ChatContent() {
     toast.success('Listening... speak now');
   };
 
+  const handleInputChange = async (value: string) => {
+    if (value.length > 1500) {
+      toast.info('Large prompt detected (>1500 chars). Saving to prompt.txt...');
+      try {
+        const res = await fetch('/api/save-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: value })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setInput('Please read and implement the directives detailed in the prompt.txt file at the workspace root.');
+          toast.success('Prompt successfully saved to prompt.txt in the workspace root!');
+        } else {
+          toast.error(`Failed to convert prompt: ${data.error}`);
+          setInput(value);
+        }
+      } catch (err: any) {
+        toast.error(`Connection failed: ${err.message}`);
+        setInput(value);
+      }
+    } else {
+      setInput(value);
+    }
+    adjustTextareaHeight();
+  };
+
   const adjustTextareaHeight = () => {
     setTimeout(() => {
       if (inputRef.current) {
@@ -1380,8 +1407,8 @@ function ChatContent() {
                     </div>
                   )}
                 </div>
-                <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-y-auto"
+                <textarea ref={inputRef} value={input} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-hidden"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} rows={1} disabled={isLoading}
                 />
                 <button
