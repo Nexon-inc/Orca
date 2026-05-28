@@ -96,7 +96,7 @@ export default function PricingSection() {
         'Daily executive task backups',
         'Email support (24hr response SLA)'
       ],
-      cta: 'Start Free Trial'
+      cta: 'Upgrade Now'
     },
     {
       id: 'pro',
@@ -119,12 +119,16 @@ export default function PricingSection() {
         'Dedicated database schema isolation',
         'Priority chat support (1hr response SLA)'
       ],
-      cta: 'Start Free Trial',
+      cta: 'Upgrade Now',
       highlighted: true
     }
   ];
 
   const handleCheckout = async (plan: string) => {
+    if (plan.toLowerCase() === 'free') {
+      window.location.href = '/dashboard';
+      return;
+    }
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
@@ -264,10 +268,9 @@ export default function PricingSection() {
           ))}
         </div>
 
-        {/* Trial Notice */}
         <div className="mt-16 text-center space-y-4">
             <p className="text-[11px] text-white/20 font-black uppercase tracking-[0.2em]">
-               All paid plans include a 14-day free trial. No credit card required. Cancel anytime.
+               No credit card required for the Free plan. Cancel paid subscriptions anytime.
             </p>
         </div>
       </div>

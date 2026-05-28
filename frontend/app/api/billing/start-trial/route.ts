@@ -22,18 +22,19 @@ export async function POST(request: Request) {
 
   if (!member) return NextResponse.json({ error: 'Only owners can start trials' }, { status: 403 })
 
-  const trialExpiresAt = new Date()
-  trialExpiresAt.setDate(trialExpiresAt.getDate() + 14)
+  if (plan !== 'free') {
+    return NextResponse.json({ error: 'Free trials are disabled. Please subscribe to upgrade.' }, { status: 400 })
+  }
 
   const { error } = await supabase
     .from('organizations')
     .update({
-      plan,
-      plan_expires_at: trialExpiresAt.toISOString()
+      plan: 'free',
+      plan_expires_at: null
     })
     .eq('id', member.org_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  return NextResponse.json({ success: true, plan_expires_at: trialExpiresAt.toISOString() })
+  return NextResponse.json({ success: true, plan: 'free' })
 }

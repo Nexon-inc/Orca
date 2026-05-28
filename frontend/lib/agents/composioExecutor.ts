@@ -11,21 +11,10 @@ export async function executeViaComposio(
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
   const supabase = createServerSupabaseClient()
 
-  // 1. Check integration is connected and token is valid
-  const { valid, error: tokenError } = await validateIntegrationToken(orgId, serviceKey)
-
-  if (!valid) {
-    // Try refreshing token first
-    const newToken = await refreshOAuthToken(orgId, serviceKey)
-    if (!newToken) {
-      return { success: false, error: tokenError }
-    }
-  }
-
-  // 2. Retrieve encrypted token
+  // Retrieve encrypted token
   const { data: integration } = await supabase
     .from('integrations')
-    .select('access_token_encrypted')
+    .select('access_token_encrypted, metadata')
     .eq('org_id', orgId)
     .eq('service_name', serviceKey)
     .single()
@@ -34,24 +23,41 @@ export async function executeViaComposio(
     return { success: false, error: `${serviceKey} is not connected.` }
   }
 
-  // 3. Decrypt — happens server-side only, token never leaves the server
-  const accessToken = decryptToken(integration.access_token_encrypted)
+  const tokenValue = decryptToken(integration.access_token_encrypted)
+  const isComposio = integration.metadata?.auth_type === 'composio'
 
-  // 4. Execute via Composio with the decrypted token
+  const requestBody: any = {
+    actionName: action,
+    input: parameters
+  }
+
+  if (isComposio) {
+    requestBody.connectedAccountId = tokenValue
+  } else {
+    // 1. Check integration is connected and token is valid (fallback/legacy flow)
+    const { valid, error: tokenError } = await validateIntegrationToken(orgId, serviceKey)
+
+    if (!valid) {
+      // Try refreshing token first
+      const newToken = await refreshOAuthToken(orgId, serviceKey)
+      if (!newToken) {
+        return { success: false, error: tokenError }
+      }
+    }
+
+    requestBody.connectedAccountId = orgId
+    requestBody.authConfig = {
+      access_token: tokenValue
+    }
+  }
+
   const composioResponse = await fetch('https://backend.composio.dev/api/v1/actions/execute', {
     method: 'POST',
     headers: {
       'x-api-key': process.env.COMPOSIO_API_KEY!,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      actionName: action,         // e.g. 'GITHUB_CREATE_ISSUE', 'LINKEDIN_CREATE_POST'
-      connectedAccountId: orgId,  // Composio uses this to route to the right connection
-      input: parameters,
-      authConfig: {
-        access_token: accessToken, // passed directly — Composio uses it for the API call
-      },
-    }),
+    body: JSON.stringify(requestBody),
   })
 
   const result = await composioResponse.json()

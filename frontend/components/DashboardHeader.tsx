@@ -34,7 +34,7 @@ export default function DashboardHeader() {
   }, []);
 
   return (
-    <header className="h-16 flex items-center justify-end px-8 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-4">
+    <header className="h-11 flex items-center justify-end px-5 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-4">
       {/* New Chat Button */}
       <button 
         onClick={() => router.push('/dashboard/chat')}

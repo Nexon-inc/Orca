@@ -85,7 +85,7 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
         'Daily executive task backups',
         'Email support (24hr response SLA)'
       ],
-      cta: 'Start Free Trial'
+      cta: 'Upgrade Now'
     },
     {
       id: 'pro',
@@ -106,7 +106,7 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
         'Dedicated database schema isolation',
         'Priority chat support (1hr response SLA)'
       ],
-      cta: 'Start Free Trial',
+      cta: 'Upgrade Now',
       highlighted: true
     }
   ];
@@ -174,7 +174,7 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-5xl font-syne font-[800] text-white tracking-tight mb-6">
               {isLocked 
-                ? <>Your trial has ended. <span className="text-green">Select a plan to continue.</span></>
+                ? <>Please select a plan <span className="text-green">to continue.</span></>
                 : <>Pricing that scales with <span className="text-green">your ambition.</span></>
               }
             </h2>
@@ -239,7 +239,7 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
                 </ul>
 
                 <button 
-                  onClick={() => isLocked ? handleCheckout(plan.id) : handleStartTrial(plan.id)}
+                  onClick={() => plan.id === 'free' ? handleStartTrial(plan.id) : handleCheckout(plan.id)}
                   className={`w-full py-4 sm:py-5 px-6 rounded-2xl font-syne font-[800] text-[13px] sm:text-[15px] transition-all duration-300 uppercase tracking-widest ${
                     plan.highlighted 
                       ? 'btn-primary shadow-[0_4px_20px_rgba(0,255,135,0.25)]' 
@@ -253,7 +253,7 @@ export default function PricingModal({ isOpen, onClose, isLocked, currentPlan }:
           </div>
 
           <p className="mt-12 text-center font-dm-mono text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">
-             All plans include a 14-day free trial. No credit card required. Cancel anytime.
+             No credit card required for the Free plan. Cancel paid subscriptions anytime.
           </p>
         </div>
       </div>
