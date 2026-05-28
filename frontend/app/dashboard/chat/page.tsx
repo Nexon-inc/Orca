@@ -175,25 +175,24 @@ function ChatContent() {
 
   const handleInputChange = async (value: string) => {
     if (value.length > 1500) {
-      toast.info('Large prompt detected (>1500 chars). Saving to prompt.txt...');
-      try {
-        const res = await fetch('/api/save-prompt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: value })
-        });
-        const data = await res.json();
+      toast.info('Large prompt detected. Auto-saving to prompt.txt...');
+      // Optimistically update the input immediately so the user can send without lag
+      setInput('Please read and implement the directives detailed in the prompt.txt file at the workspace root.');
+      
+      fetch('/api/save-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: value })
+      }).then(async (res) => {
         if (res.ok) {
-          setInput('Please read and implement the directives detailed in the prompt.txt file at the workspace root.');
           toast.success('Prompt successfully saved to prompt.txt in the workspace root!');
         } else {
-          toast.error(`Failed to convert prompt: ${data.error}`);
-          setInput(value);
+          const data = await res.json();
+          toast.error(`Warning: Failed to save prompt file: ${data.error}`);
         }
-      } catch (err: any) {
-        toast.error(`Connection failed: ${err.message}`);
-        setInput(value);
-      }
+      }).catch((err) => {
+        toast.error(`Warning: Connection failed: ${err.message}`);
+      });
     } else {
       setInput(value);
     }
