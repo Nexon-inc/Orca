@@ -276,10 +276,12 @@ function ChatContent() {
   };
 
   const adjustTextareaHeight = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 240)}px`;
-    }
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 240)}px`;
+      }
+    }, 0);
   };
 
 
