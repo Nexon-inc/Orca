@@ -58,7 +58,8 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { plan: rawPlan, billing_cycle: requestedCycle } = await request.json()
-  const plan = normalizePlanId(rawPlan)
+  const planInput = rawPlan?.toLowerCase()
+  const plan = planInput === 'founding' ? 'founding' : normalizePlanId(rawPlan)
   if (!plan) {
     return NextResponse.json({ error: 'Plan is required.' }, { status: 400 })
   }
@@ -85,6 +86,31 @@ export async function POST(request: Request) {
   }
 
   const orgId = (member as any).org_id
+
+  if (plan === 'founding') {
+    if (billing_cycle === 'annual') {
+      return NextResponse.json({ error: 'Founding membership is monthly only — $19/mo locked for life.' }, { status: 400 })
+    }
+    const { getFoundingAvailability, isOrgFoundingMember } = await import('@/lib/billing/founding')
+    const founding = await getFoundingAvailability()
+    if (!founding.available) {
+      return NextResponse.json({ error: 'All founding spots are taken. Choose Builder or Pro instead.' }, { status: 409 })
+    }
+    if (await isOrgFoundingMember(orgId)) {
+      return NextResponse.json({ error: 'This workspace already has founding pricing locked at $19/mo.' }, { status: 409 })
+    }
+  }
+
+  if (plan === 'builder') {
+    const { isOrgFoundingMember } = await import('@/lib/billing/founding')
+    if (await isOrgFoundingMember(orgId)) {
+      return NextResponse.json(
+        { error: 'You are a founding member at $19/mo. Your price is already locked — no action needed.' },
+        { status: 409 }
+      )
+    }
+  }
+
   const { data: org } = await supabase.from('organizations').select('checkout_locked_at, checkout_locked_by').eq('id', orgId).single()
 
   if (org?.checkout_locked_at) {
@@ -121,7 +147,7 @@ export async function POST(request: Request) {
       callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/billing/verify`,
       metadata: {
         org_id: orgId,
-        plan: plan === 'founding' ? 'builder' : plan,
+        plan: plan === 'founding' ? 'founding_builder' : plan,
         billing_cycle,
         user_id: user.id,
         founding: plan === 'founding',

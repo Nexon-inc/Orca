@@ -52,6 +52,22 @@ import {
   foundingUserStrategySkill
 } from './skills'
 import { readWikiPage, writeWikiPage, listWikiPages } from './wiki'
+import { fetchOrgMetrics } from '@/lib/analytics/orgMetrics'
+
+function orgAnalyticsTool(orgId: string) {
+  return tool({
+    description:
+      'Fetch live company analytics: plan tier, monthly task usage, active departments, team size, connected integrations, briefings saved, sales pipeline, and coordination events.',
+    parameters: z.object({}),
+    execute: async () => {
+      try {
+        return await fetchOrgMetrics(orgId)
+      } catch (err: any) {
+        return { error: `Analytics fetch failed: ${err.message}` }
+      }
+    },
+  })
+}
 
 /**
  * Builds the native tools available for an executive by referencing
@@ -108,6 +124,10 @@ export function buildToolsForAgent(
   })
 
   // Register central skills based on executive department roles
+  if (['Atlas', 'Roman', 'Rex', 'Purity'].includes(agentName)) {
+    tools.get_org_analytics = orgAnalyticsTool(orgId)
+  }
+
   if (['Aria', 'Rex', 'Roman', 'Ghost'].includes(agentName)) {
     tools.web_search = webSearchSkill
     tools.scrape_page = scrapePageSkill

@@ -39,9 +39,9 @@ export async function POST(request: Request) {
   if (event.event === 'charge.success') {
     const meta = event.data.metadata
     const orgId = meta?.org_id
-    const plan = meta?.plan || 'builder'
     const userId = meta?.user_id
     const isFounding = meta?.founding === true || meta?.founding === 'true'
+    const plan = isFounding ? 'founding_builder' : (meta?.plan || 'builder')
 
     if (!orgId || !plan) return NextResponse.json({ received: true })
 
@@ -55,20 +55,8 @@ export async function POST(request: Request) {
     }).eq('id', orgId)
 
     if (isFounding && userId) {
-      const { data: config } = await supabase.from('founding_config').select('id, spots_taken').limit(1).maybeSingle()
-      if (config) {
-        const spotNumber = (config.spots_taken ?? 0) + 1
-        await supabase.from('founding_members').insert({
-          user_id: userId,
-          org_id: orgId,
-          spot_number: spotNumber,
-          locked_price: 19,
-        })
-        await supabase.from('founding_config').update({
-          spots_taken: spotNumber,
-          updated_at: new Date().toISOString(),
-        }).eq('id', config.id)
-      }
+      const { recordFoundingMember } = await import('@/lib/billing/founding')
+      await recordFoundingMember(orgId, userId)
     }
 
     // Mark as processed

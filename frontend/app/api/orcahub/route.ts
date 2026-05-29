@@ -47,12 +47,11 @@ export async function GET(request: Request) {
 
   const installedIds = new Set((installs || []).map(i => i.template_id))
 
-  // Mark plan accessibility and install status
-  const PLAN_ORDER = ['none', 'free', 'starter', 'pro', 'enterprise']
+  const { planMeetsMinimum } = await import('@/lib/plans/planOrder')
   const enriched = (templates || []).map(t => ({
     ...t,
     is_installed: installedIds.has(t.id),
-    is_accessible: PLAN_ORDER.indexOf(orgPlan) >= PLAN_ORDER.indexOf(t.plan_required),
+    is_accessible: planMeetsMinimum(orgPlan, t.plan_required || 'free'),
   }))
 
   return NextResponse.json({

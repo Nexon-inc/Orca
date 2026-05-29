@@ -1,11 +1,10 @@
 // components/ui/PlanGate.tsx
 'use client'
 import { useRole } from '@/hooks/useRole'
-
-const PLAN_ORDER = ['free', 'starter', 'pro', 'enterprise']
+import { planMeetsMinimum } from '@/lib/plans/planOrder'
 
 interface PlanGateProps {
-  requiredPlan: 'starter' | 'pro' | 'enterprise'
+  requiredPlan: 'builder' | 'starter' | 'pro' | 'enterprise'
   feature: string
   children: React.ReactNode
   showLock?: boolean
@@ -16,7 +15,7 @@ export function PlanGate({ requiredPlan, feature, children, showLock = true }: P
   
   if (loading) return <div className="animate-pulse bg-white/5 rounded-lg h-10 w-32" />
 
-  const hasAccess = PLAN_ORDER.indexOf(plan) >= PLAN_ORDER.indexOf(requiredPlan)
+  const hasAccess = planMeetsMinimum(plan, requiredPlan)
 
   if (hasAccess) return <>{children}</>
 

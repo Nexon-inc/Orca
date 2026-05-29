@@ -1,5 +1,6 @@
 import { getAuthUser } from '@/lib/auth'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { isOrgFoundingMember } from '@/lib/billing/founding'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -18,10 +19,14 @@ export async function GET() {
   }
 
   const org = Array.isArray(member.organizations) ? member.organizations[0] : member.organizations
-  
+  const isFounding = org?.plan === 'founding_builder' || (await isOrgFoundingMember(member.org_id))
+
   return NextResponse.json({
     plan: org?.plan,
     expires_at: org?.plan_expires_at,
     has_active_subscription: !!org?.paystack_subscription_code,
+    is_founding: isFounding,
+    locked_price_usd: isFounding ? 19 : null,
+    locked_price_label: isFounding ? '$19/mo for life (founding member)' : null,
   })
 }

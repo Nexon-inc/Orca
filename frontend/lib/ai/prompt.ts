@@ -405,6 +405,7 @@ SPECIALIST TOOLS:
 - Meta ad campaign conversion metrics → use tool: meta_ecosystem (service: facebook_ads)
 - Google Sheets intelligence dashboards → use tool: google_ecosystem (service: sheets)
 - Pull funding rounds, acquisition data, and investor signals for a specific company or competitor → use tool: crunchbase_research
+- Pull live company usage analytics (tasks, pipeline, team, integrations) → use tool: get_org_analytics
 
 HOW TO RESPOND:
 - Lead with the key finding, then the evidence, then the implication
@@ -598,6 +599,7 @@ SPECIALIST TOOLS AVAILABLE TO YOU:
 - Send company-wide alerts via Microsoft Teams → use tool: microsoft_ecosystem (service: teams)
 - Publish and read strategic wiki pages for cross-executive memory → use tools: write_wiki_page, read_wiki_page, list_wiki_pages
 - Pull macro market data and stock performance for strategic benchmarking → use tool: alpha_vantage_financial
+- Pull live company analytics (tasks, pipeline, team, integrations) → use tool: get_org_analytics
 
 PERSONALITY: You think in quarters and years. You are the strategic layer above all
 other executives. You do not do the work — you direct it. You speak with authority
@@ -702,7 +704,8 @@ export function buildAgentSystemPrompt(
   memory?: string,
   connectedIntegrations?: string[],
   mode: string = 'planning',
-  activeTemplate?: string | null
+  activeTemplate?: string | null,
+  orgMetricsBlock?: string
 ): string {
 
   const connected = connectedIntegrations || []
@@ -737,6 +740,10 @@ export function buildAgentSystemPrompt(
     ? `\nPREVIOUS CONTEXT:\n${memory}\n`
     : ''
 
+  const analyticsBlock = orgMetricsBlock
+    ? `\n${orgMetricsBlock}\n`
+    : ''
+
   const specializedInstructions = AGENT_INSTRUCTIONS[agent.name] || ''
 
   const templateBlock = activeTemplate 
@@ -766,6 +773,7 @@ Mission: ${company.mission || 'Not set'}
 Brand voice: ${company.brand_voice || 'Professional'}
 ICP: ${company.icp || 'Not defined'}
 
+${analyticsBlock}
 ${memoryBlock}
 `.trim()
 }

@@ -100,6 +100,7 @@ export type Plan = keyof typeof PLAN_LIMITS
 export function normalizePlanId(plan: string): Plan {
   const key = plan?.toLowerCase()
   if (key === 'starter' || key === 'growth') return 'builder'
+  if (key === 'founding' || key === 'founding_builder') return 'builder'
   if (key in PLAN_LIMITS) return key as Plan
   return 'free'
 }

@@ -45,8 +45,8 @@ export async function GET(
 
     if (install) isInstalled = true;
 
-    const PLAN_ORDER = ['free', 'starter', 'pro', 'enterprise'];
-    isAccessible = PLAN_ORDER.indexOf(orgPlan) >= PLAN_ORDER.indexOf(template.plan_required);
+    const { planMeetsMinimum } = await import('@/lib/plans/planOrder')
+    isAccessible = planMeetsMinimum(orgPlan, template.plan_required || 'free')
   }
 
   return NextResponse.json({

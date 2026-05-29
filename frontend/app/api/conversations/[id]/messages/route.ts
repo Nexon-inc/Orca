@@ -60,7 +60,28 @@ export async function POST(
     // 3. Fetch Company & Member Data
     const { data: company } = await supabase.from('company_identity').select('*').eq('org_id', orgId).single()
     const { data: member } = await supabase.from('org_members').select('*').eq('user_id', user.id).eq('org_id', orgId).single()
-    const { data: orgData } = await supabase.from('organizations').select('active_template').eq('id', orgId).single()
+    const { data: orgData } = await supabase.from('organizations').select('active_template, plan').eq('id', orgId).single()
+    const orgPlan = orgData?.plan || 'free'
+
+    const { enforceInputLimit } = await import('@/lib/security/tokenGuard')
+    const inputCheck = enforceInputLimit(content, orgPlan)
+    if (!inputCheck.allowed) {
+      return new NextResponse(inputCheck.error || 'Message too long for your plan.', { status: 400 })
+    }
+
+    const { checkMonthlyBriefQuota } = await import('@/lib/plans/usage')
+    const briefQuota = await checkMonthlyBriefQuota(orgId, orgPlan)
+    if (!briefQuota.allowed) {
+      return new NextResponse(
+        `Monthly agent task limit reached (${briefQuota.used}/${briefQuota.limit}). Upgrade your plan to continue.`,
+        { status: 403 }
+      )
+    }
+
+    const { fetchOrgMetrics, formatOrgMetricsForPrompt } = await import('@/lib/analytics/orgMetrics')
+    const orgMetrics = await fetchOrgMetrics(orgId)
+    const orgMetricsBlock = formatOrgMetricsForPrompt(orgMetrics)
+
     const { data: integrations } = await supabase.from('integrations').select('service_name').eq('org_id', orgId)
     const connectedIntegrations = integrations?.map(i => i.service_name) || []
 
@@ -128,7 +149,7 @@ export async function POST(
 
     // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth
     const systemPrompt =
-      buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations, chatMode, orgData?.active_template) +
+      buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations, chatMode, orgData?.active_template, orgMetricsBlock) +
       documentContextBlock
     const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
 
