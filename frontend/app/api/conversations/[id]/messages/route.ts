@@ -15,7 +15,10 @@ import { parseAndExecuteActions } from '@/lib/agents/parseActions'
 import { getAgentMemory } from '@/lib/agents/memory'
 import { inngest } from '@/lib/inngest/client'
 
-/** Skip Gemini probe for 2 min after quota/rate-limit failure */
+/** After a Gemini quota/rate-limit hit, skip probe and use Groq briefly */
+const GEMINI_BLOCK_MS = 15 * 1000
+
+/** Skip Gemini probe for a short window after quota/rate-limit failure */
 let geminiBlockedUntil = 0
 
 function isQuotaOrRateLimitError(err: unknown): boolean {
@@ -35,7 +38,7 @@ async function probeModel(model: Parameters<typeof generateText>[0]['model'], la
   } catch (err: unknown) {
     console.warn(`[ORCA] ${label} probe failed:`, err instanceof Error ? err.message : err)
     if (isQuotaOrRateLimitError(err)) {
-      geminiBlockedUntil = Date.now() + 2 * 60 * 1000
+      geminiBlockedUntil = Date.now() + GEMINI_BLOCK_MS
     }
     return false
   }
@@ -525,7 +528,7 @@ async function buildStreamResult(
         })
       }
     }
-    geminiBlockedUntil = Date.now() + 2 * 60 * 1000
+    geminiBlockedUntil = Date.now() + GEMINI_BLOCK_MS
   } else if (!geminiCacheValid) {
     console.log('[ORCA] Gemini skipped (recent quota/rate-limit failure)')
   }
@@ -576,7 +579,7 @@ async function buildFallbackResult(
       } catch (err: unknown) {
         console.warn(`[ORCA] Fallback Gemini ${modelId} failed:`, err instanceof Error ? err.message : err)
         if (isQuotaOrRateLimitError(err)) {
-          geminiBlockedUntil = Date.now() + 2 * 60 * 1000
+          geminiBlockedUntil = Date.now() + GEMINI_BLOCK_MS
           break
         }
       }
