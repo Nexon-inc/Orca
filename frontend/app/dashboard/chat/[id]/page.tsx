@@ -1418,6 +1418,9 @@ function ChatContent() {
                     const target = e.target as HTMLTextAreaElement;
                     target.style.height = '0px';
                     target.style.height = `${Math.min(Math.max(target.scrollHeight, 44), 240)}px`;
+                    if (input !== target.value) {
+                      handleInputChange(target.value);
+                    }
                   }}
                   className="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface/20 text-[15px] font-body resize-none min-h-[44px] max-h-[240px] py-2 overflow-hidden"
                   placeholder={pinnedAgent ? `Brief your ${pinnedAgent}...` : "Ask anything..."} disabled={isChatLoading}
