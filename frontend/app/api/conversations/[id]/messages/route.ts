@@ -15,6 +15,32 @@ import { parseAndExecuteActions } from '@/lib/agents/parseActions'
 import { getAgentMemory } from '@/lib/agents/memory'
 import { inngest } from '@/lib/inngest/client'
 
+/** Skip Gemini probe for 2 min after quota/rate-limit failure */
+let geminiBlockedUntil = 0
+
+function isQuotaOrRateLimitError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err)
+  return /quota|rate.?limit|429|exceeded|RESOURCE_EXHAUSTED|limit:\s*0/i.test(msg)
+}
+
+async function probeModel(model: Parameters<typeof generateText>[0]['model'], label: string): Promise<boolean> {
+  try {
+    await generateText({
+      model,
+      prompt: 'Reply with exactly: ok',
+      maxTokens: 8,
+      maxRetries: 0,
+    })
+    return true
+  } catch (err: unknown) {
+    console.warn(`[ORCA] ${label} probe failed:`, err instanceof Error ? err.message : err)
+    if (isQuotaOrRateLimitError(err)) {
+      geminiBlockedUntil = Date.now() + 2 * 60 * 1000
+    }
+    return false
+  }
+}
+
 function collectTextFromSteps(steps: Array<{ text?: string }>, fallback: string): string {
   const fromSteps = steps.map((s) => s.text?.trim() || '').filter(Boolean).join('\n\n').trim()
   return fallback?.trim() || fromSteps
@@ -477,34 +503,44 @@ async function buildStreamResult(
     return streamText({ ...streamOptions, model: openrouter(modelOverride!) })
   }
 
-  const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash']
+  const groq = groqKey ? createGroq({ apiKey: groqKey }) : null
+  const google = geminiKey ? createGoogleGenerativeAI({ apiKey: geminiKey }) : null
+  const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash']
 
-  if (geminiKey) {
-    const google = createGoogleGenerativeAI({ apiKey: geminiKey })
+  // streamText() returns immediately — quota errors happen mid-stream, so probe Gemini first
+  const geminiCacheValid = Date.now() >= geminiBlockedUntil
+  if (google && geminiCacheValid) {
     for (const modelId of geminiModels) {
-      try {
-        return await streamText({
+      const model = google(modelId)
+      if (await probeModel(model, `Gemini ${modelId}`)) {
+        console.log(`[ORCA] Using Gemini ${modelId}`)
+        return streamText({
           ...streamOptions,
-          model: google(modelId),
+          model,
+          maxRetries: 0,
           experimental_toolCallStreaming: true,
           onStepFinish: (step) => {
             console.log(`[ORCA_STEP] ${step.stepType} tokens=${step.usage?.completionTokens ?? 0}`)
           },
         })
-      } catch (geminiErr: unknown) {
-        const msg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr)
-        console.warn(`[ORCA] Gemini ${modelId} failed:`, msg)
       }
     }
+    geminiBlockedUntil = Date.now() + 2 * 60 * 1000
+  } else if (!geminiCacheValid) {
+    console.log('[ORCA] Gemini skipped (recent quota/rate-limit failure)')
   }
 
-  if (groqKey) {
-    console.log('[ORCA] Using Groq fallback')
-    const groq = createGroq({ apiKey: groqKey })
-    return streamText({ ...streamOptions, model: groq('llama-3.3-70b-versatile') })
+  if (groq) {
+    console.log('[ORCA] Falling back to Groq (llama-3.3-70b-versatile)')
+    return streamText({
+      ...streamOptions,
+      model: groq('llama-3.3-70b-versatile'),
+    })
   }
 
-  throw new Error('No AI provider API key configured. Set GEMINI_API_KEY or GROQ_API_KEY on Vercel.')
+  throw new Error(
+    'Gemini quota exceeded and Groq fallback unavailable. Set GROQ_API_KEY in your environment.'
+  )
 }
 
 async function buildFallbackResult(
@@ -524,18 +560,31 @@ async function buildFallbackResult(
     return generateText({ ...textOptions, model: openrouter(modelOverride!), maxSteps: 1, tools: undefined } as Parameters<typeof generateText>[0])
   }
 
-  if (geminiKey) {
-    const google = createGoogleGenerativeAI({ apiKey: geminiKey })
-    return generateText({
-      ...textOptions,
-      model: google('gemini-2.0-flash'),
-      maxSteps: 1,
-      tools: undefined,
-    } as Parameters<typeof generateText>[0])
+  const groq = groqKey ? createGroq({ apiKey: groqKey }) : null
+  const google = geminiKey ? createGoogleGenerativeAI({ apiKey: geminiKey }) : null
+
+  if (google && Date.now() >= geminiBlockedUntil) {
+    for (const modelId of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
+      try {
+        return await generateText({
+          ...textOptions,
+          model: google(modelId),
+          maxSteps: 1,
+          tools: undefined,
+          maxRetries: 0,
+        } as Parameters<typeof generateText>[0])
+      } catch (err: unknown) {
+        console.warn(`[ORCA] Fallback Gemini ${modelId} failed:`, err instanceof Error ? err.message : err)
+        if (isQuotaOrRateLimitError(err)) {
+          geminiBlockedUntil = Date.now() + 2 * 60 * 1000
+          break
+        }
+      }
+    }
   }
 
-  if (groqKey) {
-    const groq = createGroq({ apiKey: groqKey })
+  if (groq) {
+    console.log('[ORCA] Fallback using Groq')
     return generateText({
       ...textOptions,
       model: groq('llama-3.3-70b-versatile'),
@@ -544,7 +593,7 @@ async function buildFallbackResult(
     } as Parameters<typeof generateText>[0])
   }
 
-  throw new Error('No AI provider API key configured.')
+  throw new Error('No AI provider available. Set GROQ_API_KEY for failover when Gemini is rate-limited.')
 }
 
 export async function GET(
