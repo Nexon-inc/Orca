@@ -33,8 +33,6 @@ export function sanitizeInput(input: string): string {
   let clean = input.replace(/<[^>]*>/g, '')
   // Strip null bytes
   clean = clean.replace(/\0/g, '')
-  // Limit length to 2000 characters
-  clean = clean.slice(0, 2000)
   // Strip obvious injection starters
   clean = clean.replace(/^(system|assistant|user)\s*:/gi, '')
   return clean.trim()

@@ -188,6 +188,8 @@ function ChatContent() {
   } = useChat({
     api: conversationId ? `/api/conversations/${conversationId}/messages` : '/api/conversations/none/messages',
     id: conversationId || 'init',
+    streamProtocol: 'data',
+    keepLastMessageOnError: true,
     body: {
       model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
       mode: chatMode.toLowerCase(),
@@ -201,8 +203,13 @@ function ChatContent() {
         });
       }
     },
-    onFinish: async () => {
+    onFinish: async (message) => {
       await reloadMessagesFromDb();
+      // Retry DB reload if stream arrived empty but server saved a reply
+      if (!message?.content?.trim()) {
+        setTimeout(() => reloadMessagesFromDb(), 1500);
+        setTimeout(() => reloadMessagesFromDb(), 4000);
+      }
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       if (isFirstMessage.current && conversationId) {
         isFirstMessage.current = false;
@@ -511,7 +518,8 @@ function ChatContent() {
     }
 
     append({ role: 'user', content: messageText }, { body: getRequestBody() });
-    if (pastedDocRef.current) setPastedDocument(null);
+    // Clear pasted doc only after body was captured by append
+    setPastedDocument(null);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
