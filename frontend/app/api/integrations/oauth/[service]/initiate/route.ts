@@ -1,28 +1,15 @@
 'use server'
 import { getAuthUser } from '@/lib/auth'
+import { getComposioSlug, getCatalogTool } from '@/lib/integrations/catalog'
 import { getIntegrationConfig } from '@/lib/integrations/registry'
 import { NextResponse } from 'next/server'
 
-const COMPOSIO_SLUG_MAP: Record<string, string> = {
-  linkedin: 'linkedin',
-  twitter: 'twitter',
-  meta: 'facebook',
-  google: 'gmail',
-  hubspot: 'hubspot',
-  slack: 'slack',
-  notion: 'notion',
-  github: 'github',
-  tiktok: 'tiktok',
-  google_drive: 'googledrive',
-  gmail_outreach: 'gmail',
-  google_calendar: 'googlecalendar',
-}
-
-function envAuthConfigId(service: string): string | undefined {
+function envAuthConfigId(service: string, composioSlug: string): string | undefined {
   const serviceKey = service.toUpperCase().replace(/-/g, '_')
+  const slugKey = composioSlug.toUpperCase().replace(/-/g, '_')
   return (
     process.env[`COMPOSIO_AUTH_CONFIG_${serviceKey}`] ||
-    process.env[`COMPOSIO_AUTH_CONFIG_${COMPOSIO_SLUG_MAP[service]?.toUpperCase().replace(/-/g, '_')}`]
+    process.env[`COMPOSIO_AUTH_CONFIG_${slugKey}`]
   )
 }
 
@@ -39,8 +26,9 @@ export async function GET(
     return NextResponse.json({ error: 'Integration not found' }, { status: 404 })
   }
 
-  const composioSlug = COMPOSIO_SLUG_MAP[service] || service
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+  const catalogTool = getCatalogTool(service)
+  const composioSlug = catalogTool?.composio_slug || getComposioSlug(service)
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
 
   if (!process.env.COMPOSIO_API_KEY) {
     return NextResponse.redirect(
@@ -49,7 +37,7 @@ export async function GET(
   }
 
   try {
-    let authConfigId = envAuthConfigId(service)
+    let authConfigId = envAuthConfigId(service, composioSlug)
 
     if (!authConfigId) {
       const configRes = await fetch(
@@ -61,7 +49,7 @@ export async function GET(
         const errText = await configRes.text().catch(() => '')
         console.error('[COMPOSIO] auth_configs failed:', composioSlug, configRes.status, errText)
         return NextResponse.redirect(
-          `${appUrl}/dashboard/integrations?error=composio_api_error&service=${service}`
+          `${appUrl}/dashboard/integrations?error=composio_api_error&service=${service}&toolkit=${composioSlug}`
         )
       }
 
