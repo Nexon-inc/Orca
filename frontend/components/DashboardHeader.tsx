@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Dialog, 
   DialogContent, 
@@ -25,18 +25,32 @@ interface DashboardHeaderProps {
   activeDirectives?: any;
 }
 
-export default function DashboardHeader({ floating = false, activeDirectives = null }: DashboardHeaderProps) {
+function DashboardHeaderInner({ floating = false, activeDirectives = null }: DashboardHeaderProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [vaultOpen, setVaultOpen] = useState(false);
+  const [connectedCount, setConnectedCount] = useState(0);
 
   useEffect(() => {
-    // Fallback mocks instead of API polling to prevent 404 spam
     setNotifications([
       { id: 1, text: "Atlas (CEO) initialized Day 1 Protocols", time: "2m ago", important: true },
       { id: 2, text: "Aria (CMO) generated marketing strategy", time: "15m ago", important: false },
     ]);
   }, []);
+
+  useEffect(() => {
+    fetch('/api/integrations', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => setConnectedCount(data.integrations?.length ?? 0))
+      .catch(() => {});
+  }, [vaultOpen]);
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true' && searchParams.get('service')) {
+      setVaultOpen(true);
+    }
+  }, [searchParams]);
 
   if (activeDirectives) return null;
 
@@ -58,17 +72,22 @@ export default function DashboardHeader({ floating = false, activeDirectives = n
       <div className="h-4 w-[1px] bg-outline-variant/20 mx-1" />
 
       {/* Integrations Quick Access */}
-      <Dialog>
+      <Dialog open={vaultOpen} onOpenChange={setVaultOpen}>
         <DialogTrigger asChild>
-          <button className={`${floating ? 'w-7 h-7 rounded-full' : 'w-9 h-9 rounded-lg'} flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors hover:bg-white/5 group`} title="Integrations Vault">
+          <button className={`${floating ? 'w-7 h-7 rounded-full' : 'w-9 h-9 rounded-lg'} flex items-center justify-center text-on-surface/40 hover:text-primary-container transition-colors hover:bg-white/5 group relative`} title="Integrations Vault">
             <span className={`material-symbols-outlined ${floating ? 'text-[18px]' : 'text-[22px]'}`}>hub</span>
+            {connectedCount > 0 && (
+              <span className={`absolute ${floating ? '-top-0.5 -right-0.5 min-w-[14px] h-[14px] text-[8px]' : '-top-1 -right-1 min-w-[16px] h-4 text-[9px]'} px-1 flex items-center justify-center bg-primary-container text-on-primary font-black rounded-full border border-[#0a0c0a]`}>
+                {connectedCount}
+              </span>
+            )}
           </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[1200px] w-full bg-[#0a0c0a] border-[#1a1c1a] p-0 overflow-hidden rounded-[2.5rem]">
           <DialogTitle className="sr-only">Integrations Vault</DialogTitle>
           <DialogDescription className="sr-only">Manage your connected applications and tools.</DialogDescription>
           <div className="p-8 max-h-[85vh] overflow-y-auto no-scrollbar">
-            <IntegrationsVault />
+            <IntegrationsVault isOpen={vaultOpen} onConnectedCountChange={setConnectedCount} />
           </div>
         </DialogContent>
       </Dialog>
@@ -107,5 +126,13 @@ export default function DashboardHeader({ floating = false, activeDirectives = n
       </DropdownMenu>
       
     </header>
+  );
+}
+
+export default function DashboardHeader(props: DashboardHeaderProps) {
+  return (
+    <Suspense fallback={null}>
+      <DashboardHeaderInner {...props} />
+    </Suspense>
   );
 }

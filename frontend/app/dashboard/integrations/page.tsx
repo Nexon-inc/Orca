@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import { INTEGRATION_CATALOG } from '@/lib/integrations/catalog';
+import { getOAuthConnectUrl } from '@/lib/integrations/oauthReturn';
 
 /** UI catalog — all tools connect via Composio OAuth */
 const INTEGRATIONS_CATALOG = INTEGRATION_CATALOG.map((group) => ({
@@ -53,7 +54,7 @@ function IntegrationsContent() {
       setAlertMsg({ type: 'error', text: detail })
     }
 
-    fetch('/api/integrations')
+    fetch('/api/integrations', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data.integrations) setConnectedTools(data.integrations);
@@ -79,7 +80,7 @@ function IntegrationsContent() {
 
   const handleConnect = (tool: any) => {
     if (tool.auth_method === 'oauth') {
-      window.location.href = `/api/integrations/oauth/${tool.service_key}/initiate`;
+      window.location.href = getOAuthConnectUrl(tool.service_key, '/dashboard/integrations');
     } else {
       setApikeyModal({ service: tool });
       setApiKeyValue('');

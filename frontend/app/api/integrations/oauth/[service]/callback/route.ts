@@ -1,9 +1,15 @@
 'use server'
+import { cookies } from 'next/headers'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/auth'
 import { getIntegrationConfig } from '@/lib/integrations/registry'
 import { encryptToken } from '@/lib/security/encrypt'
 import { writeAuditLog } from '@/lib/security/auditLog'
+import {
+  OAUTH_RETURN_COOKIE,
+  buildOAuthReturnUrl,
+  sanitizeReturnPath,
+} from '@/lib/integrations/oauthReturn'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -15,14 +21,22 @@ export async function GET(
   const status = searchParams.get('status')
   const connectedAccountId = searchParams.get('connected_account_id') || searchParams.get('connectedAccountId')
   const oauthError = searchParams.get('error')
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL
+  const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
+  const cookieStore = cookies()
+  const returnPath = sanitizeReturnPath(cookieStore.get(OAUTH_RETURN_COOKIE)?.value)
+
+  const finish = (target: string) => {
+    const response = NextResponse.redirect(target)
+    response.cookies.delete(OAUTH_RETURN_COOKIE)
+    return response
+  }
 
   if (oauthError || status === 'failed') {
-    return NextResponse.redirect(`${APP_URL}/dashboard/integrations?error=denied&service=${service}`)
+    return finish(buildOAuthReturnUrl(APP_URL, returnPath, { error: 'denied', service }))
   }
-  
+
   if (!connectedAccountId) {
-    return NextResponse.redirect(`${APP_URL}/dashboard/integrations?error=invalid_connection`)
+    return finish(buildOAuthReturnUrl(APP_URL, returnPath, { error: 'invalid_connection', service }))
   }
 
   const user = await getAuthUser()
@@ -30,10 +44,14 @@ export async function GET(
 
   const supabase = await createServerSupabaseClient()
   const config = getIntegrationConfig(service)
-  if (!config) return NextResponse.redirect(`${APP_URL}/dashboard/integrations?error=unknown_service`)
+  if (!config) {
+    return finish(buildOAuthReturnUrl(APP_URL, returnPath, { error: 'unknown_service', service }))
+  }
 
   const { data: member } = await supabase.from('org_members').select('org_id').eq('user_id', user.id).single()
-  if (!member) return NextResponse.redirect(`${APP_URL}/dashboard/integrations?error=no_org`)
+  if (!member) {
+    return finish(buildOAuthReturnUrl(APP_URL, returnPath, { error: 'no_org', service }))
+  }
   const orgId = member.org_id
 
   await supabase.from('integrations').upsert({
@@ -54,5 +72,5 @@ export async function GET(
     metadata: { service, dept: config.department_key, auth_type: 'composio' },
   })
 
-  return NextResponse.redirect(`${APP_URL}/dashboard/integrations?success=true&service=${service}`)
+  return finish(buildOAuthReturnUrl(APP_URL, returnPath, { success: true, service }))
 }

@@ -2,6 +2,11 @@
 import { getAuthUser } from '@/lib/auth'
 import { getComposioSlug, getCatalogTool } from '@/lib/integrations/catalog'
 import { getIntegrationConfig } from '@/lib/integrations/registry'
+import {
+  buildOAuthReturnUrl,
+  sanitizeReturnPath,
+  setOAuthReturnCookie,
+} from '@/lib/integrations/oauthReturn'
 import { NextResponse } from 'next/server'
 
 function envAuthConfigId(service: string, composioSlug: string): string | undefined {
@@ -18,6 +23,8 @@ export async function GET(
   { params }: { params: Promise<{ service: string }> }
 ) {
   const { service } = await params
+  const { searchParams } = new URL(request.url)
+  const returnTo = sanitizeReturnPath(searchParams.get('return_to'))
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -32,7 +39,7 @@ export async function GET(
 
   if (!process.env.COMPOSIO_API_KEY) {
     return NextResponse.redirect(
-      `${appUrl}/dashboard/integrations?error=composio_missing_api_key&service=${service}`
+      buildOAuthReturnUrl(appUrl, returnTo, { error: 'composio_missing_api_key', service })
     )
   }
 
@@ -49,7 +56,11 @@ export async function GET(
         const errText = await configRes.text().catch(() => '')
         console.error('[COMPOSIO] auth_configs failed:', composioSlug, configRes.status, errText)
         return NextResponse.redirect(
-          `${appUrl}/dashboard/integrations?error=composio_api_error&service=${service}&toolkit=${composioSlug}`
+          buildOAuthReturnUrl(appUrl, returnTo, {
+            error: 'composio_api_error',
+            service,
+            toolkit: composioSlug,
+          })
         )
       }
 
@@ -65,7 +76,11 @@ export async function GET(
     if (!authConfigId) {
       console.error('[COMPOSIO] No auth config for toolkit:', composioSlug, service)
       return NextResponse.redirect(
-        `${appUrl}/dashboard/integrations?error=no_composio_auth_config&service=${service}&toolkit=${composioSlug}`
+        buildOAuthReturnUrl(appUrl, returnTo, {
+          error: 'no_composio_auth_config',
+          service,
+          toolkit: composioSlug,
+        })
       )
     }
 
@@ -87,7 +102,7 @@ export async function GET(
       const errText = await linkRes.text().catch(() => '')
       console.error('[COMPOSIO] link failed:', linkRes.status, errText)
       return NextResponse.redirect(
-        `${appUrl}/dashboard/integrations?error=composio_link_failed&service=${service}`
+        buildOAuthReturnUrl(appUrl, returnTo, { error: 'composio_link_failed', service })
       )
     }
 
@@ -96,15 +111,17 @@ export async function GET(
 
     if (!redirectUrl) {
       return NextResponse.redirect(
-        `${appUrl}/dashboard/integrations?error=no_redirect_url&service=${service}`
+        buildOAuthReturnUrl(appUrl, returnTo, { error: 'no_redirect_url', service })
       )
     }
 
-    return NextResponse.redirect(redirectUrl)
+    const response = NextResponse.redirect(redirectUrl)
+    setOAuthReturnCookie(response, returnTo)
+    return response
   } catch (err: unknown) {
     console.error('[COMPOSIO] connect exception:', err)
     return NextResponse.redirect(
-      `${appUrl}/dashboard/integrations?error=composio_connect_exception&service=${service}`
+      buildOAuthReturnUrl(appUrl, returnTo, { error: 'composio_connect_exception', service })
     )
   }
 }
