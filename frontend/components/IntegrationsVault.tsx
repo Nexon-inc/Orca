@@ -76,6 +76,10 @@ function IntegrationsInner({ isOpen = false, onConnectedCountChange }: Integrati
         composio_connect_exception: 'Unexpected error while connecting via Composio.',
         denied: 'OAuth was cancelled or denied.',
         invalid_connection: 'Connection could not be verified. Try again.',
+        save_failed: 'OAuth succeeded but saving the connection failed. Check server logs / ENCRYPTION_KEY on Vercel.',
+        callback_exception: 'Unexpected error finishing OAuth. Try again or contact support.',
+        unknown_service: 'Unknown integration service.',
+        no_org: 'No organization found for your account.',
       };
       const detail =
         errorMessages[errorParam] ||

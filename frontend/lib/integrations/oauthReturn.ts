@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server'
 
 export const OAUTH_RETURN_COOKIE = 'orca_oauth_return'
+export const OAUTH_CTX_COOKIE = 'orca_oauth_ctx'
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 600,
+  path: '/',
+}
 
 export function sanitizeReturnPath(path: string | null | undefined): string | null {
   if (!path || !path.startsWith('/') || path.startsWith('//')) return null
@@ -13,7 +22,7 @@ export function buildOAuthReturnUrl(
   params: { success?: boolean; service?: string; error?: string; toolkit?: string }
 ): string {
   const base = sanitizeReturnPath(returnPath) || '/dashboard/integrations'
-  const url = new URL(base, appUrl)
+  const url = new URL(base, appUrl.replace(/\/$/, ''))
 
   if (params.success && params.service) {
     url.searchParams.set('success', 'true')
@@ -31,13 +40,14 @@ export function buildOAuthReturnUrl(
 export function setOAuthReturnCookie(response: NextResponse, returnPath: string | null) {
   const safe = sanitizeReturnPath(returnPath)
   if (!safe) return
-  response.cookies.set(OAUTH_RETURN_COOKIE, safe, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 600,
-    path: '/',
-  })
+  response.cookies.set(OAUTH_RETURN_COOKIE, safe, cookieOptions)
+}
+
+export function setOAuthContextCookie(
+  response: NextResponse,
+  ctx: { userId: string; orgId: string; service: string }
+) {
+  response.cookies.set(OAUTH_CTX_COOKIE, JSON.stringify(ctx), cookieOptions)
 }
 
 export function getOAuthConnectUrl(serviceKey: string, returnPath?: string): string {

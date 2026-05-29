@@ -1,4 +1,3 @@
-'use server'
 import { getAuthUser } from '@/lib/auth'
 import { getComposioSlug, getCatalogTool } from '@/lib/integrations/catalog'
 import { getIntegrationConfig } from '@/lib/integrations/registry'
@@ -6,7 +5,10 @@ import {
   buildOAuthReturnUrl,
   sanitizeReturnPath,
   setOAuthReturnCookie,
+  setOAuthContextCookie,
+  OAUTH_RETURN_COOKIE,
 } from '@/lib/integrations/oauthReturn'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 function envAuthConfigId(service: string, composioSlug: string): string | undefined {
@@ -18,6 +20,10 @@ function envAuthConfigId(service: string, composioSlug: string): string | undefi
   )
 }
 
+function appBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '')
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ service: string }> }
@@ -25,21 +31,38 @@ export async function GET(
   const { service } = await params
   const { searchParams } = new URL(request.url)
   const returnTo = sanitizeReturnPath(searchParams.get('return_to'))
+
   const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const base = appBaseUrl()
+
+  if (!user) {
+    return NextResponse.redirect(`${base}/auth/login`)
+  }
 
   const config = getIntegrationConfig(service)
   if (!config) {
-    return NextResponse.json({ error: 'Integration not found' }, { status: 404 })
+    return NextResponse.redirect(
+      buildOAuthReturnUrl(base, returnTo, { error: 'unknown_service', service })
+    )
+  }
+
+  const supabase = await createServerSupabaseClient()
+  const { data: member } = await supabase
+    .from('org_members')
+    .select('org_id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!member?.org_id) {
+    return NextResponse.redirect(buildOAuthReturnUrl(base, returnTo, { error: 'no_org', service }))
   }
 
   const catalogTool = getCatalogTool(service)
   const composioSlug = catalogTool?.composio_slug || getComposioSlug(service)
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
 
   if (!process.env.COMPOSIO_API_KEY) {
     return NextResponse.redirect(
-      buildOAuthReturnUrl(appUrl, returnTo, { error: 'composio_missing_api_key', service })
+      buildOAuthReturnUrl(base, returnTo, { error: 'composio_missing_api_key', service })
     )
   }
 
@@ -56,7 +79,7 @@ export async function GET(
         const errText = await configRes.text().catch(() => '')
         console.error('[COMPOSIO] auth_configs failed:', composioSlug, configRes.status, errText)
         return NextResponse.redirect(
-          buildOAuthReturnUrl(appUrl, returnTo, {
+          buildOAuthReturnUrl(base, returnTo, {
             error: 'composio_api_error',
             service,
             toolkit: composioSlug,
@@ -76,7 +99,7 @@ export async function GET(
     if (!authConfigId) {
       console.error('[COMPOSIO] No auth config for toolkit:', composioSlug, service)
       return NextResponse.redirect(
-        buildOAuthReturnUrl(appUrl, returnTo, {
+        buildOAuthReturnUrl(base, returnTo, {
           error: 'no_composio_auth_config',
           service,
           toolkit: composioSlug,
@@ -84,7 +107,7 @@ export async function GET(
       )
     }
 
-    const redirectUri = `${appUrl}/api/integrations/oauth/${service}/callback`
+    const redirectUri = `${base}/api/integrations/oauth/${service}/callback`
     const linkRes = await fetch('https://backend.composio.dev/api/v3/connected_accounts/link', {
       method: 'POST',
       headers: {
@@ -102,7 +125,7 @@ export async function GET(
       const errText = await linkRes.text().catch(() => '')
       console.error('[COMPOSIO] link failed:', linkRes.status, errText)
       return NextResponse.redirect(
-        buildOAuthReturnUrl(appUrl, returnTo, { error: 'composio_link_failed', service })
+        buildOAuthReturnUrl(base, returnTo, { error: 'composio_link_failed', service })
       )
     }
 
@@ -111,17 +134,22 @@ export async function GET(
 
     if (!redirectUrl) {
       return NextResponse.redirect(
-        buildOAuthReturnUrl(appUrl, returnTo, { error: 'no_redirect_url', service })
+        buildOAuthReturnUrl(base, returnTo, { error: 'no_redirect_url', service })
       )
     }
 
     const response = NextResponse.redirect(redirectUrl)
     setOAuthReturnCookie(response, returnTo)
+    setOAuthContextCookie(response, {
+      userId: user.id,
+      orgId: member.org_id,
+      service,
+    })
     return response
   } catch (err: unknown) {
     console.error('[COMPOSIO] connect exception:', err)
     return NextResponse.redirect(
-      buildOAuthReturnUrl(appUrl, returnTo, { error: 'composio_connect_exception', service })
+      buildOAuthReturnUrl(base, returnTo, { error: 'composio_connect_exception', service })
     )
   }
 }
