@@ -275,9 +275,9 @@ function ChatContent() {
     toast.success('Listening... speak now');
   };
 
-  const handleInputChange = async (value: string) => {
+  async function handleInputChange(value: string) {
     if (value.length > 1500) {
-      toast.info('Large prompt detected. Auto-saving to prompt.txt...');
+      toast('Large prompt detected. Auto-saving to prompt.txt...');
       // Optimistically update the input immediately so the user can send without lag
       setInput('Please read and implement the directives detailed in the prompt.txt file at the workspace root.');
       
@@ -299,16 +299,16 @@ function ChatContent() {
       setInput(value);
     }
     adjustTextareaHeight();
-  };
+  }
 
-  const adjustTextareaHeight = () => {
+  function adjustTextareaHeight() {
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.style.height = '0px';
         inputRef.current.style.height = `${Math.min(Math.max(inputRef.current.scrollHeight, 44), 240)}px`;
       }
     }, 0);
-  };
+  }
 
 
   useEffect(() => {

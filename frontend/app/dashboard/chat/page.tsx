@@ -173,9 +173,9 @@ function ChatContent() {
     toast.success('Listening... speak now');
   };
 
-  const handleInputChange = async (value: string) => {
+  async function handleInputChange(value: string) {
     if (value.length > 1500) {
-      toast.info('Large prompt detected. Auto-saving to prompt.txt...');
+      toast('Large prompt detected. Auto-saving to prompt.txt...');
       // Optimistically update the input immediately so the user can send without lag
       setInput('Please read and implement the directives detailed in the prompt.txt file at the workspace root.');
       
@@ -197,16 +197,16 @@ function ChatContent() {
       setInput(value);
     }
     adjustTextareaHeight();
-  };
+  }
 
-  const adjustTextareaHeight = () => {
+  function adjustTextareaHeight() {
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.style.height = '0px'; 
         inputRef.current.style.height = `${Math.min(Math.max(inputRef.current.scrollHeight, 44), 240)}px`;
       }
     }, 0);
-  };
+  }
 
   useEffect(() => {
     adjustTextareaHeight();
@@ -329,7 +329,7 @@ function ChatContent() {
                     <div className="absolute bottom-full mb-2 left-0 min-w-[180px] bg-[#1a1c1a] border border-[#2d312d] rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
                       <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors"><span className="material-symbols-outlined text-[16px]">image</span> Attach Image</button>
                       <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors"><span className="material-symbols-outlined text-[16px]">description</span> Attach Document</button>
-                      <button onClick={() => { setShowAddMenu(false); toast.info('Web context coming soon'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors"><span className="material-symbols-outlined text-[16px]">language</span> Add Web Context</button>
+                      <button onClick={() => { setShowAddMenu(false); toast('Web context coming soon'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors"><span className="material-symbols-outlined text-[16px]">language</span> Add Web Context</button>
                     </div>
                   )}
                 </div>
