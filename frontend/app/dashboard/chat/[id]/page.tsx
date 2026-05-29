@@ -12,6 +12,11 @@ import { toast } from 'sonner';
 import LongContentBanner, { countWords } from '@/components/LongContentBanner';
 import InChatQuestionCard from '@/components/InChatQuestionCard';
 import { parseInChatQuestion } from '@/lib/chat/questionParser';
+import {
+  DIRECTIVE_RUN_INSTRUCTION,
+  isDirectivePaste,
+  LONG_PASTE_CHAR_THRESHOLD,
+} from '@/lib/chat/pasteConfig';
 
 export default function ChatPage() {
   return (
@@ -293,12 +298,12 @@ function ChatContent() {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pasted = e.clipboardData.getData('text');
-    if (pasted.length > 800) {
+    if (pasted.length > LONG_PASTE_CHAR_THRESHOLD) {
       e.preventDefault();
       setPastedDocument(pasted);
-      setInput('');
+      setInput(isDirectivePaste(pasted) ? DIRECTIVE_RUN_INSTRUCTION : '');
       adjustTextareaHeight();
-      toast.success('Long content attached — pick a quick action or type your instruction.');
+      toast.success('Long content attached — click "Run directive" or type your instruction.');
     }
   };
 
@@ -399,70 +404,83 @@ function ChatContent() {
     initialize();
   }, [conversationId]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = sessionStorage.getItem('orca_pasted_doc');
-    if (stored) {
-      setPastedDocument(stored);
-      sessionStorage.removeItem('orca_pasted_doc');
-    }
-  }, []);
-
-  // Handle auto-submitting initialMessage from URL
+  // Handle auto-submitting initialMessage from URL (after pasted doc is restored)
   useEffect(() => {
     const initMsg = searchParams?.get('initialMessage');
-    if (initMsg && historyInitialized.current && !initialMessageSent.current) {
-      initialMessageSent.current = true;
+    if (!initMsg || !historyInitialized.current || initialMessageSent.current) return;
 
-      // Clear from URL without triggering Next.js route reload
-      if (typeof window !== 'undefined') {
-        window.history.replaceState(null, '', `/dashboard/chat/${conversationId}`);
-      }
+    initialMessageSent.current = true;
 
-      // Auto-submit after a tiny delay to ensure useChat is ready
-      setTimeout(() => {
-        if (isFirstMessage.current) {
-          const titleSlug = initMsg.trim().split(/\s+/).slice(0, 6).join(' ');
-          fetch(`/api/conversations/${conversationId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: titleSlug })
-          }).catch(() => { });
-        }
-        append({ role: 'user', content: initMsg }, { body: getRequestBody() });
-        if (pastedDocRef.current) setPastedDocument(null);
-      }, 500);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `/dashboard/chat/${conversationId}`);
     }
-  }, [searchParams, conversationId, append, router]);
+
+    const stored = sessionStorage.getItem('orca_pasted_doc');
+    if (stored) {
+      pastedDocRef.current = stored;
+      setPastedDocContent(stored);
+      sessionStorage.removeItem('orca_pasted_doc');
+    }
+
+    const timer = setTimeout(() => {
+      if (isFirstMessage.current && conversationId) {
+        const titleSlug = initMsg.trim().split(/\s+/).slice(0, 6).join(' ');
+        fetch(`/api/conversations/${conversationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: titleSlug }),
+        }).catch(() => {});
+      }
+      append(
+        { role: 'user', content: initMsg },
+        {
+          body: {
+            model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
+            mode: chatMode.toLowerCase(),
+            pastedDocumentContent: pastedDocRef.current || undefined,
+          },
+        }
+      );
+      if (pastedDocRef.current) setPastedDocument(null);
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [searchParams, conversationId, append, activeModel, chatMode]);
 
   const isChatLoading = isLoading && messages && messages.length > 0;
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (isChatLoading) return;
-    if (!(input || '').trim()) {
-      if (pastedDocRef.current) toast.error('Choose a quick action or type an instruction for your document.');
-      return;
+
+    let messageText = (input || '').trim();
+    if (!messageText && pastedDocRef.current) {
+      if (isDirectivePaste(pastedDocRef.current)) {
+        messageText = DIRECTIVE_RUN_INSTRUCTION;
+      } else {
+        toast.error('Choose a quick action or type an instruction for your document.');
+        return;
+      }
     }
+    if (!messageText) return;
 
     if (!conversationId) {
       toast('Workspace initializing... please wait a second or refresh');
       return;
     }
 
-    const currentInput = input || '';
     setInput('');
 
     if (isFirstMessage.current) {
-      const titleSlug = (currentInput || '').trim().split(/\s+/).slice(0, 6).join(' ');
+      const titleSlug = messageText.split(/\s+/).slice(0, 6).join(' ');
       fetch(`/api/conversations/${conversationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: titleSlug })
-      }).catch(() => { });
+        body: JSON.stringify({ title: titleSlug }),
+      }).catch(() => {});
     }
 
-    append({ role: 'user', content: currentInput }, { body: getRequestBody() });
+    append({ role: 'user', content: messageText }, { body: getRequestBody() });
     if (pastedDocRef.current) setPastedDocument(null);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
@@ -987,7 +1005,7 @@ function ChatContent() {
                   )}
                 </div>
               ))}
-              {isLoading && messages[messages.length - 1]?.role === 'user' && (
+              {isLoading && (
                 <div className="flex gap-4 mb-6 w-full animate-in fade-in duration-500 bg-primary-container/5 p-6 rounded-3xl border border-primary-container/10 shadow-inner">
                   <div className="flex-shrink-0 pt-1">
                     <div className="w-10 h-10 rounded-2xl bg-primary-container/20 flex items-center justify-center text-xl shadow-inner grayscale animate-pulse">

@@ -10,6 +10,11 @@ import PricingModal from '@/components/PricingModal';
 import { useChat } from '@ai-sdk/react';
 import { toast } from 'sonner';
 import LongContentBanner, { countWords } from '@/components/LongContentBanner';
+import {
+  DIRECTIVE_RUN_INSTRUCTION,
+  isDirectivePaste,
+  LONG_PASTE_CHAR_THRESHOLD,
+} from '@/lib/chat/pasteConfig';
 
 export default function ChatPage() {
   return (
@@ -188,12 +193,12 @@ function ChatContent() {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pasted = e.clipboardData.getData('text');
-    if (pasted.length > 800) {
+    if (pasted.length > LONG_PASTE_CHAR_THRESHOLD) {
       e.preventDefault();
       setPastedDocument(pasted);
-      setInput('');
+      setInput(isDirectivePaste(pasted) ? DIRECTIVE_RUN_INSTRUCTION : '');
       adjustTextareaHeight();
-      toast.success('Long content attached — pick a quick action or type your instruction.');
+      toast.success('Long content attached — click "Run directive" or type your instruction.');
     }
   };
 
@@ -243,10 +248,17 @@ function ChatContent() {
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (isChatLoading) return;
-    if (!(input || '').trim()) {
-      if (pastedDocRef.current) toast.error('Choose a quick action or type an instruction for your document.');
-      return;
+
+    let messageText = (input || '').trim();
+    if (!messageText && pastedDocRef.current) {
+      if (isDirectivePaste(pastedDocRef.current)) {
+        messageText = DIRECTIVE_RUN_INSTRUCTION;
+      } else {
+        toast.error('Choose a quick action or type an instruction for your document.');
+        return;
+      }
     }
+    if (!messageText) return;
 
     if (!tempId) {
       try {
@@ -264,7 +276,7 @@ function ChatContent() {
             sessionStorage.setItem('orca_pasted_doc', pastedDocRef.current);
           }
           setTempId(data.conversation.id);
-          router.push(`/dashboard/chat/${data.conversation.id}?initialMessage=${encodeURIComponent(input)}`);
+          router.push(`/dashboard/chat/${data.conversation.id}?initialMessage=${encodeURIComponent(messageText)}`);
           return;
         }
       } catch (err) {

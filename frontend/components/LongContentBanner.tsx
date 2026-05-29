@@ -1,6 +1,7 @@
 'use client'
 
 const QUICK_ACTIONS = [
+  { label: 'Run directive', instruction: 'Execute the attached directive in full. You have Automate authority — do not ask clarifying questions. Begin immediately with Phase 1.' },
   { label: 'Summarise it', instruction: 'Summarise the uploaded document concisely, highlighting the most important points.' },
   { label: 'Extract action items', instruction: 'Extract every action item from the uploaded document as a clear checklist.' },
   { label: 'Analyse for risks', instruction: 'Analyse the uploaded document for risks, blockers, and concerns.' },
