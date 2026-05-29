@@ -9,6 +9,7 @@ import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
 import { useChat } from '@ai-sdk/react';
 import { toast } from 'sonner';
+import LongContentBanner, { countWords } from '@/components/LongContentBanner';
 
 export default function ChatPage() {
   return (
@@ -62,6 +63,13 @@ function ChatContent() {
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const [pastedDocContent, setPastedDocContent] = useState<string | null>(null);
+  const pastedDocRef = useRef<string | null>(null);
+
+  const setPastedDocument = (value: string | null) => {
+    pastedDocRef.current = value;
+    setPastedDocContent(value);
+  };
 
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -173,31 +181,31 @@ function ChatContent() {
     toast.success('Listening... speak now');
   };
 
-  async function handleInputChange(value: string) {
-    if (value.length > 1500) {
-      toast('Large prompt detected. Auto-saving to prompt.txt...');
-      // Optimistically update the input immediately so the user can send without lag
-      setInput('Please read and implement the directives detailed in the prompt.txt file at the workspace root.');
-      
-      fetch('/api/save-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: value })
-      }).then(async (res) => {
-        if (res.ok) {
-          toast.success('Prompt successfully saved to prompt.txt in the workspace root!');
-        } else {
-          const data = await res.json();
-          toast.error(`Warning: Failed to save prompt file: ${data.error}`);
-        }
-      }).catch((err) => {
-        toast.error(`Warning: Connection failed: ${err.message}`);
-      });
-    } else {
-      setInput(value);
-    }
+  function handleInputChange(value: string) {
+    setInput(value);
     adjustTextareaHeight();
   }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = e.clipboardData.getData('text');
+    if (pasted.length > 800) {
+      e.preventDefault();
+      setPastedDocument(pasted);
+      setInput('');
+      adjustTextareaHeight();
+      toast.success('Long content attached — pick a quick action or type your instruction.');
+    }
+  };
+
+  const handleLongContentChip = (instruction: string) => {
+    inputRef.current?.focus();
+    if (instruction) {
+      setInput(instruction);
+      adjustTextareaHeight();
+    } else {
+      setInput('');
+    }
+  };
 
   function adjustTextareaHeight() {
     setTimeout(() => {
@@ -234,7 +242,11 @@ function ChatContent() {
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!(input || '').trim() || isChatLoading) return;
+    if (isChatLoading) return;
+    if (!(input || '').trim()) {
+      if (pastedDocRef.current) toast.error('Choose a quick action or type an instruction for your document.');
+      return;
+    }
 
     if (!tempId) {
       try {
@@ -248,6 +260,9 @@ function ChatContent() {
         });
         const data = await res.json();
         if (data.conversation?.id) {
+          if (pastedDocRef.current) {
+            sessionStorage.setItem('orca_pasted_doc', pastedDocRef.current);
+          }
           setTempId(data.conversation.id);
           router.push(`/dashboard/chat/${data.conversation.id}?initialMessage=${encodeURIComponent(input)}`);
           return;
@@ -315,6 +330,13 @@ function ChatContent() {
                 </button>
               ))}
             </div>
+            {pastedDocContent && (
+              <LongContentBanner
+                wordCount={countWords(pastedDocContent)}
+                onDismiss={() => setPastedDocument(null)}
+                onChipClick={handleLongContentChip}
+              />
+            )}
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
               <div className="px-6 py-4 flex items-start gap-4">
                 <input ref={fileInputRef} type="file" accept="image/*,.pdf,.txt,.md,.csv" className="hidden" onChange={(e) => {
@@ -333,7 +355,7 @@ function ChatContent() {
                     </div>
                   )}
                 </div>
-                <textarea ref={inputRef} value={input} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                <textarea ref={inputRef} value={input} onChange={(e) => handleInputChange(e.target.value)} onPaste={handlePaste} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
                     target.style.height = '0px';
@@ -351,7 +373,7 @@ function ChatContent() {
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
                 <div className="flex items-center gap-2"><Dropdown value={chatMode} options={MODES} onChange={setChatMode} /><div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" /><Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} /></div>
-                <button onClick={() => handleSendMessage()} disabled={!(input || '').trim() || isChatLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${(input || '').trim() && !isChatLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
+                <button onClick={() => handleSendMessage()} disabled={(!(input || '').trim() && !pastedDocContent) || isChatLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${((input || '').trim() || pastedDocContent) && !isChatLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
               </div>
             </div>
           </div>

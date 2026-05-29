@@ -9,6 +9,9 @@ import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
 import { useChat } from '@ai-sdk/react';
 import { toast } from 'sonner';
+import LongContentBanner, { countWords } from '@/components/LongContentBanner';
+import InChatQuestionCard from '@/components/InChatQuestionCard';
+import { parseInChatQuestion } from '@/lib/chat/questionParser';
 
 export default function ChatPage() {
   return (
@@ -91,6 +94,13 @@ function ChatContent() {
   const historyInitialized = useRef(false);
   const isFirstMessage = useRef(true);
   const initialMessageSent = useRef(false);
+  const [pastedDocContent, setPastedDocContent] = useState<string | null>(null);
+  const pastedDocRef = useRef<string | null>(null);
+
+  const setPastedDocument = (value: string | null) => {
+    pastedDocRef.current = value;
+    setPastedDocContent(value);
+  };
 
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -130,6 +140,7 @@ function ChatContent() {
     body: {
       model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
       mode: chatMode.toLowerCase(),
+      pastedDocumentContent: pastedDocRef.current || undefined,
     },
     onResponse: (response: any) => {
       if (!response.ok) {
@@ -275,31 +286,37 @@ function ChatContent() {
     toast.success('Listening... speak now');
   };
 
-  async function handleInputChange(value: string) {
-    if (value.length > 1500) {
-      toast('Large prompt detected. Auto-saving to prompt.txt...');
-      // Optimistically update the input immediately so the user can send without lag
-      setInput('Please read and implement the directives detailed in the prompt.txt file at the workspace root.');
-      
-      fetch('/api/save-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: value })
-      }).then(async (res) => {
-        if (res.ok) {
-          toast.success('Prompt successfully saved to prompt.txt in the workspace root!');
-        } else {
-          const data = await res.json();
-          toast.error(`Warning: Failed to save prompt file: ${data.error}`);
-        }
-      }).catch((err) => {
-        toast.error(`Warning: Connection failed: ${err.message}`);
-      });
-    } else {
-      setInput(value);
-    }
+  function handleInputChange(value: string) {
+    setInput(value);
     adjustTextareaHeight();
   }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = e.clipboardData.getData('text');
+    if (pasted.length > 800) {
+      e.preventDefault();
+      setPastedDocument(pasted);
+      setInput('');
+      adjustTextareaHeight();
+      toast.success('Long content attached — pick a quick action or type your instruction.');
+    }
+  };
+
+  const handleLongContentChip = (instruction: string) => {
+    inputRef.current?.focus();
+    if (instruction) {
+      setInput(instruction);
+      adjustTextareaHeight();
+    } else {
+      setInput('');
+    }
+  };
+
+  const getRequestBody = () => ({
+    model: typeof activeModel === 'string' ? activeModel : (activeModel as any).id,
+    mode: chatMode.toLowerCase(),
+    pastedDocumentContent: pastedDocRef.current || undefined,
+  });
 
   function adjustTextareaHeight() {
     setTimeout(() => {
@@ -382,6 +399,15 @@ function ChatContent() {
     initialize();
   }, [conversationId]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = sessionStorage.getItem('orca_pasted_doc');
+    if (stored) {
+      setPastedDocument(stored);
+      sessionStorage.removeItem('orca_pasted_doc');
+    }
+  }, []);
+
   // Handle auto-submitting initialMessage from URL
   useEffect(() => {
     const initMsg = searchParams?.get('initialMessage');
@@ -403,7 +429,8 @@ function ChatContent() {
             body: JSON.stringify({ title: titleSlug })
           }).catch(() => { });
         }
-        append({ role: 'user', content: initMsg });
+        append({ role: 'user', content: initMsg }, { body: getRequestBody() });
+        if (pastedDocRef.current) setPastedDocument(null);
       }, 500);
     }
   }, [searchParams, conversationId, append, router]);
@@ -412,10 +439,14 @@ function ChatContent() {
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!(input || '').trim() || isChatLoading) return;
+    if (isChatLoading) return;
+    if (!(input || '').trim()) {
+      if (pastedDocRef.current) toast.error('Choose a quick action or type an instruction for your document.');
+      return;
+    }
 
     if (!conversationId) {
-      toast.info('Workspace initializing... please wait a second or refresh');
+      toast('Workspace initializing... please wait a second or refresh');
       return;
     }
 
@@ -431,7 +462,8 @@ function ChatContent() {
       }).catch(() => { });
     }
 
-    append({ role: 'user', content: currentInput });
+    append({ role: 'user', content: currentInput }, { body: getRequestBody() });
+    if (pastedDocRef.current) setPastedDocument(null);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
@@ -864,17 +896,35 @@ function ChatContent() {
                           );
                         })}
 
-                        <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
-                          {msg.content.split('DIRECTIVE_DOCUMENT:')[0].split('RESULT:')[0].split('---')[0]
+                        {(() => {
+                          const rawAssistant = msg.content.split('DIRECTIVE_DOCUMENT:')[0].split('RESULT:')[0].split('---')[0];
+                          const parsedQuestion = parseInChatQuestion(rawAssistant);
+                          const displayContent = (parsedQuestion?.contentWithoutQuestion ?? rawAssistant)
                             .replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
                             .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n').replace(/##\s*(.*?)(?:\n|$)/g, '$1\n').replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
-                            .trim()
-                          }
-                        </div>
+                            .trim();
+                          return (
+                            <>
+                              <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
+                                {displayContent}
+                              </div>
+                              {parsedQuestion && (
+                                <InChatQuestionCard
+                                  question={parsedQuestion.question}
+                                  options={parsedQuestion.options}
+                                  disabled={isChatLoading}
+                                  onSelect={(option) => {
+                                    append({ role: 'user', content: option }, { body: getRequestBody() });
+                                  }}
+                                />
+                              )}
+                            </>
+                          );
+                        })()}
                         {(msg.metadata?.directive_raw || (msg.result_items && msg.result_items.length > 0)) && (
                           <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-3">
                             <div className="flex items-center justify-between">
-                              <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Executive Briefing Generated</div>
+                              <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Briefing Room Generated</div>
                               <button onClick={() => setActiveDirectives(msg)} className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all">
                                 <span className="material-symbols-outlined text-[14px]">description</span> View & Delegate
                               </button>
@@ -894,7 +944,7 @@ function ChatContent() {
                         <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
                           {chatMode.toLowerCase() !== 'automate' && (
                             <><button onClick={() => {
-                                append({ role: 'user', content: 'Approved. Proceed.' });
+                                append({ role: 'user', content: 'Approved. Proceed.' }, { body: getRequestBody() });
                                 toast.success('Approved & Executing');
                               }} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-primary-container hover:text-primary-container/80 transition-all bg-primary-container/10 px-3 py-1.5 rounded-lg border border-primary-container/20"><span className="material-symbols-outlined text-xs">check</span> Approve & Run</button>
                               <button onClick={() => toast.error('Rejected')} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-on-surface/40 hover:text-error transition-all px-3 py-1.5"><span className="material-symbols-outlined text-xs">close</span> Reject</button></>
@@ -988,7 +1038,7 @@ function ChatContent() {
             {/* Sidebar Header */}
             <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Executive Briefing</h2>
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Briefing Room</h2>
                 <p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0, 8)}</p>
               </div>
               <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface">
@@ -1248,7 +1298,7 @@ function ChatContent() {
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.setAttribute('download', `ORCA_Executive_Briefing_${activeDirectives.id.substring(0, 8)}.md`);
+                    link.setAttribute('download', `ORCA_Briefing_Room_${activeDirectives.id.substring(0, 8)}.md`);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -1299,7 +1349,7 @@ function ChatContent() {
                     <button onClick={() => {
                       const workingCoord = activeCoordinations.find(c => c.to_agent?.name === exec.name);
                       if (workingCoord) {
-                        toast.info(`Jumping to ${exec.name}'s active thread...`);
+                        toast(`Jumping to ${exec.name}'s active thread...`);
                         fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
                           .then(res => res.json())
                           .then(data => {
@@ -1361,7 +1411,7 @@ function ChatContent() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              toast.info(`Jumping to ${exec.name}'s active thread...`);
+                              toast(`Jumping to ${exec.name}'s active thread...`);
                               fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
                                 .then(res => res.json())
                                 .then(data => {
@@ -1380,6 +1430,13 @@ function ChatContent() {
                 );
               })}
             </div>
+            {pastedDocContent && (
+              <LongContentBanner
+                wordCount={countWords(pastedDocContent)}
+                onDismiss={() => setPastedDocument(null)}
+                onChipClick={handleLongContentChip}
+              />
+            )}
             <div className="bg-[#121412] border border-[#262a26] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
               <div className="px-6 py-4 flex items-start gap-4">
                 {/* Hidden file input */}
@@ -1407,13 +1464,13 @@ function ChatContent() {
                       <button onClick={() => { fileInputRef.current?.click(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors">
                         <span className="material-symbols-outlined text-[16px]">description</span> Attach Document
                       </button>
-                      <button onClick={() => { setShowAddMenu(false); toast.info('Web context coming soon'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors">
+                      <button onClick={() => { setShowAddMenu(false); toast('Web context coming soon'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-white/5 transition-colors">
                         <span className="material-symbols-outlined text-[16px]">language</span> Add Web Context
                       </button>
                     </div>
                   )}
                 </div>
-                <textarea ref={inputRef} value={input} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                <textarea ref={inputRef} value={input} onChange={(e) => handleInputChange(e.target.value)} onPaste={handlePaste} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
                     target.style.height = '0px';
@@ -1434,7 +1491,7 @@ function ChatContent() {
               </div>
               <div className="flex items-center justify-between px-5 py-3.5 bg-[#0d0f0d]/30 border-t border-[#262a26]/40 rounded-b-2xl">
                 <div className="flex items-center gap-2"><Dropdown value={chatMode} options={MODES} onChange={setChatMode} /><div className="h-1 w-1 rounded-full bg-on-surface/10 mx-1" /><Dropdown value={activeModel} options={MODELS} onChange={setActiveModel} /></div>
-                <button onClick={() => handleSendMessage()} disabled={!(input || '').trim() || isChatLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${(input || '').trim() && !isChatLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
+                <button onClick={() => handleSendMessage()} disabled={(!(input || '').trim() && !pastedDocContent) || isChatLoading} className={`h-9 w-9 flex items-center justify-center rounded-full transition-all ${((input || '').trim() || pastedDocContent) && !isChatLoading ? 'bg-primary-container text-on-primary shadow-[0_0_20px_rgba(0,195,103,0.3)] hover:scale-105 active:scale-95' : 'bg-[#212421] text-on-surface/20'}`}><span className="material-symbols-outlined text-[20px] font-bold">arrow_forward</span></button>
               </div>
             </div>
           </div>

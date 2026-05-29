@@ -28,6 +28,10 @@ export async function POST(
     const rawMessages = body.messages || []
     const modelOverride = body.model
     const chatMode = body.mode || 'planning'
+    const pastedDocumentContent =
+      typeof body.pastedDocumentContent === 'string' && body.pastedDocumentContent.trim().length > 0
+        ? body.pastedDocumentContent.trim()
+        : null
     const lastUserMessage = rawMessages.filter((m: any) => m.role === 'user').pop()
     const rawContent = body.content || lastUserMessage?.content || rawMessages[rawMessages.length - 1]?.content || ''
     
@@ -92,8 +96,40 @@ export async function POST(
       })
     }
 
+    // Save pasted long-form document to Briefing Room vault
+    if (pastedDocumentContent && !isDuplicate) {
+      try {
+        const docWordCount = pastedDocumentContent.split(/\s+/).filter(Boolean).length
+        const firstLine = pastedDocumentContent.split('\n').find((l: string) => l.trim())?.trim() || ''
+        const docTitle =
+          firstLine.replace(/^#{1,6}\s+/, '').slice(0, 80) ||
+          `User Document — ${new Date().toISOString().slice(0, 10)}`
+
+        await serviceClient.from('briefings').insert({
+          org_id: orgId,
+          conversation_id: conversationId,
+          agent_name: 'User',
+          agent_acronym: 'CEO',
+          title: docTitle,
+          content: pastedDocumentContent,
+          word_count: docWordCount,
+          highlights: [],
+          tasks: [],
+          document_type: 'user_document',
+        })
+      } catch (docErr) {
+        console.error('Failed to save user document briefing:', docErr)
+      }
+    }
+
+    const documentContextBlock = pastedDocumentContent
+      ? `\n\nUSER_UPLOADED_DOCUMENT (reference for this turn only):\n---\n${pastedDocumentContent}\n---\nThe user's message is an instruction about this document. Follow their instruction using the full document above.\n`
+      : ''
+
     // 7. Prepare Prompt & Tools — DB history is the ONLY source of truth
-    const systemPrompt = buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations, chatMode, orgData?.active_template)
+    const systemPrompt =
+      buildAgentSystemPrompt(agent, company as any, member as any, memoryContext, connectedIntegrations, chatMode, orgData?.active_template) +
+      documentContextBlock
     const tools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
 
     const rawHistory = (history || []).map((m: any) => ({
@@ -147,7 +183,7 @@ export async function POST(
             const { cleanResponse } = await parseAndExecuteActions(text, orgId, agent.id, user.id)
 
             // Send to DB
-            await serviceClient.from('messages').insert({
+            const { data: insertedMsg } = await serviceClient.from('messages').insert({
               conversation_id: conversationId,
               sender_type: 'agent',
               content: cleanResponse,
@@ -157,7 +193,80 @@ export async function POST(
                 tool_results: toolResults,
                 agent_name: agent.name 
               }
-            })
+            }).select('id').single()
+
+            // Feature 1 Auto-save briefings
+            try {
+              const wordCount = cleanResponse.split(/\s+/).filter(Boolean).length;
+              const hasHeading = /^#{1,6}\s+/m.test(cleanResponse);
+              const bulletMatches = cleanResponse.match(/^[\s]*[-*+]\s+/gm) || [];
+              const hasThreeBullets = bulletMatches.length >= 3;
+
+              if (wordCount > 500 || hasHeading || hasThreeBullets) {
+                // Extract first heading as title
+                const headingMatch = cleanResponse.match(/^#{1,6}\s+(.+)$/m);
+                let title = headingMatch ? headingMatch[1].trim() : '';
+                if (!title) {
+                  title = cleanResponse.substring(0, 60).replace(/[*#_`>]/g, '').trim() || 'Briefing Room Brief';
+                }
+
+                // Extract highlights
+                const lines = cleanResponse.split('\n');
+                const highlightsList: string[] = [];
+                const listItemsFirst200Words: string[] = [];
+                let totalWordsProcessed = 0;
+
+                lines.forEach((line: string) => {
+                  const trimmed = line.trim();
+                  const words = trimmed.split(/\s+/);
+                  const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ');
+
+                  if (isBullet) {
+                    const textContent = trimmed.substring(2).trim();
+                    const hasPercentageOrCash = /[\d%]|[\d\$]/.test(textContent) && (textContent.includes('%') || textContent.includes('$'));
+                    const hasUrgentWords = /\b(urgent|immediately|critical|warning|opportunity|danger|attention)\b/i.test(textContent);
+                    const isFirst200 = totalWordsProcessed < 200;
+
+                    if (hasPercentageOrCash || hasUrgentWords) {
+                      highlightsList.push(textContent);
+                    } else if (isFirst200) {
+                      listItemsFirst200Words.push(textContent);
+                    }
+                  }
+                  if (trimmed !== '') {
+                    totalWordsProcessed += words.length;
+                  }
+                });
+                const finalHighlights = [...new Set([...highlightsList, ...listItemsFirst200Words])].slice(0, 5);
+
+                // Extract tasks
+                const tasksList: any[] = [];
+                lines.forEach((line: string) => {
+                  const trimmed = line.trim();
+                  if (trimmed.startsWith('- [ ] ') || trimmed.startsWith('- [x] ')) {
+                    const checked = trimmed.startsWith('- [x] ');
+                    const taskTitle = trimmed.substring(6).trim();
+                    tasksList.push({ title: taskTitle, status: checked ? 'done' : 'pending' });
+                  }
+                });
+
+                await serviceClient.from('briefings').insert({
+                  org_id: orgId,
+                  conversation_id: conversationId,
+                  message_id: insertedMsg?.id || null,
+                  agent_name: agent.name,
+                  agent_acronym: agent.acronym,
+                  title: title,
+                  content: cleanResponse,
+                  word_count: wordCount,
+                  highlights: finalHighlights,
+                  tasks: tasksList,
+                  document_type: 'executive_brief'
+                });
+              }
+            } catch (saveErr) {
+              console.error('Failed to auto-save briefing:', saveErr);
+            }
 
             // Trigger background memory update event to compact conversation history into Markdown
             try {

@@ -682,6 +682,17 @@ ${isAutomate
 }
 
 // ─────────────────────────────────────────────────────────────
+// IN-CHAT PERSONALIZED QUESTIONS
+// ─────────────────────────────────────────────────────────────
+const QUESTION_SYSTEM = `
+INTERACTIVE IN-CHAT QUESTIONS:
+- If you are in PLANNING or APPROVE mode (not automate): Whenever you need clarification or want to tailor your strategy, you MUST ask the user a personalized multiple-choice question. Output it EXACTLY in this format at the very end of your response:
+  [QUESTION: "Your clarifying question?" options=["Option 1", "Option 2", "Option 3"]]
+  Keep options under 5 words. Do not explain the question or choices in text. Let the user select to keep the chat going.
+- If you are in AUTOMATE mode: Do NOT ask questions. Assume the best strategic choice/optimal path forward based on company context and proceed immediately to execute and implement.
+`
+
+// ─────────────────────────────────────────────────────────────
 // MAIN BUILDER
 // ─────────────────────────────────────────────────────────────
 export function buildAgentSystemPrompt(
@@ -732,6 +743,9 @@ export function buildAgentSystemPrompt(
     ? `\nTEMPLATE OPERATING RULES (ACTIVE: ${activeTemplate}):\nYou must follow the strategic patterns and workflows defined for the "${activeTemplate}" template. Make sure your actions align with this template's specific use case.\n`
     : ''
 
+  const modeLower = (mode || 'planning').toLowerCase()
+  const questionBlock = modeLower === 'automate' ? '' : QUESTION_SYSTEM
+
   return `
 ${agentCore}
 
@@ -741,6 +755,7 @@ ${ACTION_SYSTEM}
 
 ${COORDINATION_SYSTEM}
 ${templateBlock}
+${questionBlock}
 SPECIALIZED_INSTRUCTIONS:
 ${specializedInstructions}
 
