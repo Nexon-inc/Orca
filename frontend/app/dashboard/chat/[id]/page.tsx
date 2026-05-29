@@ -111,6 +111,48 @@ function ChatContent() {
     setPastedDocContent(value);
   };
 
+  const mapDbMessagesToChat = (dbMessages: any[]) =>
+    dbMessages.map((m: any) => ({
+      id: m.id,
+      role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: String(m.content || ''),
+      createdAt: new Date(m.created_at),
+      metadata: m.metadata || {},
+      result_items: m.result_items || [],
+      toolInvocations: m.metadata?.tool_results
+        ? m.metadata.tool_results.map((tr: any) => ({
+            toolCallId: tr.toolCallId,
+            toolName: tr.toolName,
+            args: tr.args,
+            state: 'result',
+            result: tr.result,
+          }))
+        : [],
+    }));
+
+  const reloadMessagesFromDb = async () => {
+    if (!conversationId) return;
+    try {
+      const msgRes = await fetch(`/api/conversations/${conversationId}/messages`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (!msgRes.ok) return;
+      const msgData = await msgRes.json();
+      if (msgData.messages?.length) {
+        const transformed = mapDbMessagesToChat(msgData.messages);
+        setMessages(transformed);
+        const lastAgentMsg = [...msgData.messages].reverse().find((m: any) => m.sender_type === 'agent');
+        if (lastAgentMsg?.metadata?.directive_raw) {
+          const lastChat = transformed[transformed.length - 1];
+          if (lastChat?.role === 'assistant') setActiveDirectives(lastChat);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to reload messages:', err);
+    }
+  };
+
   // Tool Display Names
   const TOOL_DISPLAY_NAMES: Record<string, string> = {
     search_web: '🔍 Searching the web',
@@ -159,11 +201,12 @@ function ChatContent() {
         });
       }
     },
-    onFinish: (message: any) => {
+    onFinish: async () => {
+      await reloadMessagesFromDb();
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       if (isFirstMessage.current && conversationId) {
         isFirstMessage.current = false;
-        window.dispatchEvent(new Event('conversation_created')); // refresh sidebar
+        window.dispatchEvent(new Event('conversation_created'));
       }
     },
     onError: (err: any) => {
@@ -180,23 +223,21 @@ function ChatContent() {
           const newMessages = [...prev] as any[];
           for (let i = newMessages.length - 1; i >= 0; i--) {
             if (newMessages[i].role === 'assistant') {
-              // CLEAN TAGS FROM CONTENT: Replace [HANDOFF] and [ACTION] with nice UI markers
-              const rawContent = newMessages[i].content;
-              const cleanContent = rawContent
-                .replace(/\[ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})\]/gi, (match: any, tool: any) => `\n> ✓ **Action executed:** ${tool.replace(/_/g, ' ')}\n`)
-                .replace(/\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi, (match: any, toAgent: any, reason: any) => `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`);
-              
+              const rawContent = lastData.assistant_content || newMessages[i].content || '';
+              const cleanContent = String(rawContent)
+                .replace(/\[ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})\]/gi, (_m: string, tool: string) => `\n> ✓ **Action executed:** ${tool.replace(/_/g, ' ')}\n`)
+                .replace(/\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi, (_m: string, toAgent: string, reason: string) => `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`);
+
               newMessages[i].content = cleanContent;
-              
-              const updatedMetadata = {
+
+              newMessages[i].metadata = {
                 ...newMessages[i].metadata,
                 directive_raw: lastData.directive_raw,
                 result_items: lastData.result_items,
-                agent_name: lastData.agent_name
+                agent_name: lastData.agent_name,
               };
-              newMessages[i].metadata = updatedMetadata;
-              
-              if (i === newMessages.length - 1) {
+
+              if (i === newMessages.length - 1 && lastData.directive_raw) {
                 setActiveDirectives(newMessages[i]);
               }
               break;
@@ -366,22 +407,7 @@ function ChatContent() {
                 const msgData = await msgRes.json();
                 if (msgData.messages && msgData.messages.length > 0) {
                   isFirstMessage.current = false;
-                  const transformed = msgData.messages.map((m: any) => ({
-                    id: m.id,
-                    role: (m.sender_type === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
-                    content: String(m.content || ''),
-                    createdAt: new Date(m.created_at),
-                    metadata: m.metadata || {},
-                    result_items: m.result_items || [],
-                    // Map tool results back to toolInvocations for rendering
-                    toolInvocations: m.metadata?.tool_results ? m.metadata.tool_results.map((tr: any) => ({
-                      toolCallId: tr.toolCallId,
-                      toolName: tr.toolName,
-                      args: tr.args,
-                      state: 'result',
-                      result: tr.result
-                    })) : []
-                  }));
+                  const transformed = mapDbMessagesToChat(msgData.messages);
                   setMessages(transformed);
                   historyLoaded = true;
                   const lastAgentMsg = [...msgData.messages].reverse().find((m: any) => m.sender_type === 'agent');
@@ -486,11 +512,6 @@ function ChatContent() {
 
     append({ role: 'user', content: messageText }, { body: getRequestBody() });
     if (pastedDocRef.current) setPastedDocument(null);
-
-    if (/REVENUE SPRINT|BEGIN NOW|DIRECTIVE/i.test(messageText) && chatMode.toLowerCase() !== 'automate') {
-      toast.message('Tip: Switch to Automate mode so Atlas runs the full sprint without waiting for approval.');
-    }
-
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
@@ -927,24 +948,17 @@ function ChatContent() {
                           const rawAssistant = msg.content || '';
                           const parsedQuestion = parseInChatQuestion(rawAssistant);
                           const displayContent = getAssistantDisplayContent(msg);
-                          const hasContent = displayContent.length > 0;
                           return (
                             <>
-                              {hasContent ? (
-                                <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
-                                  {parsedQuestion?.contentWithoutQuestion
-                                    ? getAssistantDisplayContent({
-                                        ...msg,
-                                        content: parsedQuestion.contentWithoutQuestion,
-                                      })
-                                    : displayContent}
-                                </div>
-                              ) : (
-                                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-[11px] text-amber-200/90">
-                                  Response is still processing or failed. Switch to <strong>Automate</strong> mode for sprint directives, then send again.
-                                </div>
-                              )}
-                              {parsedQuestion && hasContent && (
+                              <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
+                                {parsedQuestion?.contentWithoutQuestion
+                                  ? getAssistantDisplayContent({
+                                      ...msg,
+                                      content: parsedQuestion.contentWithoutQuestion,
+                                    })
+                                  : displayContent || rawAssistant}
+                              </div>
+                              {parsedQuestion && (
                                 <InChatQuestionCard
                                   question={parsedQuestion.question}
                                   options={parsedQuestion.options}

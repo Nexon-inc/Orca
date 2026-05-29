@@ -67,34 +67,26 @@ export default function ExecutiveThinkingPanel({
   );
 }
 
-/** Build readable chat body — keeps directives visible (old split hid them). */
+/** Build readable chat body from assistant message (never hide valid DB content). */
 export function getAssistantDisplayContent(msg: any): string {
   const base = String(msg.content || '').trim();
   const directive = msg.metadata?.directive_raw?.trim();
 
-  let text = base;
-  if (directive) {
-    const hasDirectiveInBody = /DIRECTIVE_DOCUMENT|MASTER_DIRECTIVE|DIRECTIVE:/i.test(base);
-    if (!hasDirectiveInBody || base.length < 80) {
-      text = base ? `${base}\n\n## Executive Directive\n\n${directive}` : `## Executive Directive\n\n${directive}`;
-    }
+  let text = base
+    .replace(
+      /\[ACTION:\s*tool=["']([^"']+)["']\s*params=\{[\s\S]+?\}\]/gi,
+      (_m, tool: string) => `\n✓ Action: ${tool.replace(/_/g, ' ')}\n`
+    )
+    .replace(
+      /\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi,
+      (_m, to: string, reason: string) => `\n🔄 Coordinating with ${to}: ${reason}\n`
+    );
+
+  if (directive && (!text || text.length < 80)) {
+    text = text ? `${text}\n\n## Executive Directive\n\n${directive}` : directive;
   }
 
-  text = text
-    .replace(/\[ACTION:\s*tool=["'][^"']+["']\s*params=\{[\s\S]+?\}\]/gi, '')
-    .replace(/\[HANDOFF:\s*to=["'][^"']+["']\s*reason=["'][^"']+["']\s*context=["'][^"']+["']\]/gi, '')
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n')
-    .replace(/##\s*(.*?)(?:\n|$)/g, '$1\n')
-    .replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
-    .trim();
-
-  if (!text && directive) {
-    text = directive;
-  }
-
-  return text;
+  return text.trim() || base.trim() || directive || '';
 }
 
 export function assistantHasVisibleContent(msg: any): boolean {

@@ -775,5 +775,7 @@ ICP: ${company.icp || 'Not defined'}
 
 ${analyticsBlock}
 ${memoryBlock}
+
+OUTPUT RULE (mandatory): Always write a full, visible text response for the CEO in this turn. Never return empty content or tool-only output without explanation. If you produce a directive, include the full DIRECTIVE_DOCUMENT body in your message text.
 `.trim()
 }

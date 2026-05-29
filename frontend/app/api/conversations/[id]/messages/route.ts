@@ -193,7 +193,7 @@ export async function POST(
           // @ts-ignore
           messages,
           tools: Object.keys(tools).length > 0 ? tools : undefined,
-          maxSteps: 5,
+          maxSteps: 8,
           onFinish: async ({ text, toolResults }: { text: string; toolResults: any }) => {
             // Flexible regex for Directive and Result
             const resultMatch = text.match(/(?:RESULT|RESULTS|OUTCOME):\s*([\s\S]+?)(?:\n|$)/i)
@@ -312,7 +312,8 @@ export async function POST(
               type: 'metadata',
               directive_raw: directiveRaw,
               result_items: resultItems,
-              agent_name: agent.name
+              agent_name: agent.name,
+              assistant_content: finalContent,
             })
           }
         }
