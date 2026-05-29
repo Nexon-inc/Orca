@@ -18,18 +18,18 @@ export const PLAN_LIMITS = {
     orcahub_publish: false,
     custom_agent_training: false,
   },
-  starter: {
+  builder: {
     departments: 2,
-    agents: 10,
-    team_members: 3,
+    agents: 4,
+    team_members: 1,
     department_heads: 1,
-    monthly_briefs: 999999,
+    monthly_briefs: 200,
     coordination_depth: 1,
-    audit_log_days: 30,
+    audit_log_days: 14,
     video_generation: false,
     code_generation: false,
-    web_intelligence_pages: 0,
-    byollm: false,        // can connect own Gemini or Groq only
+    web_intelligence_pages: 50,
+    byollm: false,
     byollm_providers: ['gemini', 'groq'],
     ollama: false,
     api_access: false,
@@ -38,18 +38,37 @@ export const PLAN_LIMITS = {
   },
   pro: {
     departments: 6,
-    agents: 30,
-    team_members: 8,
+    agents: 6,
+    team_members: 5,
     department_heads: 2,
-    monthly_briefs: 999999,
+    monthly_briefs: 1000,
     coordination_depth: 3,
-    audit_log_days: 180,
+    audit_log_days: 90,
     video_generation: true,
-    video_limit: 10,       // 10 videos per month
+    video_limit: 10,
     code_generation: true,
     web_intelligence_pages: 500,
     byollm: true,
     byollm_providers: ['gemini', 'groq', 'openai', 'anthropic', 'mistral'],
+    ollama: false,
+    api_access: false,
+    orcahub_publish: false,
+    custom_agent_training: false,
+  },
+  // Legacy org.plan value
+  starter: {
+    departments: 2,
+    agents: 4,
+    team_members: 1,
+    department_heads: 1,
+    monthly_briefs: 200,
+    coordination_depth: 1,
+    audit_log_days: 14,
+    video_generation: false,
+    code_generation: false,
+    web_intelligence_pages: 50,
+    byollm: false,
+    byollm_providers: ['gemini', 'groq'],
     ollama: false,
     api_access: false,
     orcahub_publish: false,
@@ -78,8 +97,15 @@ export const PLAN_LIMITS = {
 
 export type Plan = keyof typeof PLAN_LIMITS
 
+export function normalizePlanId(plan: string): Plan {
+  const key = plan?.toLowerCase()
+  if (key === 'starter' || key === 'growth') return 'builder'
+  if (key in PLAN_LIMITS) return key as Plan
+  return 'free'
+}
+
 export function getPlanLimits(plan: string) {
-  return PLAN_LIMITS[plan as Plan] ?? PLAN_LIMITS.free
+  return PLAN_LIMITS[normalizePlanId(plan)] ?? PLAN_LIMITS.free
 }
 
 export function canAccessFeature(plan: string, feature: keyof typeof PLAN_LIMITS.enterprise): boolean {

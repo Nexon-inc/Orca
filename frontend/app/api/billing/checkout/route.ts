@@ -8,13 +8,22 @@ import { NextResponse } from 'next/server'
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!
 
 const PLAN_CODE_MAP: Record<string, Record<string, string>> = {
-  starter: {
-    monthly: process.env.PAYSTACK_PLAN_STARTER_MONTHLY!,
-    annual: process.env.PAYSTACK_PLAN_STARTER_ANNUAL!,
+  builder: {
+    monthly: process.env.PAYSTACK_PLAN_BUILDER_MONTHLY || process.env.PAYSTACK_PLAN_STARTER_MONTHLY!,
+    annual: process.env.PAYSTACK_PLAN_BUILDER_ANNUAL || process.env.PAYSTACK_PLAN_STARTER_ANNUAL!,
   },
   pro: {
     monthly: process.env.PAYSTACK_PLAN_PRO_MONTHLY!,
     annual: process.env.PAYSTACK_PLAN_PRO_ANNUAL!,
+  },
+  founding: {
+    monthly: process.env.PAYSTACK_PLAN_FOUNDING_MONTHLY || process.env.PAYSTACK_PLAN_BUILDER_MONTHLY || process.env.PAYSTACK_PLAN_STARTER_MONTHLY!,
+    annual: process.env.PAYSTACK_PLAN_FOUNDING_ANNUAL || process.env.PAYSTACK_PLAN_BUILDER_ANNUAL || process.env.PAYSTACK_PLAN_STARTER_ANNUAL!,
+  },
+  // Legacy Paystack plan codes & org records
+  starter: {
+    monthly: process.env.PAYSTACK_PLAN_STARTER_MONTHLY!,
+    annual: process.env.PAYSTACK_PLAN_STARTER_ANNUAL!,
   },
   enterprise: {
     monthly: process.env.PAYSTACK_PLAN_ENTERPRISE_MONTHLY!,
@@ -22,12 +31,38 @@ const PLAN_CODE_MAP: Record<string, Record<string, string>> = {
   },
 }
 
+function normalizePlanId(raw?: string): string | null {
+  if (!raw) return null
+  const plan = raw.toLowerCase()
+  if (plan === 'starter' || plan === 'growth') return 'builder'
+  return plan
+}
+
+function isPlanCodeConfigured(code?: string): boolean {
+  return Boolean(code && code.trim().length > 0)
+}
+
+function resolveBillingCycle(
+  plan: string,
+  requested?: string
+): 'monthly' | 'annual' {
+  const annualCode = PLAN_CODE_MAP[plan]?.annual
+  const annualReady =
+    process.env.PAYSTACK_ANNUAL_ENABLED === 'true' && isPlanCodeConfigured(annualCode)
+  if (requested === 'annual' && annualReady) return 'annual'
+  return 'monthly'
+}
+
 export async function POST(request: Request) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { plan: rawPlan, billing_cycle } = await request.json()
-  const plan = rawPlan?.toLowerCase() === 'builder' ? 'starter' : rawPlan?.toLowerCase()
+  const { plan: rawPlan, billing_cycle: requestedCycle } = await request.json()
+  const plan = normalizePlanId(rawPlan)
+  if (!plan) {
+    return NextResponse.json({ error: 'Plan is required.' }, { status: 400 })
+  }
+  const billing_cycle = resolveBillingCycle(plan, requestedCycle)
   const supabase = await createServerSupabaseClient()
 
   const { data: member } = await supabase
@@ -66,9 +101,13 @@ export async function POST(request: Request) {
   }).eq('id', orgId)
 
   const planCode = PLAN_CODE_MAP[plan]?.[billing_cycle]
-  if (!planCode) {
+  if (!planCode || planCode.includes('undefined')) {
     await supabase.from('organizations').update({ checkout_locked_at: null, checkout_locked_by: null }).eq('id', orgId)
-    return NextResponse.json({ error: 'Invalid plan or billing cycle.' }, { status: 400 })
+    const hint =
+      billing_cycle === 'annual'
+        ? 'Annual billing is not configured yet. Use monthly or add PAYSTACK_PLAN_*_ANNUAL in Vercel.'
+        : `Missing Paystack plan code for "${plan}" monthly. Add PAYSTACK_PLAN_${plan.toUpperCase()}_MONTHLY in Vercel.`
+    return NextResponse.json({ error: hint }, { status: 400 })
   }
 
   const email = (member as any).profiles?.email || user.email!
@@ -80,7 +119,13 @@ export async function POST(request: Request) {
       email,
       plan: planCode,
       callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/billing/verify`,
-      metadata: { org_id: orgId, plan, billing_cycle, user_id: user.id },
+      metadata: {
+        org_id: orgId,
+        plan: plan === 'founding' ? 'builder' : plan,
+        billing_cycle,
+        user_id: user.id,
+        founding: plan === 'founding',
+      },
     }),
   })
 

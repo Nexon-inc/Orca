@@ -4,55 +4,19 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { animate, stagger } from 'animejs';
 import DashboardSidebar from '@/components/DashboardSidebar';
+import { INTEGRATION_CATALOG } from '@/lib/integrations/catalog';
 
-const INTEGRATIONS_CATALOG = [
-  { id: 'marketing', name: 'Marketing & SEO', tools: [
-    { service_key: 'linkedin', name: 'LinkedIn', auth_method: 'oauth', color: '#0A66C2' },
-    { service_key: 'twitter', name: 'X / Twitter', auth_method: 'oauth', color: '#000000' },
-    { service_key: 'meta', name: 'Meta', auth_method: 'oauth', color: '#0082FB' },
-    { service_key: 'tiktok', name: 'TikTok', auth_method: 'oauth', color: '#000000' },
-    { service_key: 'mailchimp', name: 'Mailchimp', auth_method: 'oauth', color: '#FFE01B' },
-    { service_key: 'ahrefs', name: 'Ahrefs', auth_method: 'apikey', color: '#FF7043' },
-    { service_key: 'semrush', name: 'Semrush', auth_method: 'apikey', color: '#FF642D' },
-    { service_key: 'google_trends', name: 'Google Trends', auth_method: 'apikey', color: '#4285F4' },
-  ]},
-  { id: 'sales', name: 'Sales & Outreach', tools: [
-    { service_key: 'hubspot', name: 'HubSpot', auth_method: 'oauth', color: '#FF7A59' },
-    { service_key: 'salesforce', name: 'Salesforce', auth_method: 'oauth', color: '#00A1E0' },
-    { service_key: 'apollo', name: 'Apollo.io', auth_method: 'apikey', color: '#1D2C4D' },
-    { service_key: 'hunter', name: 'Hunter.io', auth_method: 'apikey', color: '#FF6347' },
-    { service_key: 'gmail_outreach', name: 'Gmail Outreach', auth_method: 'oauth', color: '#EA4335' },
-  ]},
-  { id: 'cs', name: 'Success & Support', tools: [
-    { service_key: 'intercom', name: 'Intercom', auth_method: 'oauth', color: '#6AFDEF' },
-    { service_key: 'zendesk', name: 'Zendesk', auth_method: 'oauth', color: '#03363D' },
-    { service_key: 'typeform', name: 'Typeform', auth_method: 'oauth', color: '#000000' },
-    { service_key: 'g2', name: 'G2 Sentiment', auth_method: 'apikey', color: '#FF492C' },
-  ]},
-  { id: 'tech', name: 'Engineering & Dev', tools: [
-    { service_key: 'github', name: 'GitHub', auth_method: 'oauth', color: '#24292e' },
-    { service_key: 'vercel', name: 'Vercel', auth_method: 'apikey', color: '#000000' },
-    { service_key: 'sentry', name: 'Sentry', auth_method: 'apikey', color: '#362D59' },
-    { service_key: 'shodan', name: 'Shodan', auth_method: 'apikey', color: '#FF4C4C' },
-  ]},
-  { id: 'ops', name: 'Operations', tools: [
-    { service_key: 'notion', name: 'Notion', auth_method: 'oauth', color: '#000000' },
-    { service_key: 'slack', name: 'Slack', auth_method: 'oauth', color: '#4A154B' },
-    { service_key: 'google_calendar', name: 'Calendar', auth_method: 'oauth', color: '#4285F4' },
-    { service_key: 'zoom', name: 'Zoom', auth_method: 'oauth', color: '#2D8CFF' },
-  ]},
-  { id: 'finance', name: 'Finance & Legal', tools: [
-    { service_key: 'stripe', name: 'Stripe', auth_method: 'oauth', color: '#635BFF' },
-    { service_key: 'quickbooks', name: 'QuickBooks', auth_method: 'oauth', color: '#2CA01C' },
-    { service_key: 'shopify', name: 'Shopify', auth_method: 'oauth', color: '#95BF47' },
-    { service_key: 'docusign', name: 'DocuSign', auth_method: 'oauth', color: '#FF0000' },
-    { service_key: 'alphavantage', name: 'Alpha Vantage', auth_method: 'apikey', color: '#00A3A3' },
-  ]},
-  { id: 'intel', name: 'Intelligence & Research', tools: [
-    { service_key: 'crunchbase', name: 'Crunchbase', auth_method: 'apikey', color: '#1451E5' },
-    { service_key: 'perplexity', name: 'Perplexity AI', auth_method: 'apikey', color: '#20B8CD' },
-  ]}
-];
+/** UI catalog — all tools connect via Composio OAuth */
+const INTEGRATIONS_CATALOG = INTEGRATION_CATALOG.map((group) => ({
+  id: group.id,
+  name: group.name,
+  tools: group.tools.map((tool) => ({
+    service_key: tool.service_key,
+    name: tool.name,
+    auth_method: 'oauth' as const,
+    color: tool.color,
+  })),
+}));
 
 function IntegrationsContent() {
   const searchParams = useSearchParams();
@@ -71,7 +35,22 @@ function IntegrationsContent() {
     if (isSuccess === 'true' && serviceName) {
       setAlertMsg({ type: 'success', text: `Successfully connected ${serviceName.replace(/_/g, ' ')}!` });
     } else if (errorParam) {
-      setAlertMsg({ type: 'error', text: `Connection failed: ${errorParam.replace(/_/g, ' ')}` });
+      const serviceLabel = (searchParams.get('service') || '').replace(/_/g, ' ')
+      const toolkit = searchParams.get('toolkit') || ''
+      const errorMessages: Record<string, string> = {
+        composio_missing_api_key:
+          'Composio is not configured. Add COMPOSIO_API_KEY to your Vercel environment variables.',
+        no_composio_auth_config: toolkit
+          ? `No Composio auth config for "${toolkit}". In composio.dev → Auth configs, create one for this toolkit, then add COMPOSIO_AUTH_CONFIG_${(searchParams.get('service') || 'SERVICE').toUpperCase()} to Vercel.`
+          : 'No Composio auth config found for this integration. Create an Auth Config in the Composio dashboard for this toolkit.',
+        composio_api_error: 'Composio API rejected the request. Check COMPOSIO_API_KEY and toolkit slug.',
+        composio_link_failed: 'Composio could not start the OAuth link session.',
+        composio_connect_exception: 'Unexpected error while connecting via Composio.',
+      }
+      const detail =
+        errorMessages[errorParam] ||
+        `Connection failed: ${errorParam.replace(/_/g, ' ')}${serviceLabel ? ` (${serviceLabel})` : ''}`
+      setAlertMsg({ type: 'error', text: detail })
     }
 
     fetch('/api/integrations')
@@ -205,7 +184,9 @@ function IntegrationsContent() {
 
       <div className="mb-12 int-anim opacity-0">
         <h1 className="font-syne text-3xl font-[800] text-white mb-2 tracking-tight uppercase">Platform <span className="text-green">Integrations</span></h1>
-        <p className="font-syne text-[11px] text-white/40 font-[800] uppercase tracking-widest">Connect your neural network to local and cloud infrastructures.</p>
+        <p className="font-syne text-[11px] text-white/40 font-[800] uppercase tracking-widest">
+          {INTEGRATIONS_CATALOG.reduce((n, g) => n + g.tools.length, 0)} platforms via Composio · OAuth connect
+        </p>
       </div>
 
       <div className="space-y-16 pb-24">

@@ -1,8 +1,9 @@
 const INPUT_LIMITS = {
-  free:       500,   // characters (~125 tokens)
-  starter:    3000,  // characters (~750 tokens)
-  pro:        8000,  // characters (~2000 tokens)
-  enterprise: 20000, // characters (~5000 tokens)
+  free:       500,
+  builder:    2000,
+  starter:    2000,  // legacy alias
+  pro:        8000,
+  enterprise: 20000,
 }
 
 export function enforceInputLimit(
