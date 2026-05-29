@@ -10,6 +10,10 @@ import PricingModal from '@/components/PricingModal';
 import { useChat } from '@ai-sdk/react';
 import { toast } from 'sonner';
 import LongContentBanner, { countWords } from '@/components/LongContentBanner';
+import ExecutiveThinkingPanel, {
+  assistantHasVisibleContent,
+  getAssistantDisplayContent,
+} from '@/components/ExecutiveThinkingPanel';
 import InChatQuestionCard from '@/components/InChatQuestionCard';
 import { parseInChatQuestion } from '@/lib/chat/questionParser';
 import {
@@ -482,6 +486,11 @@ function ChatContent() {
 
     append({ role: 'user', content: messageText }, { body: getRequestBody() });
     if (pastedDocRef.current) setPastedDocument(null);
+
+    if (/REVENUE SPRINT|BEGIN NOW|DIRECTIVE/i.test(messageText) && chatMode.toLowerCase() !== 'automate') {
+      toast.message('Tip: Switch to Automate mode so Atlas runs the full sprint without waiting for approval.');
+    }
+
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
@@ -915,18 +924,27 @@ function ChatContent() {
                         })}
 
                         {(() => {
-                          const rawAssistant = msg.content.split('DIRECTIVE_DOCUMENT:')[0].split('RESULT:')[0].split('---')[0];
+                          const rawAssistant = msg.content || '';
                           const parsedQuestion = parseInChatQuestion(rawAssistant);
-                          const displayContent = (parsedQuestion?.contentWithoutQuestion ?? rawAssistant)
-                            .replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
-                            .replace(/###\s*(.*?)(?:\n|$)/g, '$1\n').replace(/##\s*(.*?)(?:\n|$)/g, '$1\n').replace(/#\s*(.*?)(?:\n|$)/g, '$1\n')
-                            .trim();
+                          const displayContent = getAssistantDisplayContent(msg);
+                          const hasContent = displayContent.length > 0;
                           return (
                             <>
-                              <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
-                                {displayContent}
-                              </div>
-                              {parsedQuestion && (
+                              {hasContent ? (
+                                <div className="text-sm text-on-secondary-container font-body leading-relaxed whitespace-pre-wrap">
+                                  {parsedQuestion?.contentWithoutQuestion
+                                    ? getAssistantDisplayContent({
+                                        ...msg,
+                                        content: parsedQuestion.contentWithoutQuestion,
+                                      })
+                                    : displayContent}
+                                </div>
+                              ) : (
+                                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-[11px] text-amber-200/90">
+                                  Response is still processing or failed. Switch to <strong>Automate</strong> mode for sprint directives, then send again.
+                                </div>
+                              )}
+                              {parsedQuestion && hasContent && (
                                 <InChatQuestionCard
                                   question={parsedQuestion.question}
                                   options={parsedQuestion.options}
@@ -959,8 +977,8 @@ function ChatContent() {
                             )}
                           </div>
                         )}
-                        <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 opacity-30 hover:opacity-100 transition-opacity">
-                          {chatMode.toLowerCase() !== 'automate' && (
+                        <div className={`flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 transition-opacity ${assistantHasVisibleContent(msg) ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>
+                          {chatMode.toLowerCase() !== 'automate' && assistantHasVisibleContent(msg) && (
                             <><button onClick={() => {
                                 append({ role: 'user', content: 'Approved. Proceed.' }, { body: getRequestBody() });
                                 toast.success('Approved & Executing');
@@ -1005,35 +1023,18 @@ function ChatContent() {
                   )}
                 </div>
               ))}
-              {isLoading && (
-                <div className="flex gap-4 mb-6 w-full animate-in fade-in duration-500 bg-primary-container/5 p-6 rounded-3xl border border-primary-container/10 shadow-inner">
-                  <div className="flex-shrink-0 pt-1">
-                    <div className="w-10 h-10 rounded-2xl bg-primary-container/20 flex items-center justify-center text-xl shadow-inner grayscale animate-pulse">
-                      {pinnedAgent ? EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon : '🏦'}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-[12px] font-black font-headline text-primary-container uppercase tracking-[0.2em]">
-                        {pinnedAgent || 'ATLAS'} is thinking...
-                      </span>
-                      <div className="flex gap-2 items-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary-container animate-bounce" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary-container animate-bounce [animation-delay:0.2s]" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary-container animate-bounce [animation-delay:0.4s]" />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                       <span className="text-[10px] font-mono text-primary-container/60 uppercase tracking-[0.1em] italic">
-                          {getThinkingMessages()[thinkingStep]}
-                        </span>
-                       <div className="h-1.5 w-full bg-primary-container/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-primary-container/40 animate-loading-bar" style={{ width: '40%' }} />
-                       </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {isLoading && (() => {
+                const exec = EXECUTIVE_PILLS.find((p) => p.role === pinnedAgent) || EXECUTIVE_PILLS[0];
+                return (
+                  <ExecutiveThinkingPanel
+                    executiveRole={exec.role}
+                    executiveIcon={exec.icon}
+                    executiveName={exec.title}
+                    stepLabel={getThinkingMessages()[thinkingStep]}
+                    mode={chatMode}
+                  />
+                );
+              })()}
               <div className="h-[250px] flex-shrink-0" />
               <div ref={chatEndRef} />
             </div>

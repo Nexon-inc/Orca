@@ -202,12 +202,16 @@ export async function POST(
             const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
 
             const { cleanResponse } = await parseAndExecuteActions(text, orgId, agent.id, user.id)
+            const finalContent =
+              cleanResponse?.trim() ||
+              text?.trim() ||
+              'The executive completed processing but returned no visible text. Try Automate mode or resend your brief.'
 
             // Send to DB
             const { data: insertedMsg } = await serviceClient.from('messages').insert({
               conversation_id: conversationId,
               sender_type: 'agent',
-              content: cleanResponse,
+              content: finalContent,
               result_items: resultItems,
               metadata: { 
                 directive_raw: directiveRaw, 

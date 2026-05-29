@@ -131,7 +131,11 @@ textarea:focus {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+.animate-\[shimmer_1\.8s_ease-in-out_infinite\] {
+  animation: shimmer 1.8s ease-in-out infinite;
 }
