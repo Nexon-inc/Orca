@@ -111,7 +111,7 @@ export const agentCoordinationFn = inngest.createFunction(
     // 2. Find the target agent
     const { data: targetAgent } = await supabase
       .from('agents')
-      .select('id, name, departments!inner(org_id)')
+      .select('id, name, acronym, departments!inner(org_id, agent_mode)')
       .eq('departments.org_id', org_id)
       .eq('acronym', target_agent_acronym)
       .single()
@@ -135,29 +135,188 @@ export const agentCoordinationFn = inngest.createFunction(
       .single()
 
     // 4. Create/Find a conversation between the source and target agent
-    const { data: internalConv } = await supabase
+    let { data: internalConv } = await supabase
       .from('conversations')
-      .insert({
-        org_id,
-        agent_id: targetAgent.id,
-        user_id: event.data.user_id, // Inherit user_id for permission checks
-        department_key: target_department_key
-      })
-      .select()
-      .single()
+      .select('*')
+      .eq('org_id', org_id)
+      .eq('agent_id', targetAgent.id)
+      .eq('user_id', event.data.user_id)
+      .maybeSingle()
+
+    if (!internalConv) {
+      const { data: newConv } = await supabase
+        .from('conversations')
+        .insert({
+          org_id,
+          agent_id: targetAgent.id,
+          user_id: event.data.user_id, // Inherit user_id for permission checks
+          department_key: target_department_key
+        })
+        .select()
+        .single()
+      internalConv = newConv
+    }
 
     if (!internalConv) return { success: false, reason: 'conv_creation_failed' }
 
     // 5. Post the request context as a message
-    await supabase.from('messages').insert({
+    const { data: insertedUserMsg } = await supabase.from('messages').insert({
       conversation_id: internalConv.id,
       sender_type: 'user', 
       content: `[COORDINATION_REQUEST from Agent ${from_agent_id}]\nContext: ${context}\nReason: ${reason}`
-    })
+    }).select('id').single()
 
     // 6. Mark coordination event as complete if auto-approvable (internal bridges usually are)
     if (coordEvent) {
       await supabase.from('coordination_events').update({ status: 'complete' }).eq('id', coordEvent.id)
+    }
+
+    // 7. If target agent's department is in autopilot mode, run target agent execution in background
+    const isAutopilot = (targetAgent.departments as any)?.agent_mode === 'autopilot'
+    if (isAutopilot) {
+      await step.run('execute-background-agent', async () => {
+        const { getGemini } = await import('@/lib/ai/client')
+        const { buildAgentSystemPrompt } = await import('@/lib/ai/prompt')
+        const { parseAndExecuteActions } = await import('@/lib/agents/parseActions')
+        const { getAgentMemory } = await import('@/lib/agents/memory')
+
+        // Fetch company details, org members and active template rules
+        const { data: company } = await supabase.from('company_identity').select('*').eq('org_id', org_id).single()
+        const { data: member } = await supabase.from('org_members').select('*').eq('org_id', org_id).eq('role', 'owner').limit(1).single()
+        const { data: orgData } = await supabase.from('organizations').select('active_template').eq('id', org_id).single()
+        const { data: integrations } = await supabase.from('integrations').select('service_name').eq('org_id', org_id)
+        const connectedIntegrations = integrations?.map(i => i.service_name) || []
+
+        const memoryContext = await getAgentMemory(targetAgent.id, org_id)
+
+        // Compile prompt
+        const systemPrompt = buildAgentSystemPrompt(
+          targetAgent as any,
+          company as any,
+          member as any,
+          memoryContext,
+          connectedIntegrations,
+          'automate',
+          orgData?.active_template
+        )
+
+        // Fetch conversation history
+        const { data: history } = await supabase
+          .from('messages')
+          .select('sender_type, content')
+          .eq('conversation_id', internalConv.id)
+          .order('created_at', { ascending: true })
+
+        // Format history
+        const historyText = (history || []).map(m => {
+          const sender = m.sender_type === 'user' ? 'CEO' : targetAgent.name
+          return `${sender}: ${m.content}`
+        }).join('\n\n')
+
+        const promptText = `
+System Prompt:
+${systemPrompt}
+
+Conversation History:
+${historyText}
+
+Assistant:`
+
+        const ai = getGemini()
+        const response = await ai.invoke(promptText)
+        const textResponse = response.content
+
+        // Parse result items and directive raw if present
+        const resultMatch = textResponse.match(/(?:RESULT|RESULTS|OUTCOME):\s*([\s\S]+?)(?:\n|$)/i)
+        const resultItems = resultMatch ? resultMatch[1].split('|').map((s: string) => s.trim()) : []
+        const directiveMatch = textResponse.match(/(?:DIRECTIVE_DOCUMENT|DIRECTIVE|MASTER_DIRECTIVE):\s*([\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i)
+        const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
+
+        // Execute actions/handoffs
+        const { cleanResponse } = await parseAndExecuteActions(textResponse, org_id, targetAgent.id, event.data.user_id, depth)
+
+        // Save response message to Supabase
+        const { data: insertedMsg } = await supabase.from('messages').insert({
+          conversation_id: internalConv.id,
+          sender_type: 'agent',
+          content: cleanResponse,
+          result_items: resultItems,
+          metadata: { 
+            directive_raw: directiveRaw,
+            agent_name: targetAgent.name 
+          }
+        }).select('id').single()
+
+        // Auto-save briefing if needed
+        try {
+          const wordCount = cleanResponse.split(/\s+/).filter(Boolean).length
+          const hasHeading = /^#{1,6}\s+/m.test(cleanResponse)
+          const bulletMatches = cleanResponse.match(/^[\s]*[-*+]\s+/gm) || []
+          const hasThreeBullets = bulletMatches.length >= 3
+
+          if (wordCount > 500 || hasHeading || hasThreeBullets) {
+            const headingMatch = cleanResponse.match(/^#{1,6}\s+(.+)$/m)
+            let title = headingMatch ? headingMatch[1].trim() : ''
+            if (!title) {
+              title = cleanResponse.substring(0, 60).replace(/[*#_`>]/g, '').trim() || 'Executive Briefing'
+            }
+
+            const lines = cleanResponse.split('\n')
+            const highlightsList: string[] = [];
+            const listItemsFirst200Words: string[] = [];
+            let totalWordsProcessed = 0;
+
+            lines.forEach((line: string) => {
+              const trimmed = line.trim()
+              const words = trimmed.split(/\s+/)
+              const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ')
+
+              if (isBullet) {
+                const textContent = trimmed.substring(2).trim()
+                const hasPercentageOrCash = /[\d%]|[\d\$]/.test(textContent) && (textContent.includes('%') || textContent.includes('$'))
+                const hasUrgentWords = /\b(urgent|immediately|critical|warning|opportunity|danger|attention)\b/i.test(textContent)
+                const isFirst200 = totalWordsProcessed < 200
+
+                if (hasPercentageOrCash || hasUrgentWords) {
+                  highlightsList.push(textContent)
+                } else if (isFirst200) {
+                  listItemsFirst200Words.push(textContent)
+                }
+              }
+              if (trimmed !== '') {
+                totalWordsProcessed += words.length
+              }
+            })
+            const finalHighlights = [...new Set([...highlightsList, ...listItemsFirst200Words])].slice(0, 5)
+
+            const tasksList: any[] = []
+            lines.forEach((line: string) => {
+              const trimmed = line.trim()
+              if (trimmed.startsWith('- [ ] ') || trimmed.startsWith('- [x] ')) {
+                const checked = trimmed.startsWith('- [x] ')
+                const taskTitle = trimmed.substring(6).trim()
+                tasksList.push({ title: taskTitle, status: checked ? 'done' : 'pending' })
+              }
+            })
+
+            await supabase.from('briefings').insert({
+              org_id,
+              conversation_id: internalConv.id,
+              message_id: insertedMsg?.id || null,
+              agent_name: targetAgent.name,
+              agent_acronym: targetAgent.acronym,
+              title,
+              content: cleanResponse,
+              word_count: wordCount,
+              highlights: finalHighlights,
+              tasks: tasksList,
+              document_type: 'executive_brief'
+            })
+          }
+        } catch (saveErr) {
+          console.error('Failed to auto-save briefing in background:', saveErr)
+        }
+      })
     }
 
     return { success: true, conv_id: internalConv.id }

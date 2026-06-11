@@ -22,6 +22,97 @@ import {
   LONG_PASTE_CHAR_THRESHOLD,
 } from '@/lib/chat/pasteConfig';
 
+
+const DEPT_MAP: Record<string, { emoji: string; color: string; label: string; name: string }> = {
+  Aria: { emoji: '🎙️', color: '#50ffa0', label: 'MARKETING', name: 'ARIA' },
+  Rex: { emoji: '💰', color: '#3b82f6', label: 'SALES', name: 'REX' },
+  Purity: { emoji: '🛟', color: '#a855f7', label: 'CUSTOMER SUCCESS', name: 'PURITY' },
+  Roman: { emoji: '🏛️', color: '#ec4899', label: 'INTEL', name: 'ROMAN' },
+  Ghost: { emoji: '👻', color: '#f5a623', label: 'TECHNOLOGY', name: 'GHOST' },
+  Atlas: { emoji: '🗺️', color: '#10b981', label: 'CEO/OPS', name: 'ATLAS' },
+};
+
+const LOGS = [
+  { time: '09:14', icon: '🎙️', name: 'Aria', action: 'Published LinkedIn post #1', status: 'DONE' },
+  { time: '09:02', icon: '💰', name: 'Rex', action: 'Sent outreach to 15 prospects via Gmail', status: 'DONE' },
+  { time: '08:47', icon: '🏛️', name: 'Roman', action: 'Delivered competitor intel brief to Atlas', status: 'DONE' },
+  { time: '08:30', icon: '🗺️', name: 'Atlas', action: 'Sprint Day 1 briefing dispatched to founder', status: 'DONE' },
+  { time: '08:00', icon: '🏛️', name: 'Roman', action: 'Started competitor sweep — 6 targets', status: 'RUNNING' }
+];
+
+const getBriefTitle = (msg: any) => {
+  if (!msg) return 'Sprint Brief';
+  const content = msg.metadata?.directive_raw || msg.content || '';
+  const match = content.match(/^#{1,6}\s+(.+)$/m);
+  if (match) return match[1].trim();
+  return content.split('\n')[0].replace(/[*#_`>]/g, '').trim() || 'Sprint Brief';
+};
+
+const HandoffCard = ({ to, reason, context }: { to: string; reason: string; context: string }) => {
+  const dept = DEPT_MAP[to] || { emoji: '🏦', color: '#10b981', label: 'EXEC', name: to.toUpperCase() };
+  return (
+    <div 
+      style={{ borderLeftColor: dept.color }}
+      className="my-4 bg-[#111a11] rounded-xl border border-outline-variant/10 border-l-[3px] overflow-hidden select-text"
+    >
+      <div className="bg-[#0a140a] px-4 py-2 border-b border-outline-variant/5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">{dept.emoji}</span>
+          <span className="text-[10px] font-black text-white uppercase tracking-wider">{dept.name}</span>
+        </div>
+        <div className="flex items-center gap-3 font-mono text-[8px] tracking-widest text-on-surface/40 uppercase">
+          <span>HANDOFF</span>
+          <span 
+            style={{ color: dept.color, borderColor: `${dept.color}33` }} 
+            className="px-1.5 py-0.5 rounded border bg-white/5 font-bold"
+          >
+            {dept.label}
+          </span>
+        </div>
+      </div>
+      
+      <div className="p-4 space-y-2 text-[11px] leading-relaxed">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
+          <span className="text-on-surface/40 font-mono uppercase tracking-widest w-16 shrink-0">Reason:</span>
+          <span className="text-white font-medium flex-1">{reason}</span>
+        </div>
+        <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
+          <span className="text-on-surface/40 font-mono uppercase tracking-widest w-16 shrink-0">Context:</span>
+          <span className="text-on-surface/80 flex-1">{context}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const renderContentWithHandoffs = (content: string) => {
+  const handoffRegex = /\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = handoffRegex.exec(content)) !== null) {
+    const textBefore = content.substring(lastIndex, match.index);
+    if (textBefore.trim()) {
+      parts.push({ type: 'markdown', content: textBefore });
+    }
+    parts.push({
+      type: 'handoff',
+      to: match[1],
+      reason: match[2],
+      context: match[3]
+    });
+    lastIndex = handoffRegex.lastIndex;
+  }
+  
+  const textAfter = content.substring(lastIndex);
+  if (textAfter.trim() || parts.length === 0) {
+    parts.push({ type: 'markdown', content: textAfter || content });
+  }
+  
+  return parts;
+};
+
 export default function ChatPage() {
   return (
     <Suspense fallback={null}>
@@ -89,11 +180,100 @@ function ChatContent() {
   const [activeCoordinations, setActiveCoordinations] = useState<any[]>([]);
   const [briefingTab, setBriefingTab] = useState<'preview' | 'code' | 'tasks'>('preview');
   const [hoveredExec, setHoveredExec] = useState<string | null>(null);
-  const [autoHighlight, setAutoHighlight] = useState(false);
-  const [manualHighlights, setManualHighlights] = useState<{ text: string; color: 'green' | 'yellow' }[]>([]);
+  const [autoHighlight, setAutoHighlight] = useState(true);
+  const [manualHighlights, setManualHighlights] = useState<{ text: string; color: 'green' | 'yellow' | 'red' }[]>([]);
   const [isExportingToDrive, setIsExportingToDrive] = useState(false);
   const [driveDocUrl, setDriveDocUrl] = useState<string | null>(null);
-  const [activeHighlightColor, setActiveHighlightColor] = useState<'green' | 'yellow'>('green');
+  const [activeHighlightColor, setActiveHighlightColor] = useState<'green' | 'yellow' | 'red'>('green');
+  const [selectionTooltip, setSelectionTooltip] = useState<{ x: number, y: number, text: string } | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isTasksPaused, setIsTasksPaused] = useState(false);
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const [tasks, setTasks] = useState([
+    {
+      id: 1,
+      icon: '🏛️',
+      title: 'Competitor sweep — Relevance AI',
+      status: 'RUNNING',
+      progress: 66,
+      elapsed: 134,
+      dept: 'INTEL',
+      description: 'Scanning competitors websites, scraping pricing data, and analyzing capability sheets for Relevance AI.',
+      input: 'Company URL: relevance.ai',
+      output: 'Scraped 4 pages, identified pricing models ($19/mo Starter, $199/mo Business). Core feature: agentic workspace builder.'
+    },
+    {
+      id: 2,
+      icon: '🎙️',
+      title: 'LinkedIn post draft — Q2 angle',
+      status: 'RUNNING',
+      progress: 20,
+      elapsed: 48,
+      dept: 'MARKETING',
+      description: 'Drafting LinkedIn update detailing new platform integrations and API enhancements targeting founders.',
+      input: 'Theme: SaaS speed, Integration: Supabase + Google Drive',
+      output: 'Draft outline completed. Refining hooks for solo founders.'
+    },
+    {
+      id: 3,
+      icon: '💰',
+      title: 'Prospect enrichment — 30 leads',
+      status: 'QUEUED',
+      progress: 0,
+      eta: 'in 4h',
+      dept: 'SALES',
+      description: 'Enriching prospect list with contact details, title, and target company profiles.',
+      input: 'Lead criteria: Solo SaaS founders, $10k-$50k MRR',
+      output: 'Pending task queue initialization.'
+    },
+    {
+      id: 4,
+      icon: '🛟',
+      title: 'NPS survey — March cohort',
+      status: 'COMPLETE',
+      progress: 100,
+      dept: 'CS',
+      description: 'Distributing annual customer net promoter score survey to all March platform signups.',
+      input: 'Cohort: March 2026, Channel: In-App',
+      output: 'Survey completed. NPS Score: +64. Response rate: 42%.'
+    },
+    {
+      id: 5,
+      icon: '👻',
+      title: 'PR review — feature/auth-refactor',
+      status: 'RUNNING',
+      progress: 50,
+      elapsed: 302,
+      dept: 'TECH',
+      description: 'Static analysis and security audit of the authentication system refactor branch.',
+      input: 'Branch: feature/auth-refactor, PR: #284',
+      output: 'Linting passed. Analyzing crypto key rotations.'
+    },
+    {
+      id: 6,
+      icon: '🏛️',
+      title: 'Market signal scan — AI agent space',
+      status: 'QUEUED',
+      progress: 0,
+      eta: 'in 1h',
+      dept: 'INTEL',
+      description: 'Periodic scan of tech blogs, Reddit feeds, and news outlets for competitive shifts in AI agents.',
+      input: 'Query: "AI agents dashboard" OR "autonomous startup"',
+      output: 'Waiting for scheduler window.'
+    },
+    {
+      id: 7,
+      icon: '🎙️',
+      title: 'SEO article — AI agents for founders',
+      status: 'FAILED',
+      progress: 100,
+      error: 'Gemini API limit exceeded. Error code 429.',
+      dept: 'MARKETING',
+      description: 'Drafting high-volume SEO article optimized for the keyword "AI agent systems for founders".',
+      input: 'Keyword: "AI agent for founders", Length: 1500 words',
+      output: 'Compilation failed at step 2 due to API quota block.'
+    }
+  ]);
   const [sidebarWidth, setSidebarWidth] = useState(600);
   const isResizing = useRef(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -270,6 +450,97 @@ function ChatContent() {
     const interval = setInterval(fetchCoordinations, 10000);
     return () => clearInterval(interval);
   }, [org?.id]);
+
+
+  // 1. Text Selection listener for Manual Highlights floating tooltip
+  useEffect(() => {
+    const handleSelection = () => {
+      if (typeof window === 'undefined') return;
+      const selection = window.getSelection();
+      const text = selection?.toString().trim();
+      
+      if (text && selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const container = document.getElementById('briefing-preview-container');
+        if (container && container.contains(range.commonAncestorContainer)) {
+          const rect = range.getBoundingClientRect();
+          setSelectionTooltip({
+            x: rect.left + rect.width / 2,
+            y: rect.top - 40,
+            text
+          });
+          return;
+        }
+      }
+      setSelectionTooltip(null);
+    };
+
+    document.addEventListener('mouseup', handleSelection);
+    return () => {
+      document.removeEventListener('mouseup', handleSelection);
+    };
+  }, []);
+
+  // 2. Background Task progress/timer simulation update
+  useEffect(() => {
+    if (isTasksPaused) return;
+    const interval = setInterval(() => {
+      setTasks(prev => 
+        prev.map(t => {
+          if (t.status === 'RUNNING') {
+            const nextProgress = Math.min(t.progress + Math.floor(Math.random() * 2), 99);
+            return {
+              ...t,
+              elapsed: t.elapsed + 1,
+              progress: nextProgress
+            };
+          }
+          return t;
+        })
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isTasksPaused]);
+
+  const applyHighlightColor = (text: string, color: 'green' | 'yellow' | 'red') => {
+    if (!manualHighlights.some(h => h.text.toLowerCase() === text.toLowerCase())) {
+      setManualHighlights(prev => [...prev, { text, color }]);
+      toast.success(`Highlighted selection in ${color === 'green' ? 'Action' : color === 'yellow' ? 'Insight' : 'Risk'}`);
+    }
+  };
+
+  const handleRetryTask = (taskId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast.success('Retrying task...');
+    setTasks(prev => 
+      prev.map(t => {
+        if (t.id === taskId) {
+          return {
+            ...t,
+            status: 'RUNNING',
+            progress: 10,
+            elapsed: 0,
+            error: undefined
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  const getProgressBarText = (status: string, progress: number) => {
+    if (status === 'QUEUED') return '──────';
+    if (status === 'COMPLETE' || status === 'FAILED') return '██████';
+    const filledCount = Math.floor(progress / 16.66);
+    const emptyCount = 6 - filledCount;
+    return '█'.repeat(filledCount) + '░'.repeat(emptyCount);
+  };
+
+  const formatElapsedTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s.toString().padStart(2, '0')}s`;
+  };
 
   const startResizing = (e: React.MouseEvent) => {
     isResizing.current = true;
@@ -980,23 +1251,45 @@ function ChatContent() {
                           );
                         })()}
                         {(msg.metadata?.directive_raw || (msg.result_items && msg.result_items.length > 0)) && (
-                          <div className="mt-4 p-4 bg-primary-container/5 border border-primary-container/10 rounded-xl space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="text-[9px] font-black text-primary-container uppercase tracking-widest">Briefing Room Generated</div>
-                              <button onClick={() => setActiveDirectives(msg)} className="flex items-center gap-1.5 px-2 py-1 bg-primary-container/20 border border-primary-container/30 rounded text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-primary-container/30 transition-all">
-                                <span className="material-symbols-outlined text-[14px]">description</span> View & Delegate
+                          <div 
+                            onClick={() => setActiveDirectives(msg)}
+                            className="mt-4 bg-[#111a11] rounded-xl border border-[#50ffa0]/15 p-4 flex items-center justify-between cursor-pointer hover:border-[#50ffa0]/30 transition-all select-none shadow-[0_0_15px_rgba(80,255,160,0.05)]"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 text-[#50ffa0] shrink-0">
+                                <span className="material-symbols-outlined text-lg">hexagon</span>
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="relative flex h-1.5 w-1.5 shrink-0">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#50ffa0] opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#50ffa0]"></span>
+                                  </span>
+                                  <span className="text-xs font-bold text-white uppercase tracking-wide truncate max-w-[240px] sm:max-w-[340px]">
+                                    {getBriefTitle(msg)}
+                                  </span>
+                                </div>
+                                <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest mt-0.5">
+                                  Executive Brief · ORCA
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              <button 
+                                onClick={() => handleExportToGoogleDrive(msg)}
+                                className="w-8 h-8 flex items-center justify-center bg-white/5 border border-white/10 rounded-lg text-on-surface/60 hover:text-[#50ffa0] hover:bg-[#50ffa0]/10 transition-all"
+                                title="Send to Google Drive"
+                              >
+                                🔺
+                              </button>
+                              <button 
+                                onClick={() => handleDownloadMarkdown(msg)}
+                                className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-on-surface hover:text-[#50ffa0] hover:border-[#50ffa0]/30 transition-all"
+                              >
+                                Download
                               </button>
                             </div>
-                            {msg.result_items && (
-                              <div className="space-y-2">
-                                {msg.result_items.slice(0, 3).map((item: string, i: number) => (
-                                  <div key={i} className="flex items-start gap-2 text-[11px] text-on-surface/70">
-                                    <span className="mt-1 text-primary-container material-symbols-outlined text-xs">check_circle</span>
-                                    {item}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         )}
                         <div className={`flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant/10 transition-opacity ${assistantHasVisibleContent(msg) ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>
@@ -1076,86 +1369,210 @@ function ChatContent() {
               <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-8 w-[2px] bg-outline-variant/20 group-hover:bg-primary-container/40 rounded-full" />
             </div>
 
-            {/* Sidebar Header */}
-            <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container">
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary-container">Briefing Room</h2>
-                <p className="text-[9px] font-mono text-on-surface/40 uppercase mt-1">Ref: ORCA-{activeDirectives.id.substring(0, 8)}</p>
-              </div>
-              <button onClick={() => setActiveDirectives(null)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-on-surface/40 hover:text-on-surface">
-                <span className="material-symbols-outlined text-sm">close</span>
-              </button>
-            </div>
-
-            {/* Claude-style Artifact Tabs */}
-            <div className="flex border-b border-outline-variant/5 bg-[#121412] px-6">
-              <button
-                onClick={() => setBriefingTab('preview')}
-                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all mr-6 ${briefingTab === 'preview' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
-              >
-                <span className="material-symbols-outlined text-[15px]">description</span> Document
-              </button>
-              <button
-                onClick={() => setBriefingTab('code')}
-                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all mr-6 ${briefingTab === 'code' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
-              >
-                <span className="material-symbols-outlined text-[15px]">code</span> Raw Markdown
-              </button>
-              <button
-                onClick={() => setBriefingTab('tasks')}
-                className={`flex items-center gap-2 py-3.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${briefingTab === 'tasks' ? 'border-primary-container text-primary-container' : 'border-transparent text-on-surface/40 hover:text-on-surface'}`}
-              >
-                <span className="material-symbols-outlined text-[15px]">splitscreen</span> Tasks & Logs
-              </button>
-            </div>
-
-            {/* Premium Highlighter Toolbar */}
-            <div className="bg-[#161916] border-b border-outline-variant/5 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
-              {/* Auto Highlight Switcher */}
-              <button
-                onClick={() => setAutoHighlight(!autoHighlight)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[8px] font-black uppercase tracking-widest transition-all ${autoHighlight ? 'bg-primary-container/10 border-primary-container text-primary-container shadow-[0_0_15px_rgba(0,195,103,0.15)]' : 'bg-surface-container-high border-outline-variant/15 text-on-surface/40 hover:text-on-surface/75'}`}
-              >
-                <span className="material-symbols-outlined text-xs">{autoHighlight ? 'toggle_on' : 'toggle_off'}</span>
-                Auto Highlight
-              </button>
-
-              {/* Manual Highlights Controls */}
-              <div className="flex items-center gap-2">
-                <span className="text-[8px] font-black uppercase tracking-widest text-on-surface/30">Highlight Select:</span>
+            {/* Claude-Style Replicated Header */}
+            <div className="h-10 bg-[#0a140a] border-b border-[#50ffa0]/15 px-4 flex items-center justify-between select-none relative z-50">
+              
+              {/* Left View Switching Icons */}
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setActiveHighlightColor('green')}
-                  className={`w-4 h-4 rounded-full bg-emerald-500 border transition-all ${activeHighlightColor === 'green' ? 'scale-125 border-white ring-2 ring-emerald-400/30' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                  title="Green Highlighter"
-                />
-                <button
-                  onClick={() => setActiveHighlightColor('yellow')}
-                  className={`w-4 h-4 rounded-full bg-amber-500 border transition-all ${activeHighlightColor === 'yellow' ? 'scale-125 border-white ring-2 ring-amber-400/30' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                  title="Yellow Highlighter"
-                />
-                <button
-                  onClick={applyManualHighlight}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-container/10 border border-primary-container/20 rounded-lg text-[8px] font-black uppercase tracking-widest text-primary-container hover:bg-primary-container/20 transition-all ml-1"
+                  onClick={() => setBriefingTab('preview')}
+                  className={`w-7 h-7 flex items-center justify-center rounded transition-all text-xs ${briefingTab === 'preview' ? 'text-[#50ffa0] bg-[#50ffa0]/10' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
+                  title="Document View"
                 >
-                  <span className="material-symbols-outlined text-xs">ink_highlighter</span> Apply
+                  👁
                 </button>
-                {manualHighlights.length > 0 && (
+                <button
+                  onClick={() => setBriefingTab('code')}
+                  className={`w-7 h-7 flex items-center justify-center rounded transition-all text-xs font-mono font-bold ${briefingTab === 'code' ? 'text-[#50ffa0] bg-[#50ffa0]/10' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
+                  title="Raw Markdown Source"
+                >
+                  &lt;&gt;
+                </button>
+                <button
+                  onClick={() => setBriefingTab('tasks')}
+                  className={`w-7 h-7 flex items-center justify-center rounded transition-all text-xs ${briefingTab === 'tasks' ? 'text-[#50ffa0] bg-[#50ffa0]/10' : 'text-white/40 hover:text-white/80 hover:bg-white/5'}`}
+                  title="Tasks & Logs"
+                >
+                  ☰
+                </button>
+              </div>
+
+              {/* Center Text */}
+              <div className="text-[10px] text-white/50 tracking-wider font-body truncate max-w-[280px]">
+                {getBriefTitle(activeDirectives)} <span className="text-white/30 mx-1.5">·</span> {activeDirectives.metadata?.agent_name ? `${activeDirectives.metadata.agent_name} Brief` : 'Executive Brief'}
+              </div>
+
+              {/* Right Action Icons */}
+              <div className="flex items-center gap-1.5 relative">
+                
+                {/* Google Drive Export (🔺) */}
+                <button
+                  disabled={isExportingToDrive}
+                  onClick={() => handleExportToGoogleDrive()}
+                  className="w-7 h-7 flex items-center justify-center rounded text-white/40 hover:text-[#50ffa0] hover:bg-white/5 transition-all disabled:opacity-35"
+                  title="Send to Google Drive"
+                >
+                  🔺
+                </button>
+
+                {/* Dropdown Action (⚡▾) */}
+                <div className="relative flex items-center bg-white/5 rounded border border-white/10 hover:bg-white/10 transition-all">
                   <button
-                    onClick={() => { setManualHighlights([]); toast.success('Cleared all highlights'); }}
-                    className="flex items-center justify-center p-1.5 bg-white/5 border border-white/10 rounded-lg text-[8px] font-black text-on-surface/40 hover:text-error transition-all"
-                    title="Clear Highlights"
+                    onClick={() => {
+                      const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
+                      toast.success('AUTHORIZING: Dispatching executive orders to entire team...');
+                      append({ role: 'user', content: '[APPROVAL_GRANTED] The board has authorized these directives. Execute immediately.' });
+                      setActiveDirectives(null);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center text-[#50ffa0] hover:scale-105 active:scale-95 transition-all"
+                    title="Authorize & Execute"
                   >
-                    <span className="material-symbols-outlined text-xs">delete</span>
+                    ⚡
                   </button>
-                )}
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-4 h-7 flex items-center justify-center text-white/40 hover:text-white/80 transition-all border-l border-white/10 pr-1"
+                    title="More Actions"
+                  >
+                    ▾
+                  </button>
+                  
+                  {/* Actions Dropdown Popover */}
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 w-44 bg-[#111a11] border border-[#50ffa0]/20 rounded-xl shadow-2xl py-1.5 z-[999] animate-in fade-in slide-in-from-top-1 duration-150">
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
+                          toast.success('AUTHORIZING: Dispatching executive orders to entire team...');
+                          append({ role: 'user', content: '[APPROVAL_GRANTED] The board has authorized these directives. Execute immediately.' });
+                          setActiveDirectives(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#50ffa0] hover:bg-white/5 transition-colors flex items-center gap-2"
+                      >
+                        <span className="text-xs">⚡</span> Authorize & Execute
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          append({ role: 'user', content: 'Approved. Proceed.' });
+                          toast.success('Approved & Executing');
+                          setActiveDirectives(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#50ffa0] hover:bg-white/5 transition-colors flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-xs">check</span> Approve
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          handleExportToGoogleDrive();
+                        }}
+                        className="w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white/70 hover:text-[#50ffa0] hover:bg-white/5 transition-colors flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-xs flex-shrink-0">cloud_upload</span> Send to Drive
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          handleDownloadMarkdown(activeDirectives);
+                        }}
+                        className="w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white/70 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-xs flex-shrink-0">download</span> Download MD
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          handleDownloadPlainText(activeDirectives);
+                        }}
+                        className="w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white/70 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-xs flex-shrink-0">download</span> Download TXT
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          toast.error('Rejected');
+                          setActiveDirectives(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#ff4f4f] hover:bg-white/5 transition-colors flex items-center gap-2 border-t border-white/5 mt-1 pt-2"
+                      >
+                        <span className="material-symbols-outlined text-xs">close</span> Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Refresh Icon (↺) */}
+                <button
+                  onClick={() => {
+                    toast.info('Refreshing document workspace...');
+                    reloadMessagesFromDb();
+                  }}
+                  className="w-7 h-7 flex items-center justify-center rounded text-white/40 hover:text-white/80 hover:bg-white/5 transition-all text-sm font-bold"
+                  title="Refresh / Re-run"
+                >
+                  ↺
+                </button>
+
+                {/* Close Icon (×) */}
+                <button
+                  onClick={() => setActiveDirectives(null)}
+                  className="w-7 h-7 flex items-center justify-center rounded text-white/40 hover:text-[#ff4f4f] hover:bg-white/5 transition-all text-sm font-bold"
+                  title="Close Briefing Room"
+                >
+                  ×
+                </button>
               </div>
             </div>
 
             {/* Sidebar Content Pane */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar bg-[#0f110f] relative selection:bg-[#00c3672d]">
               {briefingTab === 'preview' && (
-                <div className="p-6 lg:p-8 bg-surface-container-highest border border-outline-variant/10 rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-300 select-text">
-                  {renderBriefingMarkdown(activeDirectives.metadata?.directive_raw || activeDirectives.content)}
+                <div className="p-6 lg:p-8 bg-[#111a11] border border-[#50ffa0]/15 rounded-2xl shadow-[0_0_15px_rgba(80,255,160,0.05)] flex flex-col animate-in fade-in zoom-in-95 duration-300 select-text relative">
+                  {renderPreviewContent(activeDirectives.metadata?.directive_raw || activeDirectives.content)}
+                  
+                  {/* Floating Manual Highlight Tooltip Selector */}
+                  {selectionTooltip && (
+                    <div 
+                      style={{ 
+                        position: 'fixed', 
+                        left: `${selectionTooltip.x}px`, 
+                        top: `${selectionTooltip.y}px`, 
+                        transform: 'translate(-50%, -100%)' 
+                      }}
+                      className="bg-[#121412] border border-[#50ffa0]/30 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.5)] p-1.5 flex items-center gap-2 z-[9999] animate-in zoom-in-95 duration-100 select-none"
+                    >
+                      <button
+                        onClick={() => {
+                          applyHighlightColor(selectionTooltip.text, 'green');
+                          setSelectionTooltip(null);
+                          window.getSelection()?.removeAllRanges();
+                        }}
+                        className="w-4.5 h-4.5 rounded-full bg-[#50ffa0] hover:scale-110 active:scale-95 transition-all border border-white/20"
+                        title="Apply Mint Green Highlight (Action)"
+                      />
+                      <button
+                        onClick={() => {
+                          applyHighlightColor(selectionTooltip.text, 'yellow');
+                          setSelectionTooltip(null);
+                          window.getSelection()?.removeAllRanges();
+                        }}
+                        className="w-4.5 h-4.5 rounded-full bg-[#f5a623] hover:scale-110 active:scale-95 transition-all border border-white/20"
+                        title="Apply Amber Highlight (Insight)"
+                      />
+                      <button
+                        onClick={() => {
+                          applyHighlightColor(selectionTooltip.text, 'red');
+                          setSelectionTooltip(null);
+                          window.getSelection()?.removeAllRanges();
+                        }}
+                        className="w-4.5 h-4.5 rounded-full bg-[#ff4f4f] hover:scale-110 active:scale-95 transition-all border border-white/20"
+                        title="Apply Red Highlight (Risk)"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1168,205 +1585,140 @@ function ChatContent() {
                       navigator.clipboard.writeText(rawText);
                       toast.success('Raw markdown copied to clipboard');
                     }}
-                    className="absolute top-4 right-4 bg-[#1e221e] border border-outline-variant/20 rounded-lg px-3 py-2 text-[8px] font-black text-primary-container uppercase tracking-widest hover:bg-[#282d28] transition-colors flex items-center gap-1.5 z-10"
+                    className="absolute top-4 right-4 bg-[#1e221e] border border-[#50ffa0]/20 rounded-lg px-3 py-2 text-[8px] font-black text-[#50ffa0] uppercase tracking-widest hover:bg-[#282d28] transition-colors flex items-center gap-1.5 z-10"
                   >
-                    <span className="material-symbols-outlined text-xs">content_copy</span> Copy Raw
+                    Copy Raw
                   </button>
                   <textarea
                     readOnly
                     value={(activeDirectives.metadata?.directive_raw || activeDirectives.content)
                       .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
-                    className="w-full h-[85%] bg-[#080908] border border-outline-variant/10 rounded-2xl p-6 font-mono text-[10px] text-on-surface/70 leading-relaxed outline-none resize-none"
+                    className="w-full h-[85%] bg-[#080908] border border-[#50ffa0]/10 rounded-2xl p-6 font-mono text-[10px] text-on-surface/70 leading-relaxed outline-none resize-none"
                   />
                 </div>
               )}
 
               {briefingTab === 'tasks' && (
                 <div className="space-y-6 animate-in fade-in duration-300">
-                  {/* C-Suite System Status grid */}
-                  <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-primary-container mb-3 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-xs">grid_view</span> C-Suite Status Board
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {EXECUTIVE_PILLS.map(exec => {
-                        const status = getExecutiveStatus(exec);
-                        const statusColor = status === 'Executing' ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' : status === 'Thinking' ? 'text-amber-300 border-amber-500/30 bg-amber-500/10' : 'text-on-surface/40 border-outline-variant/10 bg-white/5';
-                        const dotColor = status === 'Executing' ? 'bg-emerald-400' : status === 'Thinking' ? 'bg-amber-300' : 'bg-on-surface/20';
+                  
+                  {/* Section 1: Background Tasks */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-[#50ffa0]/15 pb-2">
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-[#50ffa0] flex items-center gap-2">
+                        BACKGROUND TASKS
+                        <span className="flex items-center gap-1.5 text-[8px] font-mono text-white/50 tracking-wider font-normal lowercase">
+                          ● <span className="text-[#50ffa0] animate-pulse">{tasks.filter(t => t.status === 'RUNNING').length} running</span>
+                        </span>
+                      </h3>
+                      <button 
+                        onClick={() => setIsTasksPaused(!isTasksPaused)}
+                        className="text-white/40 hover:text-white transition-colors text-xs border border-white/10 rounded px-1.5 py-0.5 bg-white/5 cursor-pointer font-bold"
+                        title={isTasksPaused ? "Resume All Tasks" : "Pause All Tasks"}
+                      >
+                        {isTasksPaused ? '▶' : '⏸'}
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {tasks.map(task => {
+                        const isExpanded = expandedTaskId === task.id;
+                        const progressBar = getProgressBarText(task.status, task.progress);
+                        const progressText = task.status === 'RUNNING' ? `[RUNNING ${progressBar}]` :
+                                             task.status === 'QUEUED' ? `[QUEUED  ${progressBar}]` :
+                                             task.status === 'COMPLETE' ? `[COMPLETE${progressBar}]` :
+                                             `[FAILED  ${progressBar}]`;
+                        
+                        const statusColor = task.status === 'RUNNING' ? 'text-[#50ffa0] animate-pulse font-semibold' :
+                                            task.status === 'COMPLETE' ? 'text-[#50ffa0]' :
+                                            task.status === 'FAILED' ? 'text-[#ff4f4f]' :
+                                            'text-on-surface/30';
+                                            
+                        const timeText = task.status === 'RUNNING' ? formatElapsedTime(task.elapsed) :
+                                         task.status === 'QUEUED' ? task.eta :
+                                         task.status === 'COMPLETE' ? 'Done' :
+                                         'Error';
 
                         return (
-                          <div key={exec.key} className="p-3 bg-[#121412] border border-outline-variant/10 rounded-xl flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-base">{exec.icon}</span>
-                              <div>
-                                <h4 className="text-[10px] font-bold text-white uppercase tracking-wider">{exec.name}</h4>
-                                <p className="text-[8px] font-mono text-on-surface/40 uppercase tracking-widest">{exec.role}</p>
+                          <div 
+                            key={task.id}
+                            onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                            className="bg-[#111a11] border border-outline-variant/5 rounded-xl hover:border-outline-variant/15 transition-all select-none p-3.5 cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between text-[10px] font-mono tracking-tighter">
+                              <div className="flex items-center gap-2.5 truncate max-w-[50%]">
+                                <span className="text-xs shrink-0">{task.icon}</span>
+                                <span className="text-white truncate">{task.title}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-4 shrink-0">
+                                <span className={statusColor}>{progressText}</span>
+                                <span className="text-white/50 w-14 text-right">{timeText}</span>
+                                {task.status === 'FAILED' && (
+                                  <button 
+                                    onClick={(e) => handleRetryTask(task.id, e)}
+                                    className="p-1 rounded bg-[#ff4f4f]/10 border border-[#ff4f4f]/20 text-[#ff4f4f] hover:bg-[#ff4f4f]/20 hover:text-white transition-all text-[8px] font-bold"
+                                    title="Retry Task"
+                                  >
+                                    ↺
+                                  </button>
+                                )}
+                                <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 text-[8px]">
+                                  {task.dept}
+                                </span>
                               </div>
                             </div>
-                            <span className={`px-2 py-0.5 rounded text-[8px] font-mono uppercase tracking-widest border flex items-center gap-1.5 ${statusColor}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${status !== 'Idle' ? 'animate-pulse' : ''}`} />
-                              {status}
-                            </span>
+                            
+                            {/* Expandable details */}
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t border-white/5 space-y-2 text-[9px] font-mono text-on-surface/60 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-150">
+                                <p><span className="text-white font-bold uppercase mr-1">[Desc]:</span> {task.description}</p>
+                                <p><span className="text-[#50ffa0] font-bold uppercase mr-1">[Input]:</span> {task.input}</p>
+                                <p><span className="text-[#f5a623] font-bold uppercase mr-1">[Output]:</span> {task.output}</p>
+                                {task.status === 'FAILED' && (
+                                  <p className="text-[#ff4f4f] bg-[#ff4f4f]/5 border border-[#ff4f4f]/10 px-2 py-1 rounded">
+                                    <span className="font-bold uppercase mr-1">[Error]:</span> {task.error}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
                     </div>
-                  </div>
-
-                  {/* Active Handoffs */}
-                  <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-primary-container mb-3 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-xs">sync_alt</span> Active Handoffs & Coordinations
-                    </h3>
-                    {activeCoordinations.length === 0 ? (
-                      <div className="p-4 bg-[#121412] border border-outline-variant/5 rounded-xl text-center text-on-surface/40 text-[10px] font-mono uppercase tracking-widest">
-                        No active handoffs in progress
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {activeCoordinations.map(coord => {
-                          const fromPill = EXECUTIVE_PILLS.find(p => p.name === coord.from_agent?.name);
-                          const toPill = EXECUTIVE_PILLS.find(p => p.name === coord.to_agent?.name);
-
-                          return (
-                            <div key={coord.id} className="p-4 bg-[#121412] border border-outline-variant/10 rounded-xl space-y-3 relative overflow-hidden group">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="flex items-center gap-1 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
-                                    <span className="text-xs">{fromPill?.icon || '🏦'}</span>
-                                    <span className="text-[9px] font-mono text-white font-bold">{coord.from_agent?.name || 'User'}</span>
-                                  </div>
-                                  <span className="material-symbols-outlined text-xs text-primary-container">arrow_forward</span>
-                                  <div className="flex items-center gap-1 bg-primary-container/10 border border-primary-container/20 px-2 py-0.5 rounded">
-                                    <span className="text-xs">{toPill?.icon || '🏦'}</span>
-                                    <span className="text-[9px] font-mono text-primary-container font-bold">{coord.to_agent?.name || 'Agent'}</span>
-                                  </div>
-                                </div>
-                                <span className="flex h-2 w-2 relative">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-on-surface/80 leading-relaxed font-body">
-                                {coord.description}
-                              </p>
-                              <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                                <span className="text-[8px] font-mono text-on-surface/40 uppercase tracking-widest">
-                                  {new Date(coord.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                </span>
-                                <button
-                                  onClick={() => {
-                                    if (coord.to_agent?.name) {
-                                      toast.info(`Jumping to ${coord.to_agent.name}'s active thread...`);
-                                      fetch(`/api/agents/${coord.to_agent.name}/latest-conversation?orgId=${org?.id}`)
-                                        .then(res => res.json())
-                                        .then(data => {
-                                          if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
-                                          else toast.error('Could not locate coordination workspace');
-                                        });
-                                    }
-                                  }}
-                                  className="text-[8px] font-black uppercase tracking-widest text-primary-container hover:underline flex items-center gap-1"
-                                >
-                                  View Workspace <span className="material-symbols-outlined text-[10px]">open_in_new</span>
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tool Execution Logs */}
-                  <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-primary-container mb-3 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-xs">terminal</span> Tool Execution Logs
-                    </h3>
-                    <div className="bg-[#080908] border border-outline-variant/10 rounded-xl overflow-hidden p-4 font-mono text-[9px] text-[#a9b1d6] leading-relaxed max-h-[250px] overflow-y-auto no-scrollbar space-y-2.5">
-                      {messages.flatMap((m: any) => m.toolInvocations || []).length === 0 ? (
-                        <div className="text-on-surface/30 italic uppercase text-center py-4">No tools executed in this conversation yet</div>
-                      ) : (
-                        messages.flatMap((m: any) => (m.toolInvocations || []).map((ti: any, idx: number) => {
-                          const statusLabel = ti.state === 'result' ? 'SUCCESS' : 'RUNNING';
-                          const statusColor = ti.state === 'result' ? 'text-emerald-400' : 'text-amber-300';
-                          return (
-                            <div key={ti.toolCallId || idx} className="border-b border-white/5 pb-2 last:border-b-0 last:pb-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-primary-container font-bold">{ti.toolName.toUpperCase()}</span>
-                                <span className={`font-bold ${statusColor}`}>[{statusLabel}]</span>
-                              </div>
-                              <div className="text-[8px] text-on-surface/40 mb-1">
-                                Args: {JSON.stringify(ti.args)}
-                              </div>
-                              {ti.state === 'result' && (
-                                <div className="text-[8px] text-[#737aa2] max-h-16 overflow-y-auto no-scrollbar">
-                                  Result: {JSON.stringify(ti.result).slice(0, 150)}...
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }))
-                      )}
+                    
+                    <div className="flex items-center justify-between text-[8px] font-mono text-on-surface/40 uppercase tracking-widest pt-1 px-1">
+                      <button onClick={() => toast.info('Navigating to full task logs...')} className="hover:text-[#50ffa0] transition-colors">View all →</button>
+                      <button onClick={() => toast.info('Opening scheduler...')} className="hover:text-[#50ffa0] transition-colors">+ Schedule ⊕</button>
                     </div>
                   </div>
+
+                  {/* Divider Line */}
+                  <hr className="border-outline-variant/10" />
+
+                  {/* Section 2: Task History & Logs */}
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#50ffa0]">
+                      TASK HISTORY & LOGS
+                    </h3>
+                    <div className="space-y-2 font-mono text-[9px] leading-relaxed bg-[#080c08] border border-outline-variant/5 rounded-xl p-3.5 max-h-[280px] overflow-y-auto no-scrollbar">
+                      {LOGS.map((log, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-1 border-b border-white/5 last:border-b-0 last:pb-0">
+                          <div className="flex items-center gap-3 truncate max-w-[85%]">
+                            <span className="text-white/30 shrink-0">{log.time}</span>
+                            <span className="shrink-0">{log.icon}</span>
+                            <span className="text-white/50 shrink-0">{log.name}</span>
+                            <span className="text-on-surface/80 truncate">{log.action}</span>
+                          </div>
+                          <span className={`shrink-0 font-bold ${log.status === 'RUNNING' ? 'text-[#f5a623] animate-pulse' : 'text-[#50ffa0]'}`}>
+                            [{log.status}]
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
               )}
-            </div>
-
-            {/* Bottom Actions Drawer */}
-            <div className="p-6 border-t border-outline-variant/10 bg-surface-container space-y-3">
-              {/* Document Download & Share Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  disabled={isExportingToDrive}
-                  onClick={handleExportToGoogleDrive}
-                  className="py-3 bg-[#0f9d58]/10 hover:bg-[#0f9d58]/20 border border-[#0f9d58]/30 rounded-xl font-black text-[9px] uppercase tracking-widest text-[#0f9d58] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isExportingToDrive ? (
-                    <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <span className="material-symbols-outlined text-[16px]">cloud_upload</span>
-                  )}
-                  {isExportingToDrive ? 'Exporting...' : 'Send to Drive'}
-                </button>
-
-                <button
-                  onClick={() => {
-                    const rawText = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
-                      .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim();
-                    const blob = new Blob([rawText], { type: 'text/markdown;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.setAttribute('download', `ORCA_Briefing_Room_${activeDirectives.id.substring(0, 8)}.md`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    toast.success('Markdown file downloaded successfully');
-                  }}
-                  className="py-3 bg-surface-container-high border border-outline-variant/20 text-on-surface font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-[16px]">download</span> Download MD
-                </button>
-              </div>
-
-              {/* CEO Direct Action Execution Trigger */}
-              <button
-                onClick={() => {
-                  const content = activeDirectives.metadata?.directive_raw || activeDirectives.content;
-                  const mentions = Array.from(content.matchAll(/@([A-Z][a-z]+)/g)).map((m: any) => m[1]);
-                  const validExecs = mentions.filter(name =>
-                    EXECUTIVE_PILLS.some(p => p.name === name)
-                  );
-                  toast.success('AUTHORIZING: Dispatching executive orders to entire team...');
-                  append({ role: 'user', content: '[APPROVAL_GRANTED] The board has authorized these directives. Execute immediately.' });
-                  setActiveDirectives(null);
-                }}
-                className="w-full py-4 bg-primary-container text-on-primary rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_12px_40px_rgba(0,195,103,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined">bolt</span> Authorize & Execute
-              </button>
             </div>
           </div>
         )}

@@ -74,8 +74,6 @@ export default function DashboardSidebar({ active }: SidebarProps) {
     { id: 'chat', label: 'Chat', icon: 'terminal', href: '/dashboard/chat' },
     { id: 'projects', label: 'Projects', icon: 'layers', href: '/dashboard/projects' },
     { id: 'orcahub', label: 'Orca Hub', icon: 'hub', href: '/dashboard/orcahub' },
-    { id: 'review', label: 'Review', icon: 'rate_review', href: '/dashboard/review' },
-    { id: 'briefing-room', label: 'Briefing Room', icon: 'menu_book', href: '/dashboard/briefing-room' },
     { id: 'team', label: 'Teams', icon: 'groups', href: '/dashboard/team' },
     { id: 'archives', label: 'Archives', icon: 'database', href: '/dashboard/archives' }
   ];

@@ -10,7 +10,8 @@ export async function parseAndExecuteActions(
   agentResponse: string,
   orgId: string,
   fromAgentId?: string,
-  userId?: string
+  userId?: string,
+  depth: number = 0
 ): Promise<{ cleanResponse: string; actionsExecuted: string[] }> {
   
   // Flexible regex to find [ACTION: tool="tool_name" params={...}]
@@ -19,7 +20,7 @@ export async function parseAndExecuteActions(
   const actionsExecuted: string[] = []
   let cleanResponse = agentResponse
   let match
-
+  
   while ((match = actionRegex.exec(agentResponse)) !== null) {
     const [fullTag, tool, paramsStr] = match
     
@@ -106,7 +107,8 @@ export async function parseAndExecuteActions(
           toAgent, // backwards compatibility
           reason,
           context,
-          user_id: userId
+          user_id: userId,
+          depth: depth + 1
         }
       })
       

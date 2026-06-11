@@ -39,8 +39,8 @@ export async function POST(
 
   if (!template) return NextResponse.json({ error: 'Template not found' }, { status: 404 });
 
-  const { planMeetsMinimum } = await import('@/lib/plans/planOrder')
-  if (!planMeetsMinimum(orgPlan, template.plan_required || 'free')) {
+  const PLAN_ORDER = ['free', 'starter', 'pro', 'enterprise'];
+  if (PLAN_ORDER.indexOf(orgPlan) < PLAN_ORDER.indexOf(template.plan_required)) {
     return NextResponse.json({
       error: `This template requires the ${template.plan_required} plan or higher`
     }, { status: 403 });
