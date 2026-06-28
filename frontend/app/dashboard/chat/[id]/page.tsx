@@ -1531,7 +1531,7 @@ function ChatContent() {
             <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar bg-[#0f110f] relative selection:bg-[#00c3672d]">
               {briefingTab === 'preview' && (
                 <div className="p-6 lg:p-8 bg-[#111a11] border border-[#50ffa0]/15 rounded-2xl shadow-[0_0_15px_rgba(80,255,160,0.05)] flex flex-col animate-in fade-in zoom-in-95 duration-300 select-text relative">
-                  {renderPreviewContent(activeDirectives.metadata?.directive_raw || activeDirectives.content)}
+                  {renderBriefingMarkdown(activeDirectives.metadata?.directive_raw || activeDirectives.content)}
                   
                   {/* Floating Manual Highlight Tooltip Selector */}
                   {selectionTooltip && (
