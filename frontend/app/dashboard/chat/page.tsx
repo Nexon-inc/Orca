@@ -38,17 +38,17 @@ function ChatContent() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Chat Modes & Models
-  const [chatMode, setChatMode] = useState('Planning');
-  const [activeModel, setActiveModel] = useState({ name: 'ORCA Intelligence', id: 'orca-intel' });
+  const [chatMode, setChatMode] = useState('Automate');
+  const [activeModel, setActiveModel] = useState({ name: 'ORCA', id: 'orca-intel' });
 
-  const MODES = ['Planning', 'Automate', 'Approve'];
+  const MODES = ['Planning', 'Automate'];
   const MODELS = [
-    { name: 'ORCA Intelligence', id: 'orca-intel' },
-    { name: 'Claude 3.5 Sonnet', id: 'anthropic/claude-3.5-sonnet' },
-    { name: 'GPT-4o', id: 'openai/gpt-4o' },
-    { name: 'Llama 3.1 405B', id: 'meta-llama/llama-3.1-405b-instruct' },
-    { name: 'Gemini 1.5 Pro (Native)', id: 'google/gemini-1.5-pro' },
-    { name: 'DeepSeek V3 ', id: 'deepseek/deepseek-chat' }
+    { name: 'ORCA', id: 'orca-intel' },
+    { name: 'Claude', id: 'anthropic/claude-3.5-sonnet' },
+    { name: 'GPT', id: 'openai/gpt-4o' },
+    { name: 'Llama', id: 'meta-llama/llama-3.1-405b-instruct' },
+    { name: 'Gemini', id: 'google/gemini-1.5-pro' },
+    { name: 'DeepSeek', id: 'deepseek/deepseek-chat' }
   ];
 
   const EXECUTIVE_PILLS = [
@@ -293,17 +293,45 @@ function ChatContent() {
 
   const Dropdown = ({ value, options, onChange, labelKey = 'name' }: { value: any, options: any[], onChange: (v: any) => void, labelKey?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const displayValue = typeof value === 'string' ? value : value[labelKey];
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+      if (isOpen) {
+        document.addEventListener('mousedown', handleClickOutside);
+      }
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [isOpen]);
+
     return (
-      <div className="relative">
-        <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-1.5 text-on-surface/40 hover:text-primary-container transition-colors font-label text-[10px] uppercase tracking-widest px-2 py-1">
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-1.5 text-on-surface/40 hover:text-primary-container transition-colors font-label text-[10px] uppercase tracking-widest px-2 py-1"
+        >
           <span>{displayValue}</span>
           <span className="material-symbols-outlined text-[16px]">{isOpen ? 'expand_less' : 'expand_more'}</span>
         </button>
         {isOpen && (
           <div className="absolute bottom-full mb-2 left-0 min-w-[140px] bg-[#1a1c1a] border border-[#2d312d] rounded-lg shadow-xl py-2 z-50">
             {options.map(opt => (
-              <button key={typeof opt === 'string' ? opt : opt.id} onClick={() => { onChange(opt); setIsOpen(false); }} className={`w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${ (typeof opt === 'string' ? opt : opt.id) === (typeof value === 'string' ? value : value.id) ? 'text-primary-container' : 'text-on-surface/60' }`}>
+              <button
+                type="button"
+                key={typeof opt === 'string' ? opt : opt.id}
+                onClick={() => {
+                  onChange(opt);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${(typeof opt === 'string' ? opt : opt.id) === (typeof value === 'string' ? value : value.id) ? 'text-primary-container' : 'text-on-surface/60'}`}
+              >
                 {typeof opt === 'string' ? opt : opt[labelKey]}
               </button>
             ))}
