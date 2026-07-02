@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       email,
       password,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')}/auth/callback?next=/onboarding`,
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')}/auth/callback?next=/dashboard/chat`,
         },
     })
 
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       const { sendWelcomeEmail, sendVerificationEmail } = await import('@/lib/email/gmail')
       
       // Build the DIRECT link to our app — bypasses the Supabase internal verify page
-      const directLink = `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=signup&next=/onboarding`
+      const directLink = `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=signup&next=/dashboard/chat`
       
       // Send Welcome Email FIRST
       await sendWelcomeEmail(email, full_name)

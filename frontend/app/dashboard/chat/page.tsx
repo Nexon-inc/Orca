@@ -15,6 +15,7 @@ import {
   isDirectivePaste,
   LONG_PASTE_CHAR_THRESHOLD,
 } from '@/lib/chat/pasteConfig';
+import { parseExecutiveFromPrompt, AGENT_MAPPING } from '@/lib/chat/agentMapping';
 
 export default function ChatPage() {
   return (
@@ -262,12 +263,15 @@ function ChatContent() {
 
     if (!tempId) {
       try {
+        const targetRole = parseExecutiveFromPrompt(messageText);
+        const agentDetails = AGENT_MAPPING[targetRole] || AGENT_MAPPING.CEO;
+
         const res = await fetch('/api/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            agent_name: pinnedAgent || 'Atlas',
-            department_key: pinnedAgent?.toLowerCase() || 'ceo'
+            agent_name: agentDetails.name,
+            department_key: agentDetails.department_key
           })
         });
         const data = await res.json();
@@ -352,7 +356,7 @@ function ChatContent() {
           <DashboardHeader floating={true} activeDirectives={activeDirectives} />
           <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
             <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase animate-in fade-in zoom-in duration-700">{greeting} {userName}.</h1>
-            <p className="text-[10px] font-mono text-on-surface/20 uppercase tracking-[0.4em] mt-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">Choose an executive to begin operation</p>
+            <p className="text-[10px] font-mono text-on-surface/20 uppercase tracking-[0.4em] mt-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">Type an instruction or mention an executive (@cmo, /cto, etc.) to begin operation</p>
           </div>
         </div>
 
@@ -361,15 +365,6 @@ function ChatContent() {
           className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30`}
         >
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
-            <div className="flex justify-center gap-2 mb-1">
-              {EXECUTIVE_PILLS.map(exec => (
-                <button key={exec.key} onClick={() => setPinnedAgent(pinnedAgent === exec.role ? null : exec.role)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
-                >
-                  <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> {exec.role}
-                </button>
-              ))}
-            </div>
             {pastedDocContent && (
               <LongContentBanner
                 wordCount={countWords(pastedDocContent)}

@@ -21,6 +21,7 @@ import {
   isDirectivePaste,
   LONG_PASTE_CHAR_THRESHOLD,
 } from '@/lib/chat/pasteConfig';
+import { parseExecutiveFromPrompt, AGENT_MAPPING } from '@/lib/chat/agentMapping';
 
 
 const DEPT_MAP: Record<string, { emoji: string; color: string; label: string; name: string }> = {
@@ -188,92 +189,50 @@ function ChatContent() {
   const [selectionTooltip, setSelectionTooltip] = useState<{ x: number, y: number, text: string } | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isTasksPaused, setIsTasksPaused] = useState(false);
-  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      icon: '🏛️',
-      title: 'Competitor sweep — Relevance AI',
-      status: 'RUNNING',
-      progress: 66,
-      elapsed: 134,
-      dept: 'INTEL',
-      description: 'Scanning competitors websites, scraping pricing data, and analyzing capability sheets for Relevance AI.',
-      input: 'Company URL: relevance.ai',
-      output: 'Scraped 4 pages, identified pricing models ($19/mo Starter, $199/mo Business). Core feature: agentic workspace builder.'
-    },
-    {
-      id: 2,
-      icon: '🎙️',
-      title: 'LinkedIn post draft — Q2 angle',
-      status: 'RUNNING',
-      progress: 20,
-      elapsed: 48,
-      dept: 'MARKETING',
-      description: 'Drafting LinkedIn update detailing new platform integrations and API enhancements targeting founders.',
-      input: 'Theme: SaaS speed, Integration: Supabase + Google Drive',
-      output: 'Draft outline completed. Refining hooks for solo founders.'
-    },
-    {
-      id: 3,
-      icon: '💰',
-      title: 'Prospect enrichment — 30 leads',
-      status: 'QUEUED',
-      progress: 0,
-      eta: 'in 4h',
-      dept: 'SALES',
-      description: 'Enriching prospect list with contact details, title, and target company profiles.',
-      input: 'Lead criteria: Solo SaaS founders, $10k-$50k MRR',
-      output: 'Pending task queue initialization.'
-    },
-    {
-      id: 4,
-      icon: '🛟',
-      title: 'NPS survey — March cohort',
-      status: 'COMPLETE',
-      progress: 100,
-      dept: 'CS',
-      description: 'Distributing annual customer net promoter score survey to all March platform signups.',
-      input: 'Cohort: March 2026, Channel: In-App',
-      output: 'Survey completed. NPS Score: +64. Response rate: 42%.'
-    },
-    {
-      id: 5,
-      icon: '👻',
-      title: 'PR review — feature/auth-refactor',
-      status: 'RUNNING',
-      progress: 50,
-      elapsed: 302,
-      dept: 'TECH',
-      description: 'Static analysis and security audit of the authentication system refactor branch.',
-      input: 'Branch: feature/auth-refactor, PR: #284',
-      output: 'Linting passed. Analyzing crypto key rotations.'
-    },
-    {
-      id: 6,
-      icon: '🏛️',
-      title: 'Market signal scan — AI agent space',
-      status: 'QUEUED',
-      progress: 0,
-      eta: 'in 1h',
-      dept: 'INTEL',
-      description: 'Periodic scan of tech blogs, Reddit feeds, and news outlets for competitive shifts in AI agents.',
-      input: 'Query: "AI agents dashboard" OR "autonomous startup"',
-      output: 'Waiting for scheduler window.'
-    },
-    {
-      id: 7,
-      icon: '🎙️',
-      title: 'SEO article — AI agents for founders',
-      status: 'FAILED',
-      progress: 100,
-      error: 'Gemini API limit exceeded. Error code 429.',
-      dept: 'MARKETING',
-      description: 'Drafting high-volume SEO article optimized for the keyword "AI agent systems for founders".',
-      input: 'Keyword: "AI agent for founders", Length: 1500 words',
-      output: 'Compilation failed at step 2 due to API quota block.'
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const tasks = activeCoordinations.map(c => {
+    const toAgentName = c.to_agent?.name || 'Agent';
+    const fromAgentName = c.from_agent?.name || 'Agent';
+    const role = c.to_agent?.acronym || 'EXEC';
+    
+    let icon = '🏦';
+    if (toAgentName === 'Aria') icon = '🎙️';
+    else if (toAgentName === 'Rex') icon = '💰';
+    else if (toAgentName === 'Purity') icon = '🛟';
+    else if (toAgentName === 'Roman') icon = '🏛️';
+    else if (toAgentName === 'Ghost') icon = '👻';
+
+    let status = 'RUNNING';
+    let progress = 40;
+    if (c.status === 'complete') {
+      status = 'COMPLETE';
+      progress = 100;
+    } else if (c.status === 'rejected') {
+      status = 'FAILED';
+      progress = 100;
+    } else if (c.status === 'approved') {
+      status = 'COMPLETE';
+      progress = 100;
+    } else if (c.status === 'pending') {
+      status = 'RUNNING';
+      progress = 10;
     }
-  ]);
+
+    const elapsed = Math.max(0, Math.floor((Date.now() - new Date(c.created_at).getTime()) / 1000));
+
+    return {
+      id: c.id,
+      icon,
+      title: c.description,
+      status,
+      progress,
+      elapsed,
+      dept: role,
+      description: `Coordination handoff from ${fromAgentName} to ${toAgentName}. Type: ${c.type}.`,
+      input: c.context ? JSON.stringify(c.context, null, 2) : 'No payload.',
+      output: c.chain_summary || (c.status === 'complete' ? 'Execution finished.' : 'Awaiting worker output...')
+    };
+  });
   const [sidebarWidth, setSidebarWidth] = useState(600);
   const isResizing = useRef(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -481,51 +440,11 @@ function ChatContent() {
     };
   }, []);
 
-  // 2. Background Task progress/timer simulation update
-  useEffect(() => {
-    if (isTasksPaused) return;
-    const interval = setInterval(() => {
-      setTasks(prev => 
-        prev.map(t => {
-          if (t.status === 'RUNNING') {
-            const nextProgress = Math.min(t.progress + Math.floor(Math.random() * 2), 99);
-            return {
-              ...t,
-              elapsed: t.elapsed + 1,
-              progress: nextProgress
-            };
-          }
-          return t;
-        })
-      );
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isTasksPaused]);
-
   const applyHighlightColor = (text: string, color: 'green' | 'yellow' | 'red') => {
     if (!manualHighlights.some(h => h.text.toLowerCase() === text.toLowerCase())) {
       setManualHighlights(prev => [...prev, { text, color }]);
       toast.success(`Highlighted selection in ${color === 'green' ? 'Action' : color === 'yellow' ? 'Insight' : 'Risk'}`);
     }
-  };
-
-  const handleRetryTask = (taskId: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    toast.success('Retrying task...');
-    setTasks(prev => 
-      prev.map(t => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            status: 'RUNNING',
-            progress: 10,
-            elapsed: 0,
-            error: undefined
-          };
-        }
-        return t;
-      })
-    );
   };
 
   const getProgressBarText = (status: string, progress: number) => {
@@ -739,6 +658,12 @@ function ChatContent() {
           body: JSON.stringify({ title: titleSlug }),
         }).catch(() => {});
       }
+
+      const targetRole = parseExecutiveFromPrompt(initMsg);
+      if (targetRole) {
+        setPinnedAgent(targetRole);
+      }
+
       append(
         { role: 'user', content: initMsg },
         {
@@ -778,6 +703,12 @@ function ChatContent() {
     }
 
     setInput('');
+
+    // Dynamically set pinned agent if prompt contains a mention
+    const targetRole = parseExecutiveFromPrompt(messageText);
+    if (targetRole) {
+      setPinnedAgent(targetRole);
+    }
 
     if (isFirstMessage.current) {
       const titleSlug = messageText.split(/\s+/).slice(0, 6).join(' ');
@@ -1648,70 +1579,74 @@ function ChatContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      {tasks.map(task => {
-                        const isExpanded = expandedTaskId === task.id;
-                        const progressBar = getProgressBarText(task.status, task.progress);
-                        const progressText = task.status === 'RUNNING' ? `[RUNNING ${progressBar}]` :
-                                             task.status === 'QUEUED' ? `[QUEUED  ${progressBar}]` :
-                                             task.status === 'COMPLETE' ? `[COMPLETE${progressBar}]` :
-                                             `[FAILED  ${progressBar}]`;
-                        
-                        const statusColor = task.status === 'RUNNING' ? 'text-[#50ffa0] animate-pulse font-semibold' :
-                                            task.status === 'COMPLETE' ? 'text-[#50ffa0]' :
-                                            task.status === 'FAILED' ? 'text-[#ff4f4f]' :
-                                            'text-on-surface/30';
-                                            
-                        const timeText = task.status === 'RUNNING' ? formatElapsedTime(task.elapsed) :
-                                         task.status === 'QUEUED' ? task.eta :
-                                         task.status === 'COMPLETE' ? 'Done' :
-                                         'Error';
+                      {tasks.length === 0 ? (
+                        <div className="py-8 text-center border border-dashed border-outline-variant/10 rounded-xl">
+                          <p className="text-[10px] font-mono text-on-surface/30 uppercase tracking-widest">No active background tasks.</p>
+                          <p className="text-[9px] font-mono text-on-surface/20 uppercase tracking-widest mt-1">Instruct your AI team to trigger autonomous workflows.</p>
+                        </div>
+                      ) : (
+                        tasks.map(task => {
+                          const isExpanded = expandedTaskId === task.id;
+                          const progressBar = getProgressBarText(task.status, task.progress);
+                          const progressText = task.status === 'RUNNING' ? `[RUNNING ${progressBar}]` :
+                                               task.status === 'COMPLETE' ? `[COMPLETE${progressBar}]` :
+                                               `[FAILED  ${progressBar}]`;
+                          
+                          const statusColor = task.status === 'RUNNING' ? 'text-[#50ffa0] animate-pulse font-semibold' :
+                                              task.status === 'COMPLETE' ? 'text-[#50ffa0]' :
+                                              'text-[#ff4f4f]';
+                                              
+                          const timeText = task.status === 'RUNNING' ? formatElapsedTime(task.elapsed) :
+                                           task.status === 'COMPLETE' ? 'Done' :
+                                           'Error';
 
-                        return (
-                          <div 
-                            key={task.id}
-                            onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                            className="bg-[#111a11] border border-outline-variant/5 rounded-xl hover:border-outline-variant/15 transition-all select-none p-3.5 cursor-pointer"
-                          >
-                            <div className="flex items-center justify-between text-[10px] font-mono tracking-tighter">
-                              <div className="flex items-center gap-2.5 truncate max-w-[50%]">
-                                <span className="text-xs shrink-0">{task.icon}</span>
-                                <span className="text-white truncate">{task.title}</span>
+                          return (
+                            <div 
+                              key={task.id}
+                              onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                              className="bg-[#111a11] border border-outline-variant/5 rounded-xl hover:border-outline-variant/15 transition-all select-none p-3.5 cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between text-[10px] font-mono tracking-tighter">
+                                <div className="flex items-center gap-2.5 truncate max-w-[50%]">
+                                  <span className="text-xs shrink-0">{task.icon}</span>
+                                  <span className="text-white truncate">{task.title}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <span className={statusColor}>{progressText}</span>
+                                  <span className="text-white/50 w-14 text-right">{timeText}</span>
+                                  {task.status === 'FAILED' && (
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); toast.success('Retrying background task execution...'); }}
+                                      className="p-1 rounded bg-[#ff4f4f]/10 border border-[#ff4f4f]/20 text-[#ff4f4f] hover:bg-[#ff4f4f]/20 hover:text-white transition-all text-[8px] font-bold"
+                                      title="Retry Task"
+                                    >
+                                      ↺
+                                    </button>
+                                  )}
+                                  <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 text-[8px]">
+                                    {task.dept}
+                                  </span>
+                                </div>
                               </div>
                               
-                              <div className="flex items-center gap-4 shrink-0">
-                                <span className={statusColor}>{progressText}</span>
-                                <span className="text-white/50 w-14 text-right">{timeText}</span>
-                                {task.status === 'FAILED' && (
-                                  <button 
-                                    onClick={(e) => handleRetryTask(task.id, e)}
-                                    className="p-1 rounded bg-[#ff4f4f]/10 border border-[#ff4f4f]/20 text-[#ff4f4f] hover:bg-[#ff4f4f]/20 hover:text-white transition-all text-[8px] font-bold"
-                                    title="Retry Task"
-                                  >
-                                    ↺
-                                  </button>
-                                )}
-                                <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 text-[8px]">
-                                  {task.dept}
-                                </span>
-                              </div>
+                              {/* Expandable details */}
+                              {isExpanded && (
+                                <div className="mt-3 pt-3 border-t border-white/5 space-y-2 text-[9px] font-mono text-on-surface/60 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-150">
+                                  <p><span className="text-white font-bold uppercase mr-1">[Desc]:</span> {task.description}</p>
+                                  <p><span className="text-[#50ffa0] font-bold uppercase mr-1">[Input]:</span> {task.input}</p>
+                                  <p><span className="text-[#f5a623] font-bold uppercase mr-1">[Output]:</span> {task.output}</p>
+                                  {task.status === 'FAILED' && (
+                                    <p className="text-[#ff4f4f] bg-[#ff4f4f]/5 border border-[#ff4f4f]/10 px-2 py-1 rounded">
+                                      <span className="font-bold uppercase mr-1">[Error]:</span> {task.error}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            
-                            {/* Expandable details */}
-                            {isExpanded && (
-                              <div className="mt-3 pt-3 border-t border-white/5 space-y-2 text-[9px] font-mono text-on-surface/60 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-150">
-                                <p><span className="text-white font-bold uppercase mr-1">[Desc]:</span> {task.description}</p>
-                                <p><span className="text-[#50ffa0] font-bold uppercase mr-1">[Input]:</span> {task.input}</p>
-                                <p><span className="text-[#f5a623] font-bold uppercase mr-1">[Output]:</span> {task.output}</p>
-                                {task.status === 'FAILED' && (
-                                  <p className="text-[#ff4f4f] bg-[#ff4f4f]/5 border border-[#ff4f4f]/10 px-2 py-1 rounded">
-                                    <span className="font-bold uppercase mr-1">[Error]:</span> {task.error}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                     
                     <div className="flex items-center justify-between text-[8px] font-mono text-on-surface/40 uppercase tracking-widest pt-1 px-1">
@@ -1756,101 +1691,6 @@ function ChatContent() {
           className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30`}
         >
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
-            <div className="flex justify-center gap-2 mb-1">
-              {EXECUTIVE_PILLS.map(exec => {
-                const isWorking = activeCoordinations.some(c => c.to_agent?.name === exec.name);
-                const status = getExecutiveStatus(exec);
-                return (
-                  <div
-                    key={exec.key}
-                    className="relative"
-                    onMouseEnter={() => setHoveredExec(exec.key)}
-                    onMouseLeave={() => setHoveredExec(null)}
-                  >
-                    <button onClick={() => {
-                      const workingCoord = activeCoordinations.find(c => c.to_agent?.name === exec.name);
-                      if (workingCoord) {
-                        toast(`Jumping to ${exec.name}'s active thread...`);
-                        fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
-                          .then(res => res.json())
-                          .then(data => {
-                            if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
-                            else setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
-                          });
-                      } else {
-                        setPinnedAgent(pinnedAgent === exec.role ? null : exec.role);
-                      }
-                    }}
-                      className={`relative flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-sm transition-all duration-300 ${pinnedAgent === exec.role ? 'bg-primary-container/20 border border-primary-container text-primary-container shadow-[0_0_20px_rgba(0,195,103,0.2)] scale-105' : 'bg-surface-container-high border border-outline-variant/20 text-on-surface/30 hover:border-primary-container/40 hover:text-on-surface'}`}
-                    >
-                      {isWorking && (
-                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
-                        </span>
-                      )}
-                      <span className={`text-sm transition-all duration-500 ${pinnedAgent === exec.role ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0'}`}>{exec.icon}</span> {exec.role}
-                    </button>
-
-                    {/* Premium Hover Tooltip */}
-                    {hoveredExec === exec.key && (
-                      <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-64 bg-[#121412] border border-[#262a26] p-4 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] text-left normal-case pointer-events-auto z-[60] animate-in fade-in slide-in-from-bottom-2 duration-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-base">{exec.icon}</span>
-                            <div>
-                              <h4 className="text-[10px] font-bold text-white uppercase tracking-wider">{exec.name}</h4>
-                              <p className="text-[8px] font-mono text-on-surface/40 uppercase tracking-widest">{exec.role}</p>
-                            </div>
-                          </div>
-                          <span className={`px-1.5 py-0.5 rounded text-[7px] font-mono uppercase tracking-widest border flex items-center gap-1 ${
-                            status === 'Executing' ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' :
-                            status === 'Thinking' ? 'text-amber-300 border-amber-500/30 bg-amber-500/10' :
-                            'text-on-surface/40 border-outline-variant/10 bg-white/5'
-                          }`}>
-                            <span className={`w-1 h-1 rounded-full ${
-                              status === 'Executing' ? 'bg-emerald-400' :
-                              status === 'Thinking' ? 'bg-amber-300' : 'bg-on-surface/20'
-                            } ${status !== 'Idle' ? 'animate-pulse' : ''}`} />
-                            {status}
-                          </span>
-                        </div>
-                        
-                        <p className="text-[10px] text-on-surface/70 leading-relaxed mb-3">
-                          {status === 'Executing' ? (
-                            <span>
-                              Currently working: <span className="text-white font-medium">{activeCoordinations.find(c => c.to_agent?.name === exec.name)?.description}</span>
-                            </span>
-                          ) : status === 'Thinking' ? (
-                            <span>Analyzing directives and processing background pipeline...</span>
-                          ) : (
-                            <span>{EXECUTIVE_DESCRIPTIONS[exec.key]}</span>
-                          )}
-                        </p>
-
-                        {status === 'Executing' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toast(`Jumping to ${exec.name}'s active thread...`);
-                              fetch(`/api/agents/${exec.name}/latest-conversation?orgId=${org?.id}`)
-                                .then(res => res.json())
-                                .then(data => {
-                                  if (data.conversationId) router.push(`/dashboard/chat/${data.conversationId}`);
-                                  else toast.error('Could not locate coordination workspace');
-                                });
-                            }}
-                            className="w-full py-1.5 bg-primary-container/20 border border-primary-container/30 hover:bg-primary-container/30 rounded-lg text-[8px] font-black text-primary-container uppercase tracking-widest transition-all flex items-center justify-center gap-1"
-                          >
-                            Jump to Workspace <span className="material-symbols-outlined text-[10px]">open_in_new</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
             {pastedDocContent && (
               <LongContentBanner
                 wordCount={countWords(pastedDocContent)}

@@ -5,7 +5,7 @@ import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 
 export default function OrcaHubPage() {
-  const [activeTab, setActiveTab] = useState<'templates' | 'integrations'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'integrations' | 'tiers'>('templates');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [templates, setTemplates] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -133,6 +133,16 @@ export default function OrcaHubPage() {
             >
               INTEGRATIONS
             </button>
+            <button 
+              onClick={() => setActiveTab('tiers')}
+              className={`px-4 py-3 text-[11px] font-black font-label uppercase tracking-widest transition-colors -mb-px border-b-2 ${
+                activeTab === 'tiers'
+                  ? 'text-primary-container border-primary-container' 
+                  : 'text-on-surface/40 border-transparent hover:text-on-surface'
+              }`}
+            >
+              LICENSE TIERS (TREE)
+            </button>
           </div>
 
           {activeTab === 'templates' ? (
@@ -223,8 +233,8 @@ export default function OrcaHubPage() {
                 </div>
               )}
             </>
-          ) : (
-            <div className="flex flex-col gap-8 max-w-3xl">
+          ) : activeTab === 'integrations' ? (
+            <div className="flex flex-col gap-8 max-w-3xl animate-in fade-in duration-300">
               {integrations.map(group => (
                 <div key={group.role}>
                   <div className="flex items-center gap-3 mb-4">
@@ -268,6 +278,83 @@ export default function OrcaHubPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-500 w-full max-w-4xl mx-auto py-6">
+              <div className="bg-[#111311]/80 border border-outline-variant/10 rounded-2xl p-10 backdrop-blur-xl relative overflow-hidden flex flex-col items-center">
+                <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
+                
+                {/* ROOT NODE */}
+                <div className="relative z-10 flex flex-col items-center mb-10">
+                  <div className="px-6 py-3 rounded-lg bg-primary-container text-on-primary border border-primary-container/20 shadow-[0_0_24px_rgba(0,255,135,0.3)] font-syne font-black text-xs uppercase tracking-widest text-center">
+                    👑 ORCA CORE PLATFORM
+                  </div>
+                  <div className="w-0.5 h-10 bg-gradient-to-b from-primary-container to-outline-variant/35 mt-1" />
+                </div>
+                
+                {/* BRANCH HORIZONTAL BAR */}
+                <div className="relative z-10 w-full flex items-center justify-between px-16 mb-1">
+                  <div className="w-full h-0.5 bg-outline-variant/35 relative">
+                    <div className="absolute top-0 left-0 w-0.5 h-6 bg-outline-variant/35" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-outline-variant/35" />
+                    <div className="absolute top-0 right-0 w-0.5 h-6 bg-outline-variant/35" />
+                  </div>
+                </div>
+
+                {/* THREE COLUMNS TIER LEAF CONTAINER */}
+                <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 w-full mt-5">
+                  
+                  {/* FREE TIER LEAF */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-full bg-[#161816]/60 border border-white/5 rounded-xl p-5 hover:border-white/10 transition-all flex flex-col items-center text-center">
+                      <span className="text-[9px] font-black font-mono text-on-surface/40 uppercase tracking-widest mb-1.5">Free License</span>
+                      <h4 className="text-sm font-black font-headline text-white uppercase tracking-wider mb-3">$0 / month</h4>
+                      <div className="w-full h-px bg-white/5 my-2" />
+                      <ul className="space-y-2.5 text-left w-full text-[10px] font-mono text-on-surface/50 mt-2">
+                        <li className="flex items-center gap-2"><span className="text-white/20">▪</span> 2 Active Executive Agents</li>
+                        <li className="flex items-center gap-2"><span className="text-white/20">▪</span> 20 Autonomous Tasks/mo</li>
+                        <li className="flex items-center gap-2"><span className="text-white/20">▪</span> 1 Team Workspace slot</li>
+                        <li className="flex items-center gap-2"><span className="text-white/20">▪</span> Core business integrations</li>
+                        <li className="flex items-center gap-2"><span className="text-white/20">▪</span> Standard execution speed</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* BUILDER TIER LEAF (FOUNDING PROMO) */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-full bg-primary-container/5 border border-primary-container/40 rounded-xl p-5 hover:border-primary-container/60 transition-all flex flex-col items-center text-center shadow-[0_0_24px_rgba(0,195,103,0.05)]">
+                      <span className="text-[9px] font-black font-mono text-primary-container uppercase tracking-widest mb-1.5 flex items-center gap-1">⭐ Builder / Promo</span>
+                      <h4 className="text-sm font-black font-headline text-white uppercase tracking-wider mb-1">$29 / month</h4>
+                      <p className="text-[8px] font-black text-[#F59E0B] uppercase tracking-widest mb-3">🔥 founding promo: $19/mo</p>
+                      <div className="w-full h-px bg-primary-container/10 my-2" />
+                      <ul className="space-y-2.5 text-left w-full text-[10px] font-black font-mono text-primary-container/80 mt-2">
+                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> 4 Executive Agents</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> 200 Autonomous Tasks/mo</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> 1 Team Seat</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> Planning & Automate modes</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> LinkedIn, HubSpot, Notion API</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* PRO TIER LEAF */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-full bg-[#1b1c1b]/60 border border-purple-500/20 rounded-xl p-5 hover:border-purple-500/40 transition-all flex flex-col items-center text-center shadow-[0_0_24px_rgba(168,85,247,0.05)]">
+                      <span className="text-[9px] font-black font-mono text-purple-400 uppercase tracking-widest mb-1.5">Pro Enterprise</span>
+                      <h4 className="text-sm font-black font-headline text-white uppercase tracking-wider mb-3">$79 / month</h4>
+                      <div className="w-full h-px bg-purple-500/10 my-2" />
+                      <ul className="space-y-2.5 text-left w-full text-[10px] font-mono text-on-surface/50 mt-2">
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> All 6 C-Suite Agents</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> 1,000 Tasks / Month</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> 5 Team seats & assignments</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> Out-of-Office Autopilot</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> Bring Your Own LLM Keys</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
             </div>
           )}
 

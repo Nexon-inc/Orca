@@ -16,8 +16,8 @@ export async function GET(
       from_agent:agents!from_agent_id(id, name, acronym)
     `)
     .eq('org_id', orgId)
-    .eq('status', 'pending')
     .order('created_at', { ascending: false })
+    .limit(15)
 
   if (error) {
     console.error('[COORDINATION_API_ERR]', error)

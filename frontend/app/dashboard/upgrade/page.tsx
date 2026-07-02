@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+import { toast } from 'sonner';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 
 export default function UpgradePage() {
-  
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [loading, setLoading] = useState<string | null>(null);
+
   const featuresFree = [
     'Test your first executives',
     '3 Departments max',
@@ -21,6 +25,31 @@ export default function UpgradePage() {
     'PRIORITY_EXECUTION',
     'CUSTOM_LLM_INTEGRATION'
   ];
+
+  const handleCheckout = async (plan: string) => {
+    setLoading(plan);
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: plan.toLowerCase(),
+          billing_cycle: plan === 'founding' ? 'monthly' : billingCycle,
+        }),
+      });
+      const data = await res.json();
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        toast.error(data.error || 'Could not start checkout');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      toast.error('Checkout failed');
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-surface">
@@ -53,16 +82,27 @@ export default function UpgradePage() {
                 <span className="text-[#F59E0B] font-black ml-1">14 spots remaining.</span>
               </div>
             </div>
-            <button className="px-5 py-2.5 bg-[#F59E0B] text-[#2d1a00] text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 hover:scale-105 transition-all whitespace-nowrap shadow-[0_4px_16px_rgba(245,158,11,0.2)]">
-              CLAIM_SPOT →
+            <button 
+              type="button"
+              disabled={loading !== null}
+              onClick={() => handleCheckout('founding')}
+              className="px-5 py-2.5 bg-[#F59E0B] text-[#2d1a00] text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 hover:scale-105 transition-all whitespace-nowrap shadow-[0_4px_16px_rgba(245,158,11,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading === 'founding' ? 'PROVISIONING...' : 'CLAIM_SPOT →'}
             </button>
           </div>
 
           {/* Billing Toggle */}
           <div className="flex items-center gap-4 justify-center mb-12">
-            <span className="text-[10px] font-mono text-on-surface/40 uppercase tracking-widest font-black">MONTHLY</span>
+            <span className={`text-[10px] font-mono uppercase tracking-widest font-black transition-colors ${billingCycle === 'monthly' ? 'text-primary-container' : 'text-on-surface/40'}`}>MONTHLY</span>
             <div className="relative">
-              <input type="checkbox" id="billing-toggle" className="sr-only peer" defaultChecked />
+              <input 
+                type="checkbox" 
+                id="billing-toggle" 
+                className="sr-only peer" 
+                checked={billingCycle === 'annual'}
+                onChange={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+              />
               <label 
                 htmlFor="billing-toggle" 
                 className="w-11 h-6 bg-surface-container-high border border-primary-container/30 rounded-sm cursor-pointer peer-checked:bg-primary-container/20 block transition-all relative"
@@ -70,7 +110,7 @@ export default function UpgradePage() {
                 <span className="absolute top-1 left-1 w-4 h-4 bg-on-surface/30 peer-checked:bg-primary-container rounded-sm transition-all pointer-events-none peer-checked:translate-x-5"></span>
               </label>
             </div>
-            <span className="text-[10px] font-mono text-primary-container uppercase tracking-widest font-black">ANNUAL</span>
+            <span className={`text-[10px] font-mono uppercase tracking-widest font-black transition-colors ${billingCycle === 'annual' ? 'text-primary-container' : 'text-on-surface/40'}`}>ANNUAL</span>
             <span className="px-2 py-0.5 bg-primary-container/10 border border-primary-container/30 text-[8px] font-black text-primary-container uppercase tracking-widest rounded-sm inline-block shadow-[0_0_8px_rgba(0,255,135,0.2)]">
               SAVE 15%
             </span>
@@ -119,10 +159,13 @@ export default function UpgradePage() {
                 BUILDER
               </div>
               <div className="text-[40px] leading-none font-black font-headline text-on-surface mb-2 flex items-end gap-2">
-                $19 <span className="text-[14px] text-on-surface/40 mb-1 line-through">$49</span>
+                {billingCycle === 'annual' ? '$24' : '$29'} 
+                <span className="text-[14px] text-on-surface/40 mb-1 line-through">
+                  {billingCycle === 'annual' ? '$39' : '$49'}
+                </span>
               </div>
               <div className="text-[10px] font-mono text-primary-container/60 uppercase tracking-widest mb-6">
-                PER MONTH / BILLED ANNUALLY
+                PER MONTH / BILLED {billingCycle === 'annual' ? 'ANNUALLY' : 'MONTHLY'}
               </div>
               <div className="text-[11px] font-body text-on-surface mb-8 leading-relaxed max-w-[200px]">
                 Full autonomous operating system for founders and teams.
@@ -137,8 +180,13 @@ export default function UpgradePage() {
                 ))}
               </div>
               
-              <button className="w-full py-3 text-[10px] font-black uppercase tracking-widest bg-primary-container text-on-primary rounded-sm hover:opacity-90 transition-all mt-auto shadow-[0_0_20px_rgba(0,255,135,0.3)]">
-                UPGRADE_NOW
+              <button 
+                type="button"
+                disabled={loading !== null}
+                onClick={() => handleCheckout('builder')}
+                className="w-full py-3 text-[10px] font-black uppercase tracking-widest bg-primary-container text-on-primary rounded-sm hover:opacity-90 transition-all mt-auto shadow-[0_0_20px_rgba(0,255,135,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading === 'builder' ? 'PROVISIONING...' : 'UPGRADE_NOW'}
               </button>
             </div>
 

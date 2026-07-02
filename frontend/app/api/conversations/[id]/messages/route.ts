@@ -237,12 +237,48 @@ export async function POST(
     if (conversation.user_id !== user.id) return new NextResponse('Unauthorized (Wrong User)', { status: 403 })
 
     const orgId = conversation.org_id
-    const { data: agent } = await serviceClient
+    let { data: agent } = await serviceClient
       .from('agents')
       .select('*')
       .eq('id', conversation.agent_id)
       .single()
     if (!agent) return new NextResponse('No agent found for this conversation', { status: 400 })
+
+    // Parse the prompt content for mentions of other executives
+    const lowerContent = content.toLowerCase()
+    let targetAcronym: string | null = null
+
+    if (lowerContent.includes('@cmo') || lowerContent.includes('/cmo') || /\bcmo\b/.test(lowerContent) || lowerContent.includes('aria') || lowerContent.includes('marketing')) {
+      targetAcronym = 'CMO'
+    } else if (lowerContent.includes('@cso') || lowerContent.includes('/cso') || /\bcso\b/.test(lowerContent) || lowerContent.includes('rex') || lowerContent.includes('sales')) {
+      targetAcronym = 'CSO'
+    } else if (lowerContent.includes('@cco') || lowerContent.includes('/cco') || /\bcco\b/.test(lowerContent) || lowerContent.includes('purity') || lowerContent.includes('customer success') || /\bcs\b/.test(lowerContent)) {
+      targetAcronym = 'CCO'
+    } else if (lowerContent.includes('@cio') || lowerContent.includes('/cio') || /\bcio\b/.test(lowerContent) || lowerContent.includes('roman') || lowerContent.includes('intel') || lowerContent.includes('intelligence')) {
+      targetAcronym = 'CIO'
+    } else if (lowerContent.includes('@cto') || lowerContent.includes('/cto') || /\bcto\b/.test(lowerContent) || lowerContent.includes('ghost') || lowerContent.includes('tech') || lowerContent.includes('technology')) {
+      targetAcronym = 'CTO'
+    } else if (lowerContent.includes('@ceo') || lowerContent.includes('/ceo') || /\bceo\b/.test(lowerContent) || lowerContent.includes('atlas') || lowerContent.includes('ops') || lowerContent.includes('operations')) {
+      targetAcronym = 'CEO'
+    }
+
+    if (targetAcronym && agent.acronym !== targetAcronym) {
+      const { data: newAgent } = await serviceClient
+        .from('agents')
+        .select('*')
+        .eq('org_id', orgId)
+        .eq('acronym', targetAcronym)
+        .single()
+        
+      if (newAgent) {
+        await serviceClient
+          .from('conversations')
+          .update({ agent_id: newAgent.id })
+          .eq('id', conversationId)
+        
+        agent = newAgent
+      }
+    }
 
     const { allowed: rlAllowed } = await checkRateLimit(user.id, 'agent_briefs')
     if (!rlAllowed) return new NextResponse('Rate limit exceeded. Please wait a moment.', { status: 429 })

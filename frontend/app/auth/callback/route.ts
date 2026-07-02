@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = searchParams.get('next') ?? '/onboarding'
+  const next = searchParams.get('next') ?? '/dashboard/chat'
 
   const supabase = await createClient()
 
