@@ -1,10 +1,10 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServiceSupabaseClient } from '@/lib/supabase/server'
 
 export async function validateIntegrationToken(
   orgId: string,
   serviceKey: string
 ): Promise<{ valid: boolean; error?: string }> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceSupabaseClient()
 
   const { data: integration, error } = await supabase
     .from('integrations')

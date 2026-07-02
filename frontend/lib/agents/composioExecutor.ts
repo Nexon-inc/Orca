@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServiceSupabaseClient } from '@/lib/supabase/server'
 import { decryptToken } from '@/lib/security/encrypt'
 import { refreshOAuthToken } from '@/lib/integrations/tokenRefresh'
 import { validateIntegrationToken } from '@/lib/agents/validateToken'
@@ -9,7 +9,7 @@ export async function executeViaComposio(
   action: string,
   parameters: Record<string, unknown>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceSupabaseClient()
 
   // Retrieve encrypted token
   const { data: integration } = await supabase
