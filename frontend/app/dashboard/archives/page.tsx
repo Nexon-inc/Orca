@@ -45,26 +45,6 @@ export default function ArchivesPage() {
     fetchHistory();
   }, []);
 
-  // Fetch messages when a conversation is selected
-  const handleSelectConversation = async (conv: any) => {
-    setSelectedConv(conv);
-    setMessages([]);
-    setIsLoadingMessages(true);
-    try {
-      const res = await fetch(`/api/conversations/${conv.id}/messages`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.messages || []);
-      } else {
-        toast.error('Failed to load session details');
-      }
-    } catch (err) {
-      toast.error('Network failure loading session details');
-    } finally {
-      setIsLoadingMessages(false);
-    }
-  };
-
   const getExecDetails = (conv: any) => {
     const agentData = Array.isArray(conv.agents) ? conv.agents[0] : conv.agents;
     if (agentData) {
@@ -279,195 +259,86 @@ export default function ArchivesPage() {
       <DashboardSidebar active="archives" />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 flex flex-row min-h-screen relative grid-bg overflow-hidden">
+      <main className="flex-1 ml-64 flex flex-col min-h-screen relative grid-bg overflow-hidden">
+        <DashboardHeader />
         
-        {/* Left Pane: History List */}
-        <div className="flex-1 flex flex-col h-full border-r border-outline-variant/10">
-          <DashboardHeader />
-          
-          <div className="flex-1 overflow-y-auto p-8 lg:p-12 no-scrollbar space-y-8">
-            {/* Title & Description */}
-            <div>
-              <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase flex items-center gap-3">
-                ARCHIVES
-                <span className="text-[10px] font-mono border border-outline-variant/20 px-2 py-0.5 rounded text-on-surface/30 tracking-[0.2em] font-normal uppercase">
-                  History
-                </span>
-              </h1>
-              <p className="font-body text-xs text-on-secondary-container mt-2 max-w-xl">
-                Access your organization's entire operational pipeline. Review past executive handoffs, briefs, code blueprints, and deliverables.
-              </p>
-            </div>
+        <div className="flex-1 overflow-y-auto p-8 lg:p-12 no-scrollbar space-y-8 max-w-4xl mx-auto w-full">
+          {/* Title & Description */}
+          <div>
+            <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase flex items-center gap-3">
+              ARCHIVES
+              <span className="text-[10px] font-mono border border-outline-variant/20 px-2 py-0.5 rounded text-on-surface/30 tracking-[0.2em] font-normal uppercase">
+                History
+              </span>
+            </h1>
+            <p className="font-body text-xs text-on-secondary-container mt-2 max-w-xl">
+              Access your organization's entire operational pipeline. Review past executive handoffs, briefs, code blueprints, and deliverables.
+            </p>
+          </div>
 
-            {/* Search Input */}
-            <div className="border-b border-outline-variant/30 pb-2.5 focus-within:border-primary-container/50 transition-colors flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-on-surface/30">search</span>
-              <input 
-                className="w-full bg-transparent text-xs font-body text-on-surface placeholder:text-on-surface/20 border-none outline-none focus:ring-0" 
-                placeholder="SEARCH_HISTORICAL_SESSIONS..." 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+          {/* Search Input */}
+          <div className="border-b border-outline-variant/30 pb-2.5 focus-within:border-primary-container/50 transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-on-surface/30">search</span>
+            <input 
+              className="w-full bg-transparent text-xs font-body text-on-surface placeholder:text-on-surface/20 border-none outline-none focus:ring-0" 
+              placeholder="SEARCH_HISTORICAL_SESSIONS..." 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-            {/* Session List */}
-            <div className="flex flex-col gap-2">
-              {isLoadingList ? (
-                <div className="py-12 flex flex-col items-center gap-3 text-[10px] font-mono text-primary-container/40 uppercase tracking-widest animate-pulse">
-                  <div className="w-6 h-6 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
-                  Accessing operational records...
-                </div>
-              ) : filteredConversations.length > 0 ? (
-                filteredConversations.map(conv => {
-                  const exec = getExecDetails(conv);
-                  const isSelected = selectedConv?.id === conv.id;
-                  const title = conv.title || `SESSION_${conv.id.split('-')[0].toUpperCase()}`;
-                  
-                  return (
-                    <div 
-                      key={conv.id} 
-                      onClick={() => handleSelectConversation(conv)}
-                      className={`flex items-center gap-4 px-5 py-4 border rounded-xl cursor-pointer transition-all duration-300 group ${
-                        isSelected 
-                          ? 'bg-primary-container/5 border-primary-container shadow-[0_4px_20px_rgba(0,195,103,0.06)]' 
-                          : 'bg-surface-container-high/40 border-outline-variant/10 hover:border-primary-container/30 hover:bg-surface-container-high'
-                      }`}
-                    >
-                      {/* Executive Avatar */}
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base border transition-all shadow-inner ${
-                        isSelected 
-                          ? 'bg-primary-container/10 border-primary-container text-primary-container' 
-                          : 'bg-surface-container-highest border-outline-variant/15 text-on-surface/50 group-hover:text-primary-container'
-                      }`}>
-                        {exec.icon}
-                      </div>
-                      
-                      {/* Session Title & Metadata */}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-black font-mono text-on-surface uppercase tracking-wider group-hover:text-primary-container transition-colors truncate">
-                          {title}
-                        </div>
-                        <div className="text-[9px] font-mono text-on-surface/30 uppercase mt-1 flex items-center gap-1.5">
-                          <span className="font-semibold text-primary-container/60">{exec.role} ({exec.name})</span>
-                          <span className="w-1 h-1 rounded-full bg-on-surface/10" />
-                          <span>{formatDate(conv.updated_at || conv.created_at)}</span>
-                          <span className="w-1 h-1 rounded-full bg-on-surface/10" />
-                          <span className="font-mono text-[8px] opacity-75">{conv.id.substring(0, 8)}</span>
-                        </div>
-                      </div>
-                      
-                      {/* Directional Indicator */}
-                      <span className={`material-symbols-outlined text-[16px] transition-all ${
-                        isSelected 
-                          ? 'text-primary-container translate-x-1' 
-                          : 'text-on-surface/20 group-hover:text-primary-container/60 group-hover:translate-x-1'
-                      }`}>
-                        arrow_forward
-                      </span>
+          {/* Session List */}
+          <div className="flex flex-col gap-2 pb-24">
+            {isLoadingList ? (
+              <div className="py-12 flex flex-col items-center gap-3 text-[10px] font-mono text-primary-container/40 uppercase tracking-widest animate-pulse">
+                <div className="w-6 h-6 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
+                Accessing operational records...
+              </div>
+            ) : filteredConversations.length > 0 ? (
+              filteredConversations.map(conv => {
+                const exec = getExecDetails(conv);
+                const title = conv.title || `SESSION_${conv.id.split('-')[0].toUpperCase()}`;
+                
+                return (
+                  <div 
+                    key={conv.id} 
+                    onClick={() => router.push(`/dashboard/chat/${conv.id}`)}
+                    className="flex items-center gap-4 px-5 py-4 border rounded-xl cursor-pointer transition-all duration-300 group bg-surface-container-high/40 border-outline-variant/10 hover:border-primary-container/30 hover:bg-surface-container-high"
+                  >
+                    {/* Executive Avatar */}
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base border transition-all shadow-inner bg-surface-container-highest border-outline-variant/15 text-on-surface/50 group-hover:text-primary-container">
+                      {exec.icon}
                     </div>
-                  );
-                })
-              ) : (
-                <div className="py-16 text-center text-[10px] font-mono text-on-surface/20 uppercase tracking-[0.25em] border border-dashed border-outline-variant/10 rounded-2xl">
-                  No matching sessions archived
-                </div>
-              )}
-            </div>
+                    
+                    {/* Session Title & Metadata */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-black font-mono text-on-surface uppercase tracking-wider group-hover:text-primary-container transition-colors truncate">
+                        {title}
+                      </div>
+                      <div className="text-[9px] font-mono text-on-surface/30 uppercase mt-1 flex items-center gap-1.5">
+                        <span className="font-semibold text-primary-container/60">{exec.role} ({exec.name})</span>
+                        <span className="w-1 h-1 rounded-full bg-on-surface/10" />
+                        <span>{formatDate(conv.updated_at || conv.created_at)}</span>
+                        <span className="w-1 h-1 rounded-full bg-on-surface/10" />
+                        <span className="font-mono text-[8px] opacity-75">{conv.id.substring(0, 8)}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Directional Indicator */}
+                    <span className="material-symbols-outlined text-[16px] transition-all text-on-surface/20 group-hover:text-primary-container/60 group-hover:translate-x-1">
+                      arrow_forward
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-16 text-center text-[10px] font-mono text-on-surface/20 uppercase tracking-[0.25em] border border-dashed border-outline-variant/10 rounded-2xl">
+                No matching sessions archived
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Right Pane: Session Detail & Message History */}
-        <div className="w-[500px] xl:w-[600px] flex flex-col h-full bg-[#0a0c0a] relative selection:bg-[#00c3672d]">
-          {selectedConv ? (
-            <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
-              
-              {/* Detail Header */}
-              <div className="p-6 border-b border-outline-variant/10 bg-[#0e110e] flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-black text-primary-container uppercase tracking-widest font-mono">
-                      {getExecDetails(selectedConv).role} OFFICE
-                    </span>
-                    <span className="text-[8px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-on-surface/40 uppercase font-mono tracking-wider">
-                      {selectedConv.department_key}
-                    </span>
-                  </div>
-                  <h2 className="text-sm font-black text-white font-headline mt-1.5 uppercase truncate max-w-[340px]">
-                    {selectedConv.title || `SESSION_${selectedConv.id.split('-')[0].toUpperCase()}`}
-                  </h2>
-                </div>
-                
-                {/* Resume Chat Button */}
-                <button 
-                  onClick={() => router.push(`/dashboard/chat/${selectedConv.id}`)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-primary-container text-on-primary rounded-lg text-[9px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(0,195,103,0.15)] hover:scale-[1.03] active:scale-[0.97] transition-all"
-                >
-                  <span className="material-symbols-outlined text-xs">forum</span> Resume
-                </button>
-              </div>
-
-              {/* Message Inspector Body */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
-                {isLoadingMessages ? (
-                  <div className="h-full flex flex-col items-center justify-center gap-3 text-[10px] font-mono text-primary-container/40 uppercase tracking-widest animate-pulse">
-                    <div className="w-5 h-5 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
-                    Fetching system transcript...
-                  </div>
-                ) : messages.length > 0 ? (
-                  messages.map((msg, i) => {
-                    const isUser = msg.sender_type === 'user';
-                    
-                    return (
-                      <div key={msg.id || i} className={`flex gap-3.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
-                        {/* Agent Avatar */}
-                        {!isUser && (
-                          <div className="w-7 h-7 rounded-lg bg-surface-container-highest border border-outline-variant/10 flex items-center justify-center text-sm shadow-inner mt-1">
-                            {getExecDetails(selectedConv).icon}
-                          </div>
-                        )}
-                        
-                        {/* Bubble */}
-                        <div className={`max-w-[82%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-                          {/* Label */}
-                          <span className="text-[8px] font-mono text-on-surface/30 uppercase mb-1 px-1 tracking-wider">
-                            {isUser ? 'USER DIRECTIVE' : `${getExecDetails(selectedConv).name} (CTO)`} · {formatDate(msg.created_at)}
-                          </span>
-                          
-                          <div className={`p-4 rounded-xl border text-xs font-body leading-relaxed shadow-sm ${
-                            isUser 
-                              ? 'bg-surface-container-high border-outline-variant/10 text-on-surface' 
-                              : 'bg-surface-container-highest border-outline-variant/5 text-on-surface/90 font-light'
-                          }`}>
-                            {isUser ? msg.content : renderMessageContent(msg.content)}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="h-full flex items-center justify-center text-[10px] font-mono text-on-surface/20 uppercase tracking-wider italic">
-                    Transcript empty or uninitialized
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            /* Empty State */
-            <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-[#070907] border-l border-outline-variant/5">
-              <span className="material-symbols-outlined text-4xl text-on-surface/15 animate-bounce [animation-duration:3s]">
-                folder_open
-              </span>
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-on-surface/30 mt-4">
-                SELECT_A_SESSION_TO_VIEW_HISTORY
-              </h3>
-              <p className="text-[9px] font-mono text-on-surface/20 uppercase max-w-[260px] leading-relaxed mt-2">
-                Click any session in the records log to inspect executive directives, briefs, and deliverables.
-              </p>
-            </div>
-          )}
-        </div>
-
       </main>
     </div>
   );

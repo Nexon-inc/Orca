@@ -8,6 +8,7 @@ export default function OrcaHubPage() {
   const [activeTab, setActiveTab] = useState<'templates' | 'integrations' | 'tiers'>('templates');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [templates, setTemplates] = useState<any[]>([]);
+  const [connectedServices, setConnectedServices] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProvisioning, setIsProvisioning] = useState<string | null>(null);
   const [activeDrawerTemplate, setActiveDrawerTemplate] = useState<any | null>(null);
@@ -15,18 +16,25 @@ export default function OrcaHubPage() {
   const filters = ['ALL', 'saas_startup', 'marketing_agency', 'ecommerce', 'dev_agency', 'intelligence'];
 
   useEffect(() => {
-    const fetchTemplates = async () => {
+    const fetchData = async () => {
       try {
         const res = await fetch('/api/orcahub');
         const data = await res.json();
         setTemplates(data.templates || []);
+        
+        const intRes = await fetch('/api/integrations');
+        const intData = await intRes.json();
+        if (intData.integrations) {
+          const names = intData.integrations.map((i: any) => i.service_name);
+          setConnectedServices(names);
+        }
       } catch (err) {
-        console.error('Failed to fetch hub templates:', err);
+        console.error('Failed to fetch hub data:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchTemplates();
+    fetchData();
   }, []);
 
   const handleInstall = async (tpl: any) => {
@@ -141,7 +149,7 @@ export default function OrcaHubPage() {
                   : 'text-on-surface/40 border-transparent hover:text-on-surface'
               }`}
             >
-              LICENSE TIERS (TREE)
+              ORCA OS
             </button>
           </div>
 
@@ -245,36 +253,47 @@ export default function OrcaHubPage() {
                   </div>
                   
                   <div className="flex flex-col gap-2">
-                    {group.items.map(item => (
-                      <div key={item.id} className="flex items-center justify-between px-5 py-4 bg-surface-container rounded-lg border border-outline-variant/10 hover:bg-surface-bright transition-all">
-                        
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container border border-outline-variant/20 group-hover:border-primary-container/30 transition-all">
-                            <span className="material-symbols-outlined text-lg">{group.icon}</span>
-                          </div>
-                          <div>
-                            <div className="text-[11px] font-black font-label text-on-surface uppercase tracking-wide">
-                              {item.name}
+                    {group.items.map(item => {
+                      const isConnected = connectedServices.includes(item.id) || 
+                                          (item.id === 'google_workspace' && (
+                                            connectedServices.includes('google_drive') || 
+                                            connectedServices.includes('googledocs') || 
+                                            connectedServices.includes('googlesheets') || 
+                                            connectedServices.includes('google_calendar')
+                                          )) ||
+                                          (item.id === 'twitter' && connectedServices.includes('twitter'));
+
+                      return (
+                        <div key={item.id} className="flex items-center justify-between px-5 py-4 bg-surface-container rounded-lg border border-outline-variant/10 hover:bg-surface-bright transition-all">
+                          
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container border border-outline-variant/20 group-hover:border-primary-container/30 transition-all">
+                              <span className="material-symbols-outlined text-lg">{group.icon}</span>
                             </div>
-                            <div className="text-[9px] font-mono text-on-surface/30 uppercase mt-0.5 tracking-tight">
-                              {item.type}
+                            <div>
+                              <div className="text-[11px] font-black font-label text-on-surface uppercase tracking-wide">
+                                {item.name}
+                              </div>
+                              <div className="text-[9px] font-mono text-on-surface/30 uppercase mt-0.5 tracking-tight">
+                                {item.type}
+                              </div>
                             </div>
                           </div>
+                          
+                          {isConnected ? (
+                            <div className="px-3 py-1 bg-primary-container/10 rounded-full flex items-center gap-2">
+                               <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse shadow-[0_0_8px_rgba(0,195,103,0.5)]"></span>
+                               <span className="text-[8px] font-black font-mono text-primary-container uppercase tracking-widest">CONNECTED</span>
+                            </div>
+                          ) : (
+                            <a href="/dashboard/integrations" className="px-4 py-2 text-[9px] font-black font-mono text-on-surface/30 border border-outline-variant/20 rounded-sm uppercase tracking-widest hover:text-primary-container hover:border-primary-container/40 transition-all">
+                              CONNECT_API →
+                            </a>
+                          )}
+                          
                         </div>
-                        
-                        {item.connected ? (
-                          <div className="px-3 py-1 bg-primary-container/10 rounded-full flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse shadow-[0_0_8px_rgba(0,195,103,0.5)]"></span>
-                             <span className="text-[8px] font-black font-mono text-primary-container uppercase tracking-widest">CONNECTED</span>
-                          </div>
-                        ) : (
-                          <button className="px-4 py-2 text-[9px] font-black font-mono text-on-surface/30 border border-outline-variant/20 rounded-sm uppercase tracking-widest hover:text-primary-container hover:border-primary-container/40 transition-all">
-                            CONNECT_API →
-                          </button>
-                        )}
-                        
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -287,7 +306,7 @@ export default function OrcaHubPage() {
                 {/* ROOT NODE */}
                 <div className="relative z-10 flex flex-col items-center mb-10">
                   <div className="px-6 py-3 rounded-lg bg-primary-container text-on-primary border border-primary-container/20 shadow-[0_0_24px_rgba(0,255,135,0.3)] font-syne font-black text-xs uppercase tracking-widest text-center">
-                    👑 ORCA CORE PLATFORM
+                    👑 ORCA OS
                   </div>
                   <div className="w-0.5 h-10 bg-gradient-to-b from-primary-container to-outline-variant/35 mt-1" />
                 </div>
@@ -311,10 +330,10 @@ export default function OrcaHubPage() {
                       <h4 className="text-sm font-black font-headline text-white uppercase tracking-wider mb-3">$0 / month</h4>
                       <div className="w-full h-px bg-white/5 my-2" />
                       <ul className="space-y-2.5 text-left w-full text-[10px] font-mono text-on-surface/50 mt-2">
-                        <li className="flex items-center gap-2"><span className="text-white/20">▪</span> 2 Active Executive Agents</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/60">👤</span> Atlas (CEO/Ops)</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/60">👤</span> Aria (CMO/Marketing)</li>
                         <li className="flex items-center gap-2"><span className="text-white/20">▪</span> 20 Autonomous Tasks/mo</li>
                         <li className="flex items-center gap-2"><span className="text-white/20">▪</span> 1 Team Workspace slot</li>
-                        <li className="flex items-center gap-2"><span className="text-white/20">▪</span> Core business integrations</li>
                         <li className="flex items-center gap-2"><span className="text-white/20">▪</span> Standard execution speed</li>
                       </ul>
                     </div>
@@ -328,11 +347,12 @@ export default function OrcaHubPage() {
                       <p className="text-[8px] font-black text-[#F59E0B] uppercase tracking-widest mb-3">🔥 founding promo: $19/mo</p>
                       <div className="w-full h-px bg-primary-container/10 my-2" />
                       <ul className="space-y-2.5 text-left w-full text-[10px] font-black font-mono text-primary-container/80 mt-2">
-                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> 4 Executive Agents</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/80">👤</span> Atlas (CEO/Ops)</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/80">👤</span> Aria (CMO/Marketing)</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/80">👤</span> Rex (CSO/Sales)</li>
+                        <li className="flex items-center gap-2"><span className="text-primary-container/80">👤</span> Ghost (CTO/Technology)</li>
                         <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> 200 Autonomous Tasks/mo</li>
                         <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> 1 Team Seat</li>
-                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> Planning & Automate modes</li>
-                        <li className="flex items-center gap-2"><span className="text-primary-container/55">▪</span> LinkedIn, HubSpot, Notion API</li>
                       </ul>
                     </div>
                   </div>
@@ -344,11 +364,14 @@ export default function OrcaHubPage() {
                       <h4 className="text-sm font-black font-headline text-white uppercase tracking-wider mb-3">$79 / month</h4>
                       <div className="w-full h-px bg-purple-500/10 my-2" />
                       <ul className="space-y-2.5 text-left w-full text-[10px] font-mono text-on-surface/50 mt-2">
-                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> All 6 C-Suite Agents</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400">👤</span> Atlas (CEO/Ops)</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400">👤</span> Aria (CMO/Marketing)</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400">👤</span> Rex (CSO/Sales)</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400">👤</span> Ghost (CTO/Technology)</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400">👤</span> Purity (CCO/Customer)</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400">👤</span> Roman (CIO/Intel)</li>
                         <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> 1,000 Tasks / Month</li>
-                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> 5 Team seats & assignments</li>
-                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> Out-of-Office Autopilot</li>
-                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> Bring Your Own LLM Keys</li>
+                        <li className="flex items-center gap-2 text-purple-300/80"><span className="text-purple-400/40">▪</span> 5 Team seats</li>
                       </ul>
                     </div>
                   </div>

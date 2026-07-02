@@ -37,10 +37,10 @@ export async function parseAndExecuteActions(
       } else {
         throw new Error(result.error)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to execute action ${tool}:`, error)
       cleanResponse = cleanResponse.replace(fullTag,
-        `\n> ⚠️ **Action failed:** ${tool} — check your integrations\n`
+        `\n> ⚠️ **Action failed:** ${tool} — ${error.message || 'check your integrations'}\n`
       )
     }
   }

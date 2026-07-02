@@ -72,7 +72,6 @@ export default function DashboardSidebar({ active }: SidebarProps) {
 
   const navItems = [
     { id: 'chat', label: 'Chat', icon: 'terminal', href: '/dashboard/chat' },
-    { id: 'projects', label: 'Projects', icon: 'layers', href: '/dashboard/projects' },
     { id: 'orcahub', label: 'Orca Hub', icon: 'hub', href: '/dashboard/orcahub' },
     { id: 'team', label: 'Teams', icon: 'groups', href: '/dashboard/team' },
     { id: 'archives', label: 'Archives', icon: 'database', href: '/dashboard/archives' }

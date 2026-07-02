@@ -49,13 +49,16 @@ export async function POST(
   const templateData = template.template_data;
 
   // 1. Install Departments & Executives
-  for (const deptKey of templateData.departments) {
+  for (const deptItem of templateData.departments) {
+    const deptKey = typeof deptItem === 'string' ? deptItem : deptItem.key;
+    const agentMode = typeof deptItem === 'string' ? 'approve_first' : (deptItem.agent_mode || 'approve_first');
+    
     const { data: dept } = await supabase.from('departments').upsert({
       org_id: orgId,
       key: deptKey,
       name: deptKey.charAt(0).toUpperCase() + deptKey.slice(1),
       icon: getDeptIcon(deptKey),
-      agent_mode: 'approve_first',
+      agent_mode: agentMode,
     }, { onConflict: 'org_id,key' }).select('id').single();
 
     if (dept) {
@@ -70,6 +73,44 @@ export async function POST(
           role_description: exec.description,
           status: 'idle'
         }, { onConflict: 'department_id,name' });
+      }
+    }
+  }
+
+  // 1.5 Install Day 1 Briefs
+  if (templateData.day1_briefs && Array.isArray(templateData.day1_briefs)) {
+    const nameToAcronym: Record<string, string> = {
+      'Aria': 'CMO',
+      'Rex': 'CSO',
+      'Purity': 'CCO',
+      'Roman': 'CIO',
+      'Ghost': 'CTO',
+      'Atlas': 'CEO'
+    };
+
+    for (const briefItem of templateData.day1_briefs) {
+      const acronym = nameToAcronym[briefItem.agent_name] || 'CEO';
+      
+      const { data: existingBrief } = await supabase
+        .from('briefings')
+        .select('id')
+        .eq('org_id', orgId)
+        .eq('title', `Day 1: ${briefItem.agent_name}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingBrief) {
+        await supabase.from('briefings').insert({
+          org_id: orgId,
+          agent_name: briefItem.agent_name,
+          agent_acronym: acronym,
+          title: `Day 1: ${briefItem.agent_name}`,
+          content: `# Day 1 Brief: ${briefItem.agent_name}\n\n${briefItem.brief}\n\n**Rationale:** ${briefItem.rationale}`,
+          document_type: 'executive_brief',
+          word_count: briefItem.brief.split(/\s+/).length + 20,
+          tasks: [],
+          highlights: []
+        });
       }
     }
   }

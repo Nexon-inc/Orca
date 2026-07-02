@@ -11,16 +11,25 @@ export async function executeViaComposio(
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
   const supabase = createServiceSupabaseClient()
 
-  // Retrieve encrypted token
-  const { data: integration } = await supabase
+  // Retrieve integrations for this org
+  const { data: allIntegrations } = await supabase
     .from('integrations')
-    .select('access_token_encrypted, metadata')
+    .select('access_token_encrypted, metadata, service_name')
     .eq('org_id', orgId)
-    .eq('service_name', serviceKey)
-    .single()
+
+  // Find the best match:
+  // 1. Exact match with serviceKey (e.g. 'twitter')
+  // 2. Exact match with the full action/tool name (e.g. 'gmail_outreach')
+  // 3. Starts with serviceKey (e.g. 'google' -> 'google_drive')
+  // 4. Starts with full action name
+  const integration = allIntegrations?.find(i => i.service_name === serviceKey) ||
+                      allIntegrations?.find(i => i.service_name === action) ||
+                      allIntegrations?.find(i => i.service_name.startsWith(serviceKey)) ||
+                      allIntegrations?.find(i => i.service_name.includes(serviceKey)) ||
+                      allIntegrations?.find(i => action.startsWith(i.service_name));
 
   if (!integration?.access_token_encrypted) {
-    return { success: false, error: `${serviceKey} is not connected.` }
+    return { success: false, error: `Integration for '${serviceKey}' is not connected in your command center.` }
   }
 
   const tokenValue = decryptToken(integration.access_token_encrypted)
