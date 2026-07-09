@@ -42,6 +42,34 @@ const getBriefTitle = (msg: any) => {
   return content.split('\n')[0].replace(/[*#_`>]/g, '').trim() || 'Sprint Brief';
 };
 
+const cleanBriefingContent = (raw: string): string => {
+  if (!raw) return '';
+  let clean = raw
+    .split('RESULT:')[0]
+    .split('DIRECTIVE_DOCUMENT:')[0]
+    .trim();
+
+  const patterns = [
+    /\*\*TASK HISTORY & LOGS\*\*/gi,
+    /### TASK HISTORY & LOGS/gi,
+    /## TASK HISTORY & LOGS/gi,
+    /# TASK HISTORY & LOGS/gi,
+    /TASK HISTORY & LOGS/gi
+  ];
+
+  for (const pattern of patterns) {
+    const match = clean.match(pattern);
+    if (match && match.index !== undefined) {
+      let startIndex = clean.lastIndexOf('\n', match.index);
+      if (startIndex === -1) startIndex = 0;
+      clean = clean.substring(0, startIndex).trim();
+      break;
+    }
+  }
+  
+  return clean;
+};
+
 const HandoffCard = ({ to, reason, context }: { to: string; reason: string; context: string }) => {
   const dept = DEPT_MAP[to] || { emoji: '🏦', color: '#10b981', label: 'EXEC', name: to.toUpperCase() };
   return (
@@ -800,10 +828,7 @@ function ChatContent() {
   const renderBriefingMarkdown = (rawContent: string) => {
     if (!rawContent) return null;
 
-    const cleanContent = rawContent
-      .split('RESULT:')[0]
-      .split('DIRECTIVE_DOCUMENT:')[0]
-      .trim();
+    const cleanContent = cleanBriefingContent(rawContent);
 
     const lines = cleanContent.split('\n');
     const blocks: { type: string; content: string; lang?: string }[] = [];
@@ -1093,10 +1118,7 @@ function ChatContent() {
     if (!activeDirectives) return;
     setIsExportingToDrive(true);
     try {
-      const rawText = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
-        .split('RESULT:')[0]
-        .split('DIRECTIVE_DOCUMENT:')[0]
-        .trim();
+      const rawText = cleanBriefingContent(activeDirectives.metadata?.directive_raw || activeDirectives.content);
       const title = `ORCA Briefing - ${activeDirectives.id.substring(0, 8)}`;
 
       const res = await fetch('/api/integrations/google/drive', {
@@ -1127,6 +1149,43 @@ function ChatContent() {
       setIsExportingToDrive(false);
     }
   };
+
+  const handleDownloadMarkdown = (msg: any) => {
+    if (!msg) return;
+    const rawText = cleanBriefingContent(msg.metadata?.directive_raw || msg.content);
+    const blob = new Blob([rawText], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `briefing-${msg.id.substring(0, 8)}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Markdown downloaded');
+  };
+
+  const handleDownloadPlainText = (msg: any) => {
+    if (!msg) return;
+    const rawText = cleanBriefingContent(msg.metadata?.directive_raw || msg.content);
+    const stripped = rawText
+      .replace(/#{1,6}\s/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/`/g, '')
+      .replace(/>/g, '');
+    const blob = new Blob([stripped], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `briefing-${msg.id.substring(0, 8)}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Plain text downloaded');
+  };
+
   return (
     <div className="flex h-screen bg-surface">
       <DashboardSidebar active="chat" />
@@ -1555,8 +1614,7 @@ function ChatContent() {
                 <div className="relative h-full flex flex-col">
                   <button
                     onClick={() => {
-                      const rawText = (activeDirectives.metadata?.directive_raw || activeDirectives.content)
-                        .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim();
+                      const rawText = cleanBriefingContent(activeDirectives.metadata?.directive_raw || activeDirectives.content);
                       navigator.clipboard.writeText(rawText);
                       toast.success('Raw markdown copied to clipboard');
                     }}
@@ -1566,8 +1624,7 @@ function ChatContent() {
                   </button>
                   <textarea
                     readOnly
-                    value={(activeDirectives.metadata?.directive_raw || activeDirectives.content)
-                      .split('RESULT:')[0].split('DIRECTIVE_DOCUMENT:')[0].trim()}
+                    value={cleanBriefingContent(activeDirectives.metadata?.directive_raw || activeDirectives.content)}
                     className="w-full h-[85%] bg-[#080908] border border-[#50ffa0]/10 rounded-2xl p-6 font-mono text-[10px] text-on-surface/70 leading-relaxed outline-none resize-none"
                   />
                 </div>
