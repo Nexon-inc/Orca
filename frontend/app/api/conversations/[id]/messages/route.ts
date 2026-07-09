@@ -1,8 +1,6 @@
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 import { streamText, StreamData, generateText } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { createGroq } from '@ai-sdk/groq'
 import { createOpenAI } from '@ai-sdk/openai'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
@@ -14,6 +12,7 @@ import { checkRateLimit } from '@/lib/security/rateLimit'
 import { parseAndExecuteActions } from '@/lib/agents/parseActions'
 import { getAgentMemory } from '@/lib/agents/memory'
 import { inngest } from '@/lib/inngest/client'
+import { streamTextWithFallback, generateTextWithFallback } from '@/lib/ai/modelRouter'
 
 /** After a Gemini quota/rate-limit hit, skip probe and use Groq briefly */
 const GEMINI_BLOCK_MS = 15 * 1000
@@ -73,7 +72,9 @@ async function saveAgentMessage(
   agent: { id: string; name: string; acronym: string },
   userId: string,
   rawText: string,
-  toolResults: unknown
+  toolResults: unknown,
+  provider?: string,
+  model?: string
 ) {
   const resultMatch = rawText.match(/(?:RESULT|RESULTS|OUTCOME):\s*([\s\S]+?)(?:\n|$)/i)
   const resultItems = resultMatch ? resultMatch[1].split('|').map((s: string) => s.trim()) : []
@@ -99,6 +100,8 @@ async function saveAgentMessage(
         directive_raw: directiveRaw,
         tool_results: toolResults,
         agent_name: agent.name,
+        provider,
+        model,
       },
     })
     .select('id')
@@ -429,6 +432,9 @@ export async function POST(
       `[ORCA] stream: agent=${agent.name} mode=${chatMode} msgs=${messages.length} tools=${Object.keys(tools || {}).length}`
     )
 
+    let selectedProvider = 'nvidia'
+    let selectedModel = ''
+
     const isOrcaIntel = !modelOverride || modelOverride === 'orca-intel'
     const geminiKey = process.env.GEMINI_API_KEY
     const groqKey = process.env.GROQ_API_KEY
@@ -458,7 +464,9 @@ export async function POST(
                 modelOverride,
                 geminiKey,
                 groqKey,
-                streamOptions
+                streamOptions,
+                agent.name,
+                orgId
               )
               rawText = fallback.text
             } catch (fallbackErr: unknown) {
@@ -475,7 +483,9 @@ export async function POST(
             agent,
             user.id,
             rawText,
-            toolResults
+            toolResults,
+            selectedProvider,
+            selectedModel
           )
 
           streamData.append({
@@ -484,6 +494,8 @@ export async function POST(
             result_items: saved.resultItems,
             agent_name: agent.name,
             assistant_content: saved.finalContent,
+            provider: selectedProvider,
+            model: selectedModel,
           })
         } catch (finishErr: unknown) {
           console.error('[ORCA] onFinish error:', finishErr)
@@ -504,7 +516,18 @@ export async function POST(
       modelOverride,
       geminiKey,
       groqKey,
-      streamOptions
+      streamOptions,
+      agent.name,
+      orgId,
+      (selected) => {
+        selectedProvider = selected.provider
+        selectedModel = selected.model
+        streamData.append({
+          type: 'metadata',
+          provider: selected.provider,
+          model: selected.model,
+        })
+      }
     )
 
     return result.toDataStreamResponse({
@@ -532,54 +555,31 @@ async function buildStreamResult(
   modelOverride: string | undefined,
   geminiKey: string | undefined,
   groqKey: string | undefined,
-  streamOptions: Parameters<typeof streamText>[0]
+  streamOptions: Parameters<typeof streamText>[0],
+  agentName: string,
+  orgId: string,
+  onSelected: (selected: { provider: string; model: string }) => void
 ) {
   if (!isOrcaIntel) {
     const openrouter = createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey: process.env.OPENROUTER_API_KEY,
     })
-    return streamText({ ...streamOptions, model: openrouter(modelOverride!) })
+    const modelId = modelOverride || 'openai/gpt-4o'
+    onSelected({ provider: 'openrouter', model: modelId })
+    return streamText({ ...streamOptions, model: openrouter(modelId) })
   }
 
-  const groq = groqKey ? createGroq({ apiKey: groqKey }) : null
-  const google = geminiKey ? createGoogleGenerativeAI({ apiKey: geminiKey }) : null
-  const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash']
-
-  // streamText() returns immediately — quota errors happen mid-stream, so probe Gemini first
-  const geminiCacheValid = Date.now() >= geminiBlockedUntil
-  if (google && geminiCacheValid) {
-    for (const modelId of geminiModels) {
-      const model = google(modelId)
-      if (await probeModel(model, `Gemini ${modelId}`)) {
-        console.log(`[ORCA] Using Gemini ${modelId}`)
-        return streamText({
-          ...streamOptions,
-          model,
-          maxRetries: 0,
-          experimental_toolCallStreaming: true,
-          onStepFinish: (step) => {
-            console.log(`[ORCA_STEP] ${step.stepType} tokens=${step.usage?.completionTokens ?? 0}`)
-          },
-        })
-      }
-    }
-    geminiBlockedUntil = Date.now() + GEMINI_BLOCK_MS
-  } else if (!geminiCacheValid) {
-    console.log('[ORCA] Gemini skipped (recent quota/rate-limit failure)')
-  }
-
-  if (groq) {
-    console.log('[ORCA] Falling back to Groq (llama-3.3-70b-versatile)')
-    return streamText({
-      ...streamOptions,
-      model: groq('llama-3.3-70b-versatile'),
-    })
-  }
-
-  throw new Error(
-    'Gemini quota exceeded and Groq fallback unavailable. Set GROQ_API_KEY in your environment.'
-  )
+  return streamTextWithFallback({
+    orgId,
+    agentName,
+    systemPrompt: streamOptions.system!,
+    messages: streamOptions.messages,
+    tools: streamOptions.tools,
+    maxSteps: streamOptions.maxSteps!,
+    onFinish: streamOptions.onFinish!,
+    onSelected,
+  })
 }
 
 async function buildFallbackResult(
@@ -587,7 +587,9 @@ async function buildFallbackResult(
   modelOverride: string | undefined,
   geminiKey: string | undefined,
   groqKey: string | undefined,
-  options: Parameters<typeof generateText>[0]
+  options: Parameters<typeof generateText>[0],
+  agentName: string,
+  orgId: string
 ) {
   const { onFinish: _omit, onStepFinish: _omit2, ...textOptions } = options as Record<string, unknown>
 
@@ -599,40 +601,12 @@ async function buildFallbackResult(
     return generateText({ ...textOptions, model: openrouter(modelOverride!), maxSteps: 1, tools: undefined } as Parameters<typeof generateText>[0])
   }
 
-  const groq = groqKey ? createGroq({ apiKey: groqKey }) : null
-  const google = geminiKey ? createGoogleGenerativeAI({ apiKey: geminiKey }) : null
-
-  if (google && Date.now() >= geminiBlockedUntil) {
-    for (const modelId of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
-      try {
-        return await generateText({
-          ...textOptions,
-          model: google(modelId),
-          maxSteps: 1,
-          tools: undefined,
-          maxRetries: 0,
-        } as Parameters<typeof generateText>[0])
-      } catch (err: unknown) {
-        console.warn(`[ORCA] Fallback Gemini ${modelId} failed:`, err instanceof Error ? err.message : err)
-        if (isQuotaOrRateLimitError(err)) {
-          geminiBlockedUntil = Date.now() + GEMINI_BLOCK_MS
-          break
-        }
-      }
-    }
-  }
-
-  if (groq) {
-    console.log('[ORCA] Fallback using Groq')
-    return generateText({
-      ...textOptions,
-      model: groq('llama-3.3-70b-versatile'),
-      maxSteps: 1,
-      tools: undefined,
-    } as Parameters<typeof generateText>[0])
-  }
-
-  throw new Error('No AI provider available. Set GROQ_API_KEY for failover when Gemini is rate-limited.')
+  return generateTextWithFallback({
+    orgId,
+    agentName,
+    systemPrompt: textOptions.system as string || textOptions.prompt as string || '',
+    messages: textOptions.messages as any[],
+  })
 }
 
 export async function GET(

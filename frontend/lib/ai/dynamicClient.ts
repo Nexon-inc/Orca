@@ -66,6 +66,14 @@ export function buildDynamicLLMClient(config: ResolvedLLM): HybridAIClient {
         ...commonOptions,
       }));
 
+    case 'nvidia':
+      return asHybrid(new ChatOpenAI({
+        modelName: config.model,
+        apiKey: config.apiKey,
+        configuration: { baseURL: 'https://integrate.api.nvidia.com/v1' },
+        ...commonOptions,
+      }));
+
     case 'anthropic':
       return asHybrid(new ChatAnthropic({
         modelName: config.model,

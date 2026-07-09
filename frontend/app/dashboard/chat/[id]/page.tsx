@@ -33,13 +33,6 @@ const DEPT_MAP: Record<string, { emoji: string; color: string; label: string; na
   Atlas: { emoji: '🗺️', color: '#10b981', label: 'CEO/OPS', name: 'ATLAS' },
 };
 
-const LOGS = [
-  { time: '09:14', icon: '🎙️', name: 'Aria', action: 'Published LinkedIn post #1', status: 'DONE' },
-  { time: '09:02', icon: '💰', name: 'Rex', action: 'Sent outreach to 15 prospects via Gmail', status: 'DONE' },
-  { time: '08:47', icon: '🏛️', name: 'Roman', action: 'Delivered competitor intel brief to Atlas', status: 'DONE' },
-  { time: '08:30', icon: '🗺️', name: 'Atlas', action: 'Sprint Day 1 briefing dispatched to founder', status: 'DONE' },
-  { time: '08:00', icon: '🏛️', name: 'Roman', action: 'Started competitor sweep — 6 targets', status: 'RUNNING' }
-];
 
 const getBriefTitle = (msg: any) => {
   if (!msg) return 'Sprint Brief';
@@ -230,9 +223,12 @@ function ChatContent() {
       dept: role,
       description: `Coordination handoff from ${fromAgentName} to ${toAgentName}. Type: ${c.type}.`,
       input: c.context ? JSON.stringify(c.context, null, 2) : 'No payload.',
-      output: c.chain_summary || (c.status === 'complete' ? 'Execution finished.' : 'Awaiting worker output...')
+      output: c.chain_summary || (c.status === 'complete' ? 'Execution finished.' : 'Awaiting worker output...'),
+      created_at: c.created_at
     };
   });
+  const runningTasks = tasks.filter(t => t.status === 'RUNNING');
+  const completedTasks = tasks.filter(t => t.status === 'COMPLETE' || t.status === 'FAILED');
   const [sidebarWidth, setSidebarWidth] = useState(600);
   const isResizing = useRef(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -381,6 +377,8 @@ function ChatContent() {
                 directive_raw: lastData.directive_raw,
                 result_items: lastData.result_items,
                 agent_name: lastData.agent_name,
+                provider: lastData.provider || newMessages[i].metadata?.provider,
+                model: lastData.model || newMessages[i].metadata?.model,
               };
 
               if (i === newMessages.length - 1 && lastData.directive_raw) {
@@ -593,6 +591,15 @@ function ChatContent() {
         const userData = await userRes.json();
         if (userData?.user) {
           setUser(userData.user);
+          
+          try {
+            const orgRes = await fetch('/api/org');
+            const orgData = await orgRes.json();
+            if (orgData?.member?.organizations) {
+              setOrg(orgData.member.organizations);
+            }
+          } catch (err) {}
+
           if (conversationId) {
             let historyLoaded = false;
             try {
@@ -1150,10 +1157,19 @@ function ChatContent() {
                         <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-lg shadow-inner grayscale">{msg.agent?.icon || EXECUTIVE_PILLS.find(p => p.role === pinnedAgent)?.icon || '🏦'}</div>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <span className="text-[10px] font-black font-headline text-primary-container uppercase tracking-[0.25em]">{msg.agent?.role || pinnedAgent || 'ATLAS'}</span>
                           <span className="w-1 h-1 rounded-full bg-on-surface/10" />
                           <span className="text-[9px] font-mono text-on-surface/40 uppercase tracking-widest">{msg.agent?.title || 'EXECUTIVE AGENT'}</span>
+                          {msg.metadata?.provider && (
+                            <>
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary-container/20 animate-pulse" />
+                              <span className="text-[8px] font-mono text-white/30 border border-white/5 bg-white/[0.02] px-2 py-0.5 rounded uppercase tracking-widest">
+                                ⬡ {msg.metadata.provider === 'nvidia' ? 'NIM' : msg.metadata.provider.toUpperCase()}
+                                {msg.metadata.model && ` · ${msg.metadata.model.split('/').pop()?.slice(0, 20)}`}
+                              </span>
+                            </>
+                          )}
                         </div>
 
                         {/* Tool Invocations UI */}
@@ -1566,7 +1582,7 @@ function ChatContent() {
                       <h3 className="text-[10px] font-black uppercase tracking-widest text-[#50ffa0] flex items-center gap-2">
                         BACKGROUND TASKS
                         <span className="flex items-center gap-1.5 text-[8px] font-mono text-white/50 tracking-wider font-normal lowercase">
-                          ● <span className="text-[#50ffa0] animate-pulse">{tasks.filter(t => t.status === 'RUNNING').length} running</span>
+                          ● <span className="text-[#50ffa0] animate-pulse">{runningTasks.length} running</span>
                         </span>
                       </h3>
                       <button 
@@ -1579,26 +1595,20 @@ function ChatContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      {tasks.length === 0 ? (
+                      {runningTasks.length === 0 ? (
                         <div className="py-8 text-center border border-dashed border-outline-variant/10 rounded-xl">
                           <p className="text-[10px] font-mono text-on-surface/30 uppercase tracking-widest">No active background tasks.</p>
                           <p className="text-[9px] font-mono text-on-surface/20 uppercase tracking-widest mt-1">Instruct your AI team to trigger autonomous workflows.</p>
                         </div>
                       ) : (
-                        tasks.map(task => {
+                        runningTasks.map(task => {
                           const isExpanded = expandedTaskId === task.id;
                           const progressBar = getProgressBarText(task.status, task.progress);
-                          const progressText = task.status === 'RUNNING' ? `[RUNNING ${progressBar}]` :
-                                               task.status === 'COMPLETE' ? `[COMPLETE${progressBar}]` :
-                                               `[FAILED  ${progressBar}]`;
+                          const progressText = `[RUNNING ${progressBar}]`;
                           
-                          const statusColor = task.status === 'RUNNING' ? 'text-[#50ffa0] animate-pulse font-semibold' :
-                                              task.status === 'COMPLETE' ? 'text-[#50ffa0]' :
-                                              'text-[#ff4f4f]';
+                          const statusColor = 'text-[#50ffa0] animate-pulse font-semibold';
                                               
-                          const timeText = task.status === 'RUNNING' ? formatElapsedTime(task.elapsed) :
-                                           task.status === 'COMPLETE' ? 'Done' :
-                                           'Error';
+                          const timeText = formatElapsedTime(task.elapsed);
 
                           return (
                             <div 
@@ -1615,15 +1625,6 @@ function ChatContent() {
                                 <div className="flex items-center gap-4 shrink-0">
                                   <span className={statusColor}>{progressText}</span>
                                   <span className="text-white/50 w-14 text-right">{timeText}</span>
-                                  {task.status === 'FAILED' && (
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); toast.success('Retrying background task execution...'); }}
-                                      className="p-1 rounded bg-[#ff4f4f]/10 border border-[#ff4f4f]/20 text-[#ff4f4f] hover:bg-[#ff4f4f]/20 hover:text-white transition-all text-[8px] font-bold"
-                                      title="Retry Task"
-                                    >
-                                      ↺
-                                    </button>
-                                  )}
                                   <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 text-[8px]">
                                     {task.dept}
                                   </span>
@@ -1636,11 +1637,6 @@ function ChatContent() {
                                   <p><span className="text-white font-bold uppercase mr-1">[Desc]:</span> {task.description}</p>
                                   <p><span className="text-[#50ffa0] font-bold uppercase mr-1">[Input]:</span> {task.input}</p>
                                   <p><span className="text-[#f5a623] font-bold uppercase mr-1">[Output]:</span> {task.output}</p>
-                                  {task.status === 'FAILED' && (
-                                    <p className="text-[#ff4f4f] bg-[#ff4f4f]/5 border border-[#ff4f4f]/10 px-2 py-1 rounded">
-                                      <span className="font-bold uppercase mr-1">[Error]:</span> {task.error}
-                                    </p>
-                                  )}
                                 </div>
                               )}
                             </div>
@@ -1664,19 +1660,27 @@ function ChatContent() {
                       TASK HISTORY & LOGS
                     </h3>
                     <div className="space-y-2 font-mono text-[9px] leading-relaxed bg-[#080c08] border border-outline-variant/5 rounded-xl p-3.5 max-h-[280px] overflow-y-auto no-scrollbar">
-                      {LOGS.map((log, idx) => (
-                        <div key={idx} className="flex items-center justify-between py-1 border-b border-white/5 last:border-b-0 last:pb-0">
-                          <div className="flex items-center gap-3 truncate max-w-[85%]">
-                            <span className="text-white/30 shrink-0">{log.time}</span>
-                            <span className="shrink-0">{log.icon}</span>
-                            <span className="text-white/50 shrink-0">{log.name}</span>
-                            <span className="text-on-surface/80 truncate">{log.action}</span>
-                          </div>
-                          <span className={`shrink-0 font-bold ${log.status === 'RUNNING' ? 'text-[#f5a623] animate-pulse' : 'text-[#50ffa0]'}`}>
-                            [{log.status}]
-                          </span>
-                        </div>
-                      ))}
+                      {completedTasks.length === 0 ? (
+                        <p className="text-on-surface/20 text-center py-4">No historical logs recorded yet.</p>
+                      ) : (
+                        completedTasks.map((task) => {
+                          const dateObj = new Date(task.created_at);
+                          const timeText = isNaN(dateObj.getTime()) ? '00:00' : `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+                          return (
+                            <div key={task.id} className="flex items-center justify-between py-1 border-b border-white/5 last:border-b-0 last:pb-0">
+                              <div className="flex items-center gap-3 truncate max-w-[85%]">
+                                <span className="text-white/30 shrink-0">{timeText}</span>
+                                <span className="shrink-0">{task.icon}</span>
+                                <span className="text-white/50 shrink-0">{task.dept}</span>
+                                <span className="text-on-surface/80 truncate">{task.title}</span>
+                              </div>
+                              <span className={`shrink-0 font-bold ${task.status === 'COMPLETE' ? 'text-[#50ffa0]' : 'text-[#ff4f4f]'}`}>
+                                [{task.status}]
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 

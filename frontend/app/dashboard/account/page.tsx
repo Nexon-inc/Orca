@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
+import { toast } from 'sonner';
 
 const tabs = [
   { id: 'profile', name: 'Profile' },
@@ -28,6 +29,15 @@ export default function AccountPage() {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [keysState, setKeysState] = useState<Record<string, string>>({
+    nvidia: '',
+    groq: '',
+    gemini: '',
+    openai: '',
+    anthropic: '',
+    deepseek: '',
+  });
+  const [savedKeys, setSavedKeys] = useState<Record<string, boolean>>({});
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -35,6 +45,21 @@ export default function AccountPage() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/');
+  };
+
+  const fetchLlmConfigs = () => {
+    fetch('/api/org/llm-config')
+      .then(r => r.json())
+      .then(d => {
+        if (d.configs) {
+          const loaded: Record<string, boolean> = {};
+          d.configs.forEach((c: any) => {
+            loaded[c.provider] = c.hasKey;
+          });
+          setSavedKeys(loaded);
+        }
+      })
+      .catch(err => console.error('Failed to load LLM configs:', err));
   };
 
   useEffect(() => {
@@ -52,7 +77,32 @@ export default function AccountPage() {
           setIdentity((prev: any) => ({ ...prev, ...d.identity }));
         }
       });
+
+    fetchLlmConfigs();
   }, []);
+
+  const handleSaveKey = async (provider: string) => {
+    const key = keysState[provider]?.trim();
+    if (!key) return;
+    try {
+      const res = await fetch('/api/org/llm-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, api_key: key }),
+      });
+      if (res.ok) {
+        toast.success(`${provider.toUpperCase()} credentials saved successfully!`);
+        setSavedKeys(prev => ({ ...prev, [provider]: true }));
+        setKeysState(prev => ({ ...prev, [provider]: '' }));
+        fetchLlmConfigs(); // reload
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Failed to save credentials.');
+      }
+    } catch (e) {
+      toast.error('Network error saving credentials.');
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -232,42 +282,48 @@ export default function AccountPage() {
                 )}
 
                 {activeTab === 'ai-models' && (
-                  <div className="space-y-12">
-                     <div className="p-10 rounded-[3rem] border border-green/20 bg-green/5 shadow-2xl">
-                        <h3 className="font-syne text-xl font-black text-white mb-4 uppercase tracking-tight">Default Engine</h3>
-                        <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mb-10">Select the primary intelligence provider for the executive team.</p>
+                  <div className="space-y-8">
+                     <div className="p-8 rounded-[2rem] border border-white/5 bg-surface/30">
+                        <h3 className="font-syne text-lg font-black text-white mb-2 uppercase tracking-tight">AI Command Engines</h3>
+                        <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mb-8">Supply credentials to unlock custom models and data isolation.</p>
                         
-                        <div className="grid md:grid-cols-2 gap-8 mb-10">
-                           <div className="space-y-4">
-                              <label className="text-[9px] font-black text-white/40 uppercase tracking-[0.3em]">AI Provider</label>
-                              <select className="w-full bg-surface border border-white/10 rounded-2xl p-4 text-white font-syne focus:border-green/50 outline-none text-xs">
-                                 <option>Anthropic (Claude 3.5 Sonnet)</option>
-                                 <option>OpenAI (GPT-4o)</option>
-                                 <option>DeepSeek (V3.1)</option>
-                                 <option>Mistral (Large 2)</option>
-                              </select>
-                           </div>
-                           <div className="space-y-4">
-                              <label className="text-[9px] font-black text-white/40 uppercase tracking-[0.3em]">Context Window</label>
-                              <select className="w-full bg-surface border border-white/10 rounded-2xl p-4 text-white font-syne focus:border-green/50 outline-none text-xs">
-                                 <option>Standard (128k)</option>
-                                 <option>Extended (200k)</option>
-                                 <option>Infinite (Orca-managed)</option>
-                              </select>
-                           </div>
-                        </div>
-
-                        <div className="p-6 rounded-2xl border border-white/5 bg-bg/50 flex items-center justify-between">
-                           <div className="flex items-center gap-4">
-                              <div className="text-2xl">🔑</div>
-                              <div>
-                                 <p className="text-white font-black text-[13px] uppercase tracking-tight">Private API Access</p>
-                                 <p className="text-[9px] text-white/20 uppercase tracking-widest font-black">Bring your own credentials for full data isolation</p>
-                              </div>
-                           </div>
-                           <div className="w-12 h-6 bg-white/5 rounded-full flex items-center px-1">
-                              <div className="w-4 h-4 rounded-full bg-white/20" />
-                           </div>
+                        <div className="flex flex-col gap-4">
+                           {[
+                             { id: 'nvidia', name: 'NVIDIA NIM (Primary)', placeholder: 'nvapi-...', desc: '136+ open models (Kimi K2, Llama 3.1 405B, Qwen3 Coder)' },
+                             { id: 'groq', name: 'Groq Cloud (Fallback 1)', placeholder: 'gsk_...', desc: 'Ultra-fast Llama 3.3 and Mixtral models' },
+                             { id: 'gemini', name: 'Google Gemini (Fallback 2)', placeholder: 'AIzaSy...', desc: 'Secondary fallback handling long-contexts and RAG' },
+                             { id: 'openai', name: 'OpenAI Developer', placeholder: 'sk-proj-...', desc: 'Custom overrides for GPT-4o and GPT-4o-mini' },
+                             { id: 'anthropic', name: 'Anthropic Claude', placeholder: 'sk-ant-...', desc: 'Writing and advanced analysis features' },
+                             { id: 'deepseek', name: 'DeepSeek API', placeholder: 'sk-...', desc: 'Cost-effective reasoning and deep logic' }
+                           ].map(provider => (
+                             <div key={provider.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-white/5 bg-[#121312]">
+                                <div className="max-w-md">
+                                   <div className="flex items-center gap-2">
+                                      <span className="font-black text-white text-[12px] uppercase tracking-wide">{provider.name}</span>
+                                      {savedKeys[provider.id] && (
+                                         <span className="text-[8px] bg-green/10 text-green border border-green/20 px-2 py-0.5 rounded font-mono uppercase tracking-widest font-black">Connected</span>
+                                      )}
+                                   </div>
+                                   <p className="text-[9px] text-white/20 uppercase tracking-widest font-black mt-1 leading-tight">{provider.desc}</p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                   <input
+                                      type="password"
+                                      placeholder={savedKeys[provider.id] ? "••••••••••••••••••••" : provider.placeholder}
+                                      value={keysState[provider.id] || ''}
+                                      onChange={(e) => setKeysState({ ...keysState, [provider.id]: e.target.value })}
+                                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/20 outline-none w-48 focus:border-green/45 transition-colors"
+                                   />
+                                   <button
+                                      onClick={() => handleSaveKey(provider.id)}
+                                      disabled={!keysState[provider.id]}
+                                      className="px-4 py-2.5 bg-green text-bg font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-[1.03] transition-all disabled:opacity-30 disabled:scale-100 shrink-0"
+                                   >
+                                      Connect
+                                   </button>
+                                </div>
+                             </div>
+                           ))}
                         </div>
                      </div>
                   </div>

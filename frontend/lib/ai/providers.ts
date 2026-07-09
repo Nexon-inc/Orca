@@ -131,6 +131,21 @@ export const LLM_PROVIDERS: LLMProvider[] = [
     supportsCustomKey: true,
     planRequired: 'pro',
   },
+  {
+    key: 'nvidia',
+    name: 'NVIDIA NIM',
+    models: [
+      { id: 'moonshotai/kimi-k2-instruct', name: 'Kimi K2 Instruct (NIM)', contextWindow: 128000, bestFor: 'Elite reasoning and planning' },
+      { id: 'mistralai/mistral-large-3-675b-instruct-2512', name: 'Mistral Large 3 (NIM)', contextWindow: 128000, bestFor: 'Creative copywriting' },
+      { id: 'meta/llama-3.1-405b-instruct', name: 'Llama 3.1 405B Instruct (NIM)', contextWindow: 128000, bestFor: 'Fast reasoning' },
+      { id: 'nvidia/llama-3.3-nemotron-super-49b-v1', name: 'Nemotron Super 49B (NIM)', contextWindow: 128000, bestFor: 'High precision response' },
+      { id: 'qwen/qwen3-coder-480b-a35b-instruct', name: 'Qwen3 Coder 480B (NIM)', contextWindow: 128000, bestFor: 'Deterministic code' },
+    ],
+    apiKeyEnv: 'NVIDIA_NIM_API_KEY',
+    baseUrl: 'https://integrate.api.nvidia.com/v1',
+    supportsCustomKey: true,
+    planRequired: 'pro',
+  },
 ];
 
 export function getProvider(key: string): LLMProvider | undefined {
