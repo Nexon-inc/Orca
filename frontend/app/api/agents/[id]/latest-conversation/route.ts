@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const agentNameOrAcronym = params.id
+  const { id: agentNameOrAcronym } = await params
   const { searchParams } = new URL(request.url)
   const orgId = searchParams.get('orgId')
 

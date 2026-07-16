@@ -16,11 +16,11 @@ export async function resolveLLMForAgent(
   agentId: string,
   departmentKey: string
 ): Promise<ResolvedLLM> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { get: (name) => cookieStore.get(name)?.value } }
+    { cookies: { get: (name: string) => cookieStore.get(name)?.value } }
   );
 
   // Fetch configs: agent > dept > org

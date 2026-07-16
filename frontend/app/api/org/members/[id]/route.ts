@@ -6,9 +6,9 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const memberId = params.id
+  const { id: memberId } = await params;
   const supabase = await createServerSupabaseClient()
 
   // 1. Get the current user

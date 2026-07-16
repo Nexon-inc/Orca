@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const orgId = params.id
+  const { id: orgId } = await params
   const supabase = createServiceSupabaseClient()
 
   const { data: coordinations, error } = await supabase

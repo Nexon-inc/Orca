@@ -6,9 +6,10 @@ import { AGENT_ROSTER } from '@/lib/agents';
 
 export async function POST(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const cookieStore = cookies();
+  const { slug } = await params;
+  const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -34,7 +35,7 @@ export async function POST(
   const { data: template } = await supabase
     .from('orcahub_templates')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single();
 
   if (!template) return NextResponse.json({ error: 'Template not found' }, { status: 404 });
@@ -127,7 +128,7 @@ export async function POST(
   // 2.5 Record Installation
   await supabase.from('orcahub_installs').upsert({
     org_id: orgId,
-    template_slug: params.slug
+    template_slug: slug
   }, { onConflict: 'org_id,template_slug' });
 
   // 3. System Notification
@@ -143,7 +144,7 @@ export async function POST(
     orgId,
     actorUserId: user.id,
     action: 'orcahub_template_installed',
-    metadata: { template_slug: params.slug, needs_onboarding: needsOnboarding }
+    metadata: { template_slug: slug, needs_onboarding: needsOnboarding }
   });
 
   return NextResponse.json({ 
