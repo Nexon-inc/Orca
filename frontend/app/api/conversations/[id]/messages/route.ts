@@ -532,8 +532,8 @@ export async function POST(
 
     return result.toDataStreamResponse({
       data: streamData,
-      getErrorMessage: (error) => {
-        const msg = error instanceof Error ? error.message : String(error)
+      getErrorMessage: (error: any) => {
+        const msg = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error))
         console.error('[ORCA_STREAM_ERR]', msg)
         return msg
       },
