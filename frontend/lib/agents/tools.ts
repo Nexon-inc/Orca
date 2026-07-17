@@ -1,5 +1,6 @@
 import { tool } from 'ai'
 import { z } from 'zod'
+import { executeViaComposio } from './composioExecutor'
 import { 
   webSearchSkill, 
   scrapePageSkill, 
@@ -66,6 +67,63 @@ function orgAnalyticsTool(orgId: string) {
         return { error: `Analytics fetch failed: ${err.message}` }
       }
     },
+  })
+}
+
+function googleEcosystemAdapter(
+  orgId: string,
+  service: 'drive' | 'docs' | 'sheets' | 'calendar' | 'gmail',
+  action: string,
+  desc: string
+) {
+  return tool({
+    description: desc,
+    parameters: z.record(z.any()),
+    execute: async (params) => {
+      try {
+        const eco = googleEcosystemSkill(orgId)
+        return await eco.execute({ service, action, payload: params })
+      } catch (err: any) {
+        return { error: `${service} action failed: ${err.message}` }
+      }
+    }
+  })
+}
+
+function slackPostSkill(orgId: string) {
+  return tool({
+    description: 'Post a message to a Slack channel.',
+    parameters: z.object({
+      channel: z.string().describe('Slack channel name or ID (e.g., "general", "C123456")'),
+      message: z.string().describe('Message content to post')
+    }),
+    execute: async (params) => {
+      try {
+        return await executeViaComposio(orgId, 'slack', 'slack_post', {
+          channel: params.channel,
+          text: params.message
+        })
+      } catch (err: any) {
+        return { error: `Slack post failed: ${err.message}` }
+      }
+    }
+  })
+}
+
+function notionCreatePageSkill(orgId: string) {
+  return tool({
+    description: 'Create a new page in Notion.',
+    parameters: z.object({
+      title: z.string().describe('Notion page title'),
+      content: z.string().describe('Notion page body content')
+    }),
+    execute: async (params) => {
+      try {
+        return await executeViaComposio(orgId, 'notion', 'notion_create_page', params)
+      } catch (err: any) {
+        return { error: `Notion page creation failed: ${err.message}` }
+      }
+    }
   })
 }
 
@@ -236,6 +294,82 @@ export function buildToolsForAgent(
       tools.github_create_pr = githubCreatePRSkill(orgId)
       tools.github_create_pull_request = githubCreatePRSkill(orgId)
     }
+  }
+
+  // Mount dynamic Google Workspace direct tools and their aliases globally
+  if (connectedServices.includes('googlesheets') || connectedServices.includes('google_sheets')) {
+    tools.google_sheets_update_sheet = googleEcosystemAdapter(orgId, 'sheets', 'update_sheet', 'Update rows/columns in Google Sheets.')
+    tools.google_sheets_update = tools.google_sheets_update_sheet
+    tools.google_sheets_create_row = tools.google_sheets_update_sheet
+    tools.google_sheets_append_row = tools.google_sheets_update_sheet
+  }
+  if (connectedServices.includes('googledocs') || connectedServices.includes('google_docs')) {
+    tools.google_docs_create_file = googleEcosystemAdapter(orgId, 'docs', 'create_file', 'Create new document in Google Docs.')
+    tools.google_docs_create_document = tools.google_docs_create_file
+    tools.google_docs_write_doc = tools.google_docs_create_file
+  }
+  if (connectedServices.includes('googlecalendar') || connectedServices.includes('google_calendar')) {
+    tools.google_calendar_schedule_event = googleEcosystemAdapter(orgId, 'calendar', 'schedule_event', 'Schedule a meeting event in Google Calendar.')
+    tools.google_calendar_create_event = tools.google_calendar_schedule_event
+    tools.google_calendar_add_event = tools.google_calendar_schedule_event
+  }
+  if (connectedServices.includes('googledrive') || connectedServices.includes('google_drive')) {
+    tools.google_drive_create_file = googleEcosystemAdapter(orgId, 'drive', 'create_file', 'Create or upload new files in Google Drive.')
+    tools.google_drive_upload_file = tools.google_drive_create_file
+  }
+  if (connectedServices.includes('gmail') || connectedServices.includes('gmail_outreach')) {
+    tools.google_gmail_send_email = googleEcosystemAdapter(orgId, 'gmail', 'send_email', 'Send outbound email alerts or marketing newsletters using Gmail.')
+    tools.google_gmail_send_mail = tools.google_gmail_send_email
+    tools.gmail_send_email = tools.google_gmail_send_email
+    tools.gmail_outreach = tools.google_gmail_send_email
+    tools.send_email = tools.google_gmail_send_email
+  }
+
+  // Mount dynamic Slack and Notion tools globally
+  if (connectedServices.includes('slack')) {
+    tools.slack_post = slackPostSkill(orgId)
+    tools.slack_message = tools.slack_post
+    tools.slack_chat_post_message = tools.slack_post
+  }
+  if (connectedServices.includes('notion')) {
+    tools.notion_create_page = notionCreatePageSkill(orgId)
+    tools.notion_post = tools.notion_create_page
+  }
+
+  // Mount dynamic HubSpot and GitHub tools globally
+  if (connectedServices.includes('hubspot')) {
+    tools.hubspot_create_deal = hubspotCreateDealSkill(orgId)
+    tools.hubspot_deal = tools.hubspot_create_deal
+    tools.create_deal = tools.hubspot_create_deal
+  }
+  if (connectedServices.includes('github')) {
+    tools.github_create_pr = githubCreatePRSkill(orgId)
+    tools.github_create_pull_request = tools.github_create_pr
+    tools.create_pull_request = tools.github_create_pr
+  }
+
+  // Mount dynamic social platforms globally
+  if (connectedServices.includes('linkedin')) {
+    tools.linkedin_post = linkedinPostSkill(orgId)
+    tools.linkedin_share = tools.linkedin_post
+    tools.linkedin_create_post = tools.linkedin_post
+  }
+  if (connectedServices.includes('facebook')) {
+    tools.facebook_post = facebookPostSkill(orgId)
+    tools.facebook_create_post = tools.facebook_post
+  }
+  if (connectedServices.includes('pinterest')) {
+    tools.pinterest_post = pinterestPostSkill(orgId)
+    tools.pinterest_create_pin = tools.pinterest_post
+  }
+  if (connectedServices.includes('instagram')) {
+    tools.instagram_post = instagramPostSkill(orgId)
+    tools.instagram_create_media = tools.instagram_post
+  }
+  if (connectedServices.includes('twitter') || connectedServices.includes('x')) {
+    tools.twitter_post = twitterPostSkill(orgId)
+    tools.tweet_post = tools.twitter_post
+    tools.create_tweet = tools.twitter_post
   }
 
   return tools
