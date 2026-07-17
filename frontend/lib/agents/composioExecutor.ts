@@ -37,18 +37,52 @@ export async function executeViaComposio(
 
   // Map action name to Composio v3.1 slug
   const ACTION_MAP: Record<string, string> = {
+    // Twitter / X
     'twitter_post': 'TWITTER_CREATION_OF_A_POST',
     'twitter_create_tweet': 'TWITTER_CREATION_OF_A_POST',
+    
+    // GitHub
     'github_create_pr': 'GITHUB_CREATE_A_PULL_REQUEST',
     'github_create_pull_request': 'GITHUB_CREATE_A_PULL_REQUEST',
+    
+    // HubSpot
     'hubspot_create_deal': 'HUBSPOT_CREATE_DEAL',
+    
+    // LinkedIn
     'linkedin_post': 'LINKEDIN_CREATE_LINKED_IN_POST',
     'linkedin_share': 'LINKEDIN_CREATE_ARTICLE_OR_URL_SHARE',
+
+    // Facebook
+    'facebook_post': 'FACEBOOK_CREATE_POST',
+
+    // Pinterest
+    'pinterest_post': 'PINTEREST_CREATE_PIN',
+
+    // Instagram
+    'instagram_post': 'INSTAGRAM_CREATE_MEDIA',
+
+    // Slack
     'slack_post': 'SLACK_CHAT_POST_MESSAGE',
     'slack_message': 'SLACK_CHAT_POST_MESSAGE',
     'slack_chat_post_message': 'SLACK_CHAT_POST_MESSAGE',
+
+    // Notion
     'notion_create_page': 'NOTION_CREATE_NOTION_PAGE',
-    'notion_post': 'NOTION_CREATE_NOTION_PAGE'
+    'notion_post': 'NOTION_CREATE_NOTION_PAGE',
+
+    // Gmail / Outreach
+    'gmail_outreach': 'GMAIL_SEND_EMAIL',
+    'google_gmail_send_email': 'GMAIL_SEND_EMAIL',
+    'google_gmail_send_mail': 'GMAIL_SEND_EMAIL',
+
+    // Google Workspace
+    'google_sheets_update_sheet': 'GOOGLESHEETS_BATCH_UPDATE',
+    'google_docs_create_file': 'GOOGLEDOCS_CREATE_DOCUMENT',
+    'google_calendar_schedule_event': 'GOOGLECALENDAR_CREATE_EVENT',
+    'google_drive_create_file': 'GOOGLEDRIVE_CREATE_FILE',
+
+    // Meta Ads
+    'facebook_ads_create_campaign': 'FACEBOOK_CREATE_POST'
   };
 
   const mappedAction = ACTION_MAP[action] || action.toUpperCase();
