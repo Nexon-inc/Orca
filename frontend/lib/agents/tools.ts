@@ -167,6 +167,7 @@ export function buildToolsForAgent(
     }
     if (connectedServices.includes('twitter') || connectedServices.includes('x')) {
       tools.twitter_post = twitterPostSkill(orgId)
+      tools.tweet_post = twitterPostSkill(orgId)
     }
     if (connectedServices.includes('discord')) {
       tools.discord_post = discordPostSkill(orgId)
@@ -233,6 +234,7 @@ export function buildToolsForAgent(
     tools.tech_stack_decider = techStackDeciderSkill
     if (connectedServices.includes('github')) {
       tools.github_create_pr = githubCreatePRSkill(orgId)
+      tools.github_create_pull_request = githubCreatePRSkill(orgId)
     }
   }
 
