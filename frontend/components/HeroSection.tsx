@@ -12,11 +12,17 @@ interface Particle {
 
 export default function HeroSection() {
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [simStep, setSimStep] = useState<'overview' | 'workspace'>('overview');
+  const [simStep, setSimStep] = useState<'overview' | 'workspace' | 'sandbox'>('overview');
   const [simAgent, setSimAgent] = useState<string | null>(null);
   const [typedText, setTypedText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   
+  // Sandbox states
+  const [sandboxInput, setSandboxInput] = useState('');
+  const [sandboxLoading, setSandboxLoading] = useState(false);
+  const [sandboxStream, setSandboxStream] = useState('');
+  const [sandboxFinished, setSandboxFinished] = useState(false);
+
   const particlesRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
@@ -24,6 +30,7 @@ export default function HeroSection() {
   const ctaRef = useRef<HTMLDivElement>(null);
   const visualRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<any>(null);
 
   useEffect(() => {
     const particleCount = typeof window !== 'undefined' && window.innerWidth < 768 ? 20 : 50;
@@ -42,7 +49,6 @@ export default function HeroSection() {
   }, [particles]);
 
   const initAnimations = () => {
-    // Particles fade
     animate('.particle-dot', {
       opacity: [0, (el: any) => el.getAttribute('data-opacity')],
       duration: 2000,
@@ -50,7 +56,6 @@ export default function HeroSection() {
       ease: 'inOutQuad',
     });
 
-    // Entrance animations
     if (badgeRef.current) animate(badgeRef.current, { opacity: [0, 1], y: [20, 0], duration: 1200, ease: 'outExpo' });
     if (headlineRef.current) animate(headlineRef.current.querySelectorAll('.line'), { opacity: [0, 1], y: [30, 0], duration: 1000, delay: stagger(200, { start: 500 }), ease: 'outExpo' });
     if (subheadRef.current) animate(subheadRef.current, { opacity: [0, 1], y: [30, 0], duration: 1500, delay: 400, ease: 'outExpo' });
@@ -65,8 +70,8 @@ export default function HeroSection() {
       loop: true,
       delay: 3000
     });
+    timelineRef.current = tl;
 
-    // 0. Reset State & Show Cursor
     tl.add({
       duration: 500,
       onBegin: () => {
@@ -83,16 +88,12 @@ export default function HeroSection() {
       duration: 800,
       ease: 'outExpo'
     })
-
-    // 1. Move to Sidebar Dept (Marketing)
     .add(cursorRef.current, { 
       translateX: -410, 
       translateY: -55, 
       duration: 1200, 
       ease: 'inOutQuad' 
     })
-    
-    // 2. Click Dept
     .add('#sim-sidebar-marketing', { 
       backgroundColor: ['rgba(0,255,135,0)', 'rgba(0,255,135,0.2)', 'rgba(0,255,135,0)'],
       scale: [1, 0.95, 1], 
@@ -100,19 +101,13 @@ export default function HeroSection() {
       ease: 'outQuad', 
       onBegin: () => setSimStep('workspace') 
     })
-
-    // 3. Small delay for workspace to render/animate in
     .add({ duration: 800 })
-
-    // 4. Move to Agent (Aria) - now in workspace
     .add(cursorRef.current, { 
       translateX: -285, 
       translateY: -155, 
       duration: 1000, 
       ease: 'inOutQuad' 
     })
-    
-    // 5. Click Agent
     .add('#sim-agent-AR', { 
       backgroundColor: ['rgba(0,255,135,0)', 'rgba(0,255,135,0.4)', 'rgba(0,255,135,0)'],
       scale: [1, 0.9, 1], 
@@ -120,23 +115,17 @@ export default function HeroSection() {
       ease: 'outQuad',
       onBegin: () => setSimAgent('Aria')
     })
-
-    // 6. Move to Input Bar
     .add(cursorRef.current, { 
       translateX: 80, 
       translateY: 225, 
       duration: 1000, 
       ease: 'inOutQuad' 
     })
-    
-    // 7. Click Input (Focus)
     .add('#sim-input-bar', {
        borderColor: ['rgba(255,255,255,0.1)', 'rgba(0,255,135,0.5)', 'rgba(255,255,255,0.1)'],
        scale: [1, 0.99, 1],
        duration: 400
     })
-
-    // 8. Typing Simulation
     .add({ 
       duration: 3000, 
       onUpdate: (self: any) => {
@@ -144,8 +133,6 @@ export default function HeroSection() {
         setTypedText(text.slice(0, Math.floor(self.progress * text.length)));
       }
     })
-    
-    // 9. Send (Click Cursor again)
     .add(cursorRef.current, {
       translateX: 520,
       translateY: 225,
@@ -156,15 +143,11 @@ export default function HeroSection() {
       scale: [1, 0.8, 1],
       duration: 300
     })
-
-    // 10. Thinking State
     .add({ 
       duration: 3500, 
       onBegin: () => { setIsThinking(true); setTypedText(''); }, 
       onComplete: () => setIsThinking(false) 
     })
-    
-    // 11. Wait for Result and Hide Cursor
     .add(cursorRef.current, {
       opacity: 0,
       duration: 800,
@@ -178,9 +161,80 @@ export default function HeroSection() {
     });
   };
 
+  const handleSandboxSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sandboxInput.trim()) return;
+
+    if (timelineRef.current) {
+      timelineRef.current.pause();
+    }
+    setSimStep('sandbox');
+    setSandboxLoading(true);
+    setSandboxStream('');
+    setSandboxFinished(false);
+
+    try {
+      const res = await fetch('/api/guest/demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: sandboxInput })
+      });
+
+      if (!res.body) throw new Error('No stream body returned');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let text = '';
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        const chunk = decoder.decode(value, { stream: !done });
+        
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('0:')) {
+            try {
+              text += JSON.parse(line.substring(2));
+            } catch {
+              text += line.substring(2).replace(/^"/, '').replace(/"$/, '');
+            }
+          }
+        }
+        setSandboxStream(text);
+      }
+      setSandboxFinished(true);
+    } catch (err) {
+      console.error(err);
+      setSandboxStream('Error generating launch plan. Please check your connection and try again.');
+    } finally {
+      setSandboxLoading(false);
+    }
+  };
+
+  const handleBackToOverview = () => {
+    setSimStep('overview');
+    setSandboxStream('');
+    setSandboxFinished(false);
+    if (timelineRef.current) {
+      timelineRef.current.restart();
+    }
+  };
+
+  const getLogsFromStream = () => {
+    const parts = sandboxStream.split(/\[AGENT:\s*([^\]]+)\]/i);
+    const logs: Array<{ agent: string; text: string }> = [];
+    for (let i = 1; i < parts.length; i += 2) {
+      const agent = parts[i].trim();
+      const text = parts[i + 1] || '';
+      logs.push({ agent, text });
+    }
+    return logs;
+  };
+
   return (
     <section className="relative min-h-[95vh] flex flex-col items-center justify-center pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Bioluminescence & Particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] opacity-20 bg-[radial-gradient(circle_at_center,var(--green-dim)_0%,transparent_60%)] blur-[100px] animate-pulse" />
       </div>
@@ -209,21 +263,37 @@ export default function HeroSection() {
           </p>
         </div>
 
-        <div ref={ctaRef} className="hero-text-anim opacity-0 flex flex-col items-center gap-6">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button 
-              onClick={() => window.location.href = '/auth/signup'}
-              className="btn-primary w-full sm:w-auto px-8 py-3.5 text-[14px] font-syne font-bold uppercase tracking-widest rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Join Early Access →
-            </button>
-            <button 
-              onClick={() => document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="w-full sm:w-auto px-8 py-3.5 text-[14px] font-syne font-bold uppercase tracking-widest rounded-xl bg-white/[0.03] border border-white/5 text-white/80 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              See how it works ↓
-            </button>
-          </div>
+        <div ref={ctaRef} className="hero-text-anim opacity-0 flex flex-col items-center gap-6 w-full max-w-xl mx-auto">
+          {simStep !== 'sandbox' ? (
+            <form onSubmit={handleSandboxSubmit} className="w-full">
+              <div className="relative flex items-center rounded-xl border border-white/10 bg-white/5 focus-within:border-green focus-within:ring-1 focus-within:ring-green transition-all duration-200 shadow-lg">
+                <input 
+                  type="text" 
+                  placeholder="Enter your SaaS domain or product idea..." 
+                  value={sandboxInput}
+                  onChange={(e) => setSandboxInput(e.target.value)}
+                  required
+                  className="w-full bg-transparent py-4 pl-5 pr-36 border-0 outline-none text-white text-[13px] placeholder:text-white/40 font-dm-mono"
+                />
+                <button 
+                  type="submit" 
+                  disabled={sandboxLoading}
+                  className="absolute right-1.5 px-5 py-2.5 rounded-lg text-[11px] font-syne font-bold uppercase tracking-wider bg-green text-bg hover:bg-green/90 transition-all disabled:opacity-40"
+                >
+                  {sandboxLoading ? 'Deploying...' : 'Launch Plan →'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex gap-4 w-full justify-center">
+              <button 
+                onClick={handleBackToOverview}
+                className="px-6 py-2.5 rounded-lg text-[11px] font-syne font-bold uppercase tracking-wider bg-white/[0.03] border border-white/10 hover:bg-white/5 transition-all text-white/70"
+              >
+                ← Back to overview
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Hero Visual Simulation */}
@@ -254,11 +324,11 @@ export default function HeroSection() {
                    <header className="h-14 border-b border-white/5 bg-surface/30 px-6 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                          <h2 className="font-syne font-bold text-white text-[11px] uppercase tracking-wider">
-                           {simStep === 'overview' ? 'Command Center' : simAgent ? `${simAgent} | Social Media` : 'Marketing Workspace'}
+                           {simStep === 'overview' ? 'Command Center' : simStep === 'sandbox' ? 'Autopilot Workspace' : simAgent ? `${simAgent} | Social Media` : 'Marketing Workspace'}
                          </h2>
                          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-green/10 border border-green/20">
                             <div className="w-1 h-1 rounded-full bg-green animate-pulse" />
-                            <span className="text-[8px] text-green font-bold uppercase">{simStep === 'overview' ? '5 ONLINE' : '5 ONLINE'}</span>
+                            <span className="text-[8px] text-green font-bold uppercase">5 ONLINE</span>
                          </div>
                       </div>
                    </header>
@@ -329,6 +399,44 @@ export default function HeroSection() {
                             <div id="sim-input-bar-send" className="w-6 h-6 rounded bg-green flex items-center justify-center text-bg text-[12px] flex-shrink-0">↑</div>
                           </div>
                       </div>
+
+                      {/* Sandbox View */}
+                      <div className={`animate-in fade-in duration-500 h-full flex flex-col pt-2 ${simStep === 'sandbox' ? 'flex' : 'hidden'}`}>
+                          <div className="flex-1 overflow-y-auto pr-2 space-y-4 max-h-[380px] font-dm-mono text-[10px]">
+                            {sandboxLoading && !sandboxStream && (
+                              <div className="flex items-center justify-center h-full flex-col gap-3 text-text-muted mt-20">
+                                <div className="w-6 h-6 border-2 border-green border-t-transparent rounded-full animate-spin" />
+                                <span>Deploying AI Board for {sandboxInput}...</span>
+                              </div>
+                            )}
+                            {getLogsFromStream().map((log, idx) => {
+                              const icon = log.agent.toUpperCase().includes('CEO') ? '👑' : log.agent.toUpperCase().includes('CMO') ? '🎙️' : '💻';
+                              const color = log.agent.toUpperCase().includes('CEO') ? 'text-green' : log.agent.toUpperCase().includes('CMO') ? 'text-blue-400' : 'text-purple-400';
+                              return (
+                                <div key={idx} className="p-3 bg-white/[0.02] border border-white/5 rounded-xl space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                  <div className="flex items-center gap-2">
+                                    <span>{icon}</span>
+                                    <span className={`font-bold ${color}`}>{log.agent}</span>
+                                    <span className="text-[7px] text-text-muted opacity-50 uppercase tracking-widest">• Live Stream</span>
+                                  </div>
+                                  <p className="text-white/80 leading-relaxed whitespace-pre-wrap">{log.text.trim()}</p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {sandboxFinished && (
+                            <div className="mt-4 p-4 bg-green/10 border border-green/20 rounded-xl text-center space-y-3 animate-in fade-in duration-500">
+                              <p className="text-[11px] text-green font-bold">Your autonomous executive team is ready to execute this roadmap on autopilot.</p>
+                              <button 
+                                onClick={() => window.location.href = `/auth/signup?ref=sandbox&domain=${encodeURIComponent(sandboxInput)}`}
+                                className="w-full btn-primary py-2.5 rounded-lg text-[11px] font-syne font-bold uppercase tracking-wider transition-all hover:scale-[1.01]"
+                              >
+                                Deploy Executive Team to Your SaaS
+                              </button>
+                            </div>
+                          )}
+                      </div>
+
                    </div>
                 </div>
              </div>
@@ -353,4 +461,3 @@ export default function HeroSection() {
     </section>
   );
 }
-

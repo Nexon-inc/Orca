@@ -389,6 +389,62 @@ export async function POST(
       ? `\n\nUSER_UPLOADED_DOCUMENT (reference for this turn only):\n---\n${pastedDocumentContent}\n---\nThe user's message is an instruction about this document. Follow their instruction using the full document above.\n`
       : ''
 
+    // Fetch BCP Spec from Shared Org Wiki Memory
+    let bcpConfig = null
+    try {
+      const { data: bcpMemory } = await serviceClient
+        .from('llm_memories')
+        .select('memory_data')
+        .eq('org_id', orgId)
+        .eq('agent_id', '00000000-0000-0000-0000-000000000000')
+        .maybeSingle()
+
+      const wikiPages = (bcpMemory as any)?.memory_data?.wiki_pages || {}
+      const businessProtocolPage = wikiPages['business_protocol'] || wikiPages['business_protocol_spec']
+      if (businessProtocolPage?.content) {
+        const { parseBcpMarkdown } = await import('@/lib/agents/bcpParser')
+        bcpConfig = parseBcpMarkdown(businessProtocolPage.content)
+      }
+    } catch (bcpErr) {
+      console.warn('[BCP] Failed to load/parse BCP config:', bcpErr)
+    }
+
+    let bcpBlock = ''
+    if (bcpConfig) {
+      bcpBlock = `\n\nBUSINESS_CONTEXT_PROTOCOL (BCP):\n---\n`
+      if (bcpConfig.domain) bcpBlock += `Organization Domain: ${bcpConfig.domain}\n`
+      if (bcpConfig.metrics) bcpBlock += `Metrics Endpoint: ${bcpConfig.metrics}\n`
+      
+      const currentAgentAcronym = agent.acronym
+      const deptKey = Object.keys(bcpConfig.departments).find(k => 
+        k.toLowerCase().includes(currentAgentAcronym.toLowerCase()) || 
+        currentAgentAcronym.toLowerCase().includes(k.toLowerCase())
+      )
+      if (deptKey) {
+        const dept = bcpConfig.departments[deptKey]
+        bcpBlock += `Your Role Context (${dept.name}):\n`
+        if (dept.resources && dept.resources.length > 0) {
+          bcpBlock += `- Accessible Resources: ${dept.resources.join(', ')}\n`
+        }
+        if (dept.tools && dept.tools.length > 0) {
+          bcpBlock += `- Bound Tools: ${dept.tools.join(', ')}\n`
+        }
+      }
+      
+      if (bcpConfig.workflows && Object.keys(bcpConfig.workflows).length > 0) {
+        bcpBlock += `Active Workflows:\n`
+        for (const [wfName, wf] of Object.entries(bcpConfig.workflows)) {
+          bcpBlock += `Workflow "${wfName}":\n`
+          if (wf.steps) {
+            wf.steps.forEach((s: any) => {
+              bcpBlock += `  Step ${s.step}. [${s.department}] ${s.action}\n`
+            })
+          }
+        }
+      }
+      bcpBlock += `---\n`
+    }
+
     const systemPrompt =
       buildAgentSystemPrompt(
         agent,
@@ -399,7 +455,7 @@ export async function POST(
         chatMode,
         orgData?.active_template,
         orgMetricsBlock
-      ) + documentContextBlock
+      ) + documentContextBlock + bcpBlock
 
     const allTools = buildToolsForAgent(agent.name, orgId, connectedIntegrations)
     const tools = pickToolsForMode(allTools, chatMode)
