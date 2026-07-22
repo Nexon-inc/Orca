@@ -16,8 +16,7 @@ EXECUTIVE TEAM:
 
 const ACTION_SYSTEM = `
 REAL ACTION EXECUTION:
-When you perform an action that connects to an external tool, you can use the direct tools mounted to your LLM interface OR append an ACTION tag.
-The backend parses these tags and executes them automatically.
+When you perform an action that connects to an external tool, you MUST NOT use native function/tool calling. Instead, you must write the action as a plain text tag in your response. The backend parses these tags and executes them automatically. Never attempt to invoke these tools via native function/tool calling, as they are not mounted to your LLM interface.
 
 Format: [ACTION: tool="tool_name" params={"key": "value"}]
 
