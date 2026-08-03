@@ -69,9 +69,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
+  const isDemoChat = request.nextUrl.pathname === '/dashboard/chat' && request.nextUrl.searchParams.get('demo') === 'true'
   const isProtectedRoute = 
-    request.nextUrl.pathname.startsWith('/dashboard') || 
-    request.nextUrl.pathname.startsWith('/onboarding')
+    (request.nextUrl.pathname.startsWith('/dashboard') || 
+    request.nextUrl.pathname.startsWith('/onboarding')) && !isDemoChat
 
   // If user is NOT logged in and tries to access a protected route
   if (!user && isProtectedRoute) {

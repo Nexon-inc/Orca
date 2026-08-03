@@ -1,45 +1,15 @@
 'use server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/auth'
-import { emailTemplates, resend } from '@/lib/email/resend'
-import { writeAuditLog } from '@/lib/security/auditLog'
 import { NextResponse } from 'next/server'
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!
 
 const PLAN_CODE_MAP: Record<string, Record<string, string>> = {
-  builder: {
-    monthly: process.env.PAYSTACK_PLAN_BUILDER_MONTHLY || process.env.PAYSTACK_PLAN_STARTER_MONTHLY!,
-    annual: process.env.PAYSTACK_PLAN_BUILDER_ANNUAL || process.env.PAYSTACK_PLAN_STARTER_ANNUAL!,
-  },
   pro: {
     monthly: process.env.PAYSTACK_PLAN_PRO_MONTHLY!,
     annual: process.env.PAYSTACK_PLAN_PRO_ANNUAL!,
   },
-  founding: {
-    monthly: process.env.PAYSTACK_PLAN_FOUNDING_MONTHLY || process.env.PAYSTACK_PLAN_BUILDER_MONTHLY || process.env.PAYSTACK_PLAN_STARTER_MONTHLY!,
-    annual: process.env.PAYSTACK_PLAN_FOUNDING_ANNUAL || process.env.PAYSTACK_PLAN_BUILDER_ANNUAL || process.env.PAYSTACK_PLAN_STARTER_ANNUAL!,
-  },
-  // Legacy Paystack plan codes & org records
-  starter: {
-    monthly: process.env.PAYSTACK_PLAN_STARTER_MONTHLY!,
-    annual: process.env.PAYSTACK_PLAN_STARTER_ANNUAL!,
-  },
-  enterprise: {
-    monthly: process.env.PAYSTACK_PLAN_ENTERPRISE_MONTHLY!,
-    annual: process.env.PAYSTACK_PLAN_ENTERPRISE_ANNUAL!,
-  },
-}
-
-function normalizePlanId(raw?: string): string | null {
-  if (!raw) return null
-  const plan = raw.toLowerCase()
-  if (plan === 'starter' || plan === 'growth') return 'builder'
-  return plan
-}
-
-function isPlanCodeConfigured(code?: string): boolean {
-  return Boolean(code && code.trim().length > 0)
 }
 
 function resolveBillingCycle(
@@ -48,7 +18,7 @@ function resolveBillingCycle(
 ): 'monthly' | 'annual' {
   const annualCode = PLAN_CODE_MAP[plan]?.annual
   const annualReady =
-    process.env.PAYSTACK_ANNUAL_ENABLED === 'true' && isPlanCodeConfigured(annualCode)
+    process.env.PAYSTACK_ANNUAL_ENABLED === 'true' && Boolean(annualCode && annualCode.trim().length > 0)
   if (requested === 'annual' && annualReady) return 'annual'
   return 'monthly'
 }
@@ -58,11 +28,12 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { plan: rawPlan, billing_cycle: requestedCycle } = await request.json()
-  const planInput = rawPlan?.toLowerCase()
-  const plan = planInput === 'founding' ? 'founding' : normalizePlanId(rawPlan)
-  if (!plan) {
-    return NextResponse.json({ error: 'Plan is required.' }, { status: 400 })
+  const plan = rawPlan?.toLowerCase()
+  
+  if (!plan || plan !== 'pro') {
+    return NextResponse.json({ error: 'Invalid plan selected. Only Pro is supported.' }, { status: 400 })
   }
+  
   const billing_cycle = resolveBillingCycle(plan, requestedCycle)
   const supabase = await createServerSupabaseClient()
 
@@ -87,30 +58,6 @@ export async function POST(request: Request) {
 
   const orgId = (member as any).org_id
 
-  if (plan === 'founding') {
-    if (billing_cycle === 'annual') {
-      return NextResponse.json({ error: 'Founding membership is monthly only — $19/mo locked for life.' }, { status: 400 })
-    }
-    const { getFoundingAvailability, isOrgFoundingMember } = await import('@/lib/billing/founding')
-    const founding = await getFoundingAvailability()
-    if (!founding.available) {
-      return NextResponse.json({ error: 'All founding spots are taken. Choose Builder or Pro instead.' }, { status: 409 })
-    }
-    if (await isOrgFoundingMember(orgId)) {
-      return NextResponse.json({ error: 'This workspace already has founding pricing locked at $19/mo.' }, { status: 409 })
-    }
-  }
-
-  if (plan === 'builder') {
-    const { isOrgFoundingMember } = await import('@/lib/billing/founding')
-    if (await isOrgFoundingMember(orgId)) {
-      return NextResponse.json(
-        { error: 'You are a founding member at $19/mo. Your price is already locked — no action needed.' },
-        { status: 409 }
-      )
-    }
-  }
-
   const { data: org } = await supabase.from('organizations').select('checkout_locked_at, checkout_locked_by').eq('id', orgId).single()
 
   if (org?.checkout_locked_at) {
@@ -131,8 +78,8 @@ export async function POST(request: Request) {
     await supabase.from('organizations').update({ checkout_locked_at: null, checkout_locked_by: null }).eq('id', orgId)
     const hint =
       billing_cycle === 'annual'
-        ? 'Annual billing is not configured yet. Use monthly or add PAYSTACK_PLAN_*_ANNUAL in Vercel.'
-        : `Missing Paystack plan code for "${plan}" monthly. Add PAYSTACK_PLAN_${plan.toUpperCase()}_MONTHLY in Vercel.`
+        ? 'Annual billing is not configured yet. Add PAYSTACK_PLAN_PRO_ANNUAL in Vercel.'
+        : `Missing Paystack plan code for Pro monthly. Add PAYSTACK_PLAN_PRO_MONTHLY in Vercel.`
     return NextResponse.json({ error: hint }, { status: 400 })
   }
 
@@ -147,10 +94,9 @@ export async function POST(request: Request) {
       callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/billing/verify`,
       metadata: {
         org_id: orgId,
-        plan: plan === 'founding' ? 'founding_builder' : plan,
+        plan: plan,
         billing_cycle,
         user_id: user.id,
-        founding: plan === 'founding',
       },
     }),
   })

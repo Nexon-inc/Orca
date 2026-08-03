@@ -25,7 +25,18 @@ export async function parseAndExecuteActions(
     const [fullTag, tool, paramsStr] = match
     
     try {
-      const params = JSON.parse(paramsStr)
+      let params: any;
+      try {
+        params = JSON.parse(paramsStr);
+      } catch {
+        const sanitized = paramsStr.replace(/\r?\n/g, '\\n');
+        try {
+          params = JSON.parse(sanitized);
+        } catch {
+          params = Function(`"use strict"; return (${sanitized})`)();
+        }
+      }
+
       const serviceKey = tool.split('_')[0]
       const result = await executeViaComposio(orgId, serviceKey, tool, params)
       
@@ -95,22 +106,26 @@ export async function parseAndExecuteActions(
       const targetDeptKey = (targetAgent?.departments as any)?.key || nameToDept[actualName] || 'ops'
       const targetAgentId = targetAgent?.id || null
 
-      await inngest.send({
-        name: 'agent/coordination.requested',
-        data: {
-          org_id: orgId,
-          orgId, // backwards compatibility
-          from_agent_id: fromAgentId,
-          target_department_key: targetDeptKey,
-          target_agent_acronym: targetAcronym,
-          target_agent_id: targetAgentId,
-          toAgent, // backwards compatibility
-          reason,
-          context,
-          user_id: userId,
-          depth: depth + 1
-        }
-      })
+      try {
+        await inngest.send({
+          name: 'agent/coordination.requested',
+          data: {
+            org_id: orgId,
+            orgId, // backwards compatibility
+            from_agent_id: fromAgentId,
+            target_department_key: targetDeptKey,
+            target_agent_acronym: targetAcronym,
+            target_agent_id: targetAgentId,
+            toAgent, // backwards compatibility
+            reason,
+            context,
+            user_id: userId,
+            depth: depth + 1
+          }
+        })
+      } catch (inngestErr) {
+        console.warn('[HANDOFF_INNGEST_WARN] Could not send Inngest event:', inngestErr)
+      }
       
       cleanResponse = cleanResponse.replace(fullTag,
         `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`

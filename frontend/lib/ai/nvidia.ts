@@ -16,6 +16,7 @@ export const EXECUTIVE_MODELS: Record<string, string> = {
   Purity: 'nvidia/llama-3.3-nemotron-super-49b-v1', // warm + precise — CCO support
   Roman:  'moonshotai/kimi-k2-instruct',            // long context — CIO research
   Ghost:  'qwen/qwen3-coder-480b-a35b-instruct',   // best code model — CTO
+  Lunar:  'moonshotai/kimi-k2-instruct',            // BCP business context agent — Lunar
 }
 
 export function getModelForExecutive(agentName: string): string {
@@ -30,6 +31,7 @@ export const EXECUTIVE_TEMPERATURES: Record<string, number> = {
   Purity: 0.7,
   Roman:  0.5,
   Ghost:  0.1,
+  Lunar:  0.7,
 }
 
 export function getTemperatureForExecutive(agentName: string): number {

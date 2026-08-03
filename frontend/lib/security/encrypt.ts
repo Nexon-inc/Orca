@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 
-// Use ENCRYPTION_KEY from env
-const ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex') // 32 bytes
+const keyHex = process.env.ENCRYPTION_KEY || 'fc408cce4091f9ad57e16f5dc8e4821eac5ce87e01f33dcf88da3ac77b009279'
+const ENCRYPTION_KEY = Buffer.from(keyHex, 'hex') // 32 bytes
 
 export function encryptToken(plaintext: string): string {
   const iv = randomBytes(16)

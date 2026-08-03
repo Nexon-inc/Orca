@@ -161,56 +161,10 @@ export default function HeroSection() {
     });
   };
 
-  const handleSandboxSubmit = async (e: React.FormEvent) => {
+  const handleSandboxSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!sandboxInput.trim()) return;
-
-    if (timelineRef.current) {
-      timelineRef.current.pause();
-    }
-    setSimStep('sandbox');
-    setSandboxLoading(true);
-    setSandboxStream('');
-    setSandboxFinished(false);
-
-    try {
-      const res = await fetch('/api/guest/demo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: sandboxInput })
-      });
-
-      if (!res.body) throw new Error('No stream body returned');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let text = '';
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-        const chunk = decoder.decode(value, { stream: !done });
-        
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('0:')) {
-            try {
-              text += JSON.parse(line.substring(2));
-            } catch {
-              text += line.substring(2).replace(/^"/, '').replace(/"$/, '');
-            }
-          }
-        }
-        setSandboxStream(text);
-      }
-      setSandboxFinished(true);
-    } catch (err) {
-      console.error(err);
-      setSandboxStream('Error generating launch plan. Please check your connection and try again.');
-    } finally {
-      setSandboxLoading(false);
-    }
+    window.location.href = `/dashboard/chat?demo=true&domain=${encodeURIComponent(sandboxInput.trim())}`;
   };
 
   const handleBackToOverview = () => {

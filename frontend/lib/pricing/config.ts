@@ -12,7 +12,7 @@ export const ANNUAL_CHECKOUT_ENABLED =
   process.env.PAYSTACK_ANNUAL_ENABLED === 'true' ||
   process.env.NEXT_PUBLIC_PRICING_ANNUAL_CHECKOUT === 'true'
 
-export type OrcaPlanId = 'free' | 'builder' | 'pro' | 'founding'
+export type OrcaPlanId = 'free' | 'pro'
 
 export type OrcaPlanPricing = {
   id: OrcaPlanId
@@ -54,58 +54,30 @@ export const ORCA_PLANS: OrcaPlanPricing[] = [
     cta: 'Get Started Free',
   },
   {
-    id: 'builder',
-    name: 'BUILDER',
-    tagline: 'Validate ideas fast — your first AI executive team.',
-    monthlyUsd: 29,
-    annualMonthlyUsd: 24,
-    annualTotalUsd: 288,
-    annualSavingsUsd: 60,
-    checkoutKesMonthly: 3999,
-    checkoutKesAnnualTotal: 39990,
-    features: [
-      '4 executive agents (pick your stack)',
-      '200 autonomous tasks per month',
-      '1 team seat',
-      'Briefing Room vault',
-      'Planning & Approve chat modes',
-      'Core integrations (LinkedIn, Gmail, Notion, HubSpot)',
-      'Daily executive brief backups',
-      'Community + email support',
-    ],
-    cta: 'Start Building',
-    highlighted: true,
-  },
-  {
     id: 'pro',
     name: 'PRO',
     tagline: 'Full C-Suite autonomy for founders ready to scale.',
-    monthlyUsd: 79,
-    annualMonthlyUsd: 65,
-    annualTotalUsd: 780,
-    annualSavingsUsd: 168,
-    checkoutKesMonthly: 10499,
+    monthlyUsd: 99,
+    annualMonthlyUsd: 79,
+    annualTotalUsd: 948,
+    annualSavingsUsd: 240,
+    checkoutKesMonthly: 12999,
     checkoutKesAnnualTotal: 104990,
     features: [
       'All 6 C-Suite executives + AI CEO Mode (Atlas)',
-      '1,000 autonomous tasks per month',
+      'Unlimited autonomous tasks',
       '5 team seats with department assigning',
       'All integrations + webhook alerts',
       'Code generation & Ghost CTO mode',
       'Out-of-Office Autopilot (3-day sprints)',
       'Unlimited Briefing Room archive',
-      'Bring Your Own LLM',
+      'Lunar AI Business Context agent',
       'Email support (24hr response SLA)',
     ],
     cta: 'Upgrade to Pro',
+    highlighted: true,
   },
 ]
-
-export const FOUNDING = {
-  monthlyUsd: 19,
-  checkoutKesMonthly: 2499,
-  checkoutKesAnnualTotal: 0,
-} as const
 
 export function formatUsd(amount: number): string {
   if (amount === 0) return 'Free'
@@ -148,10 +120,6 @@ export function getCheckoutKesHint(
   return `${formatKes(kes)}${suffix}`
 }
 
-export function getFoundingCheckoutHint(): string {
-  return `${formatKes(FOUNDING.checkoutKesMonthly)}/mo at checkout`
-}
-
 export function getCheckoutBillingCycle(
   requested?: string
 ): 'monthly' | 'annual' {
@@ -161,18 +129,12 @@ export function getCheckoutBillingCycle(
 
 /** Reference for Paystack dashboard — KES amounts only */
 export const PAYSTACK_KES_REFERENCE = {
-  founding_monthly: FOUNDING.checkoutKesMonthly,
-  builder_monthly: 3999,
-  builder_annual: 39990,
-  pro_monthly: 10499,
+  pro_monthly: 12999,
   pro_annual: 104990,
 } as const
 
 /** Reference for marketing — USD amounts on site */
 export const DISPLAY_USD_REFERENCE = {
-  founding_monthly: FOUNDING.monthlyUsd,
-  builder_monthly: 29,
-  builder_annual_total: 288,
-  pro_monthly: 79,
-  pro_annual_total: 780,
+  pro_monthly: 99,
+  pro_annual_total: 948,
 } as const

@@ -16,11 +16,6 @@ import {
 
 export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [foundingStatus, setFoundingStatus] = useState({
-    remaining: 50,
-    available: true,
-    total: 50,
-  });
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,11 +32,6 @@ export default function PricingSection() {
     if (sectionRef.current) {
       observer.observe(sectionRef.current);
     }
-
-    fetch('/api/founding/status')
-      .then((res) => res.json())
-      .then((data) => setFoundingStatus(data))
-      .catch(() => {});
 
     return () => observer.disconnect();
   }, []);
@@ -61,7 +51,7 @@ export default function PricingSection() {
       window.location.href = '/dashboard';
       return;
     }
-    if (billingCycle === 'annual' && !ANNUAL_CHECKOUT_ENABLED && plan !== 'founding') {
+    if (billingCycle === 'annual' && !ANNUAL_CHECKOUT_ENABLED) {
       toast.error('Annual checkout is being enabled. Choose Monthly or try again shortly.');
       return;
     }
@@ -96,33 +86,7 @@ export default function PricingSection() {
         <div className="w-full h-full bg-green filter blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {foundingStatus.available && (
-          <div className="max-w-3xl mx-auto mb-16 p-px rounded-[2rem] bg-gradient-to-r from-green/50 via-white/20 to-green/50 animate-pulse">
-            <div className="bg-bg/90 backdrop-blur-xl rounded-[2rem] p-6 px-10 flex flex-col sm:flex-row items-center justify-between gap-6 border border-white/10">
-              <div className="flex items-center gap-4">
-                <span className="text-3xl">🔥</span>
-                <div className="text-left">
-                  <h4 className="font-syne font-black text-white text-[16px] uppercase tracking-widest">
-                    Founding Member Offer
-                  </h4>
-                  <p className="text-white/40 text-[10px] uppercase font-black tracking-widest leading-relaxed mt-1">
-                    {formatUsd(FOUNDING.monthlyUsd)}/mo locked · {getFoundingCheckoutHint()} ·{' '}
-                    {foundingStatus.remaining} spots left
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleCheckout('founding')}
-                className="whitespace-nowrap px-6 py-3 bg-green text-bg font-syne font-black text-[12px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,255,135,0.3)]"
-              >
-                Claim founding spot →
-              </button>
-            </div>
-          </div>
-        )}
-
+      <div className="relative z-10 max-w-5xl mx-auto">
         <div className="text-center mb-16 px-4">
           <h2 className="text-3xl sm:text-4xl lg:text-[48px] font-syne font-[800] leading-tight mb-4 text-white tracking-tight">
             Pricing that scales with <span className="text-green">your ambition.</span>
@@ -159,7 +123,7 @@ export default function PricingSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch max-w-4xl mx-auto">
           {ORCA_PLANS.map((plan) => (
             <div
               key={plan.id}

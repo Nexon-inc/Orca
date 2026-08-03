@@ -90,6 +90,12 @@ export async function executeViaComposio(
   // Enrich parameters
   const finalParams = { ...parameters };
 
+  if (mappedAction === 'HUBSPOT_CREATE_DEAL') {
+    if (finalParams.amount !== undefined) {
+      finalParams.amount = String(finalParams.amount);
+    }
+  }
+
   if (mappedAction === 'GITHUB_CREATE_A_PULL_REQUEST') {
     // Map branch to head
     if (finalParams.branch && !finalParams.head) {

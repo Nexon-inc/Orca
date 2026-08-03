@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import PricingModal from '@/components/PricingModal';
@@ -28,12 +28,85 @@ export default function ChatPage() {
 function ChatContent() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const isDemo = searchParams?.get('demo') === 'true';
+  const demoDomain = searchParams?.get('domain') || 'SaaS';
+
   const [org, setOrg] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [greeting, setGreeting] = useState('GOOD MORNING,');
   const [pinnedAgent, setPinnedAgent] = useState<string | null>(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+
+  // Demo mode streaming state
+  const [demoMessages, setDemoMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string; agent?: string }>>([]);
+  const [demoStreaming, setDemoStreaming] = useState(false);
+
+  useEffect(() => {
+    if (isDemo && !demoStreaming && demoMessages.length === 0) {
+      setDemoStreaming(true);
+      const startDemoStream = async () => {
+        setDemoMessages([{ id: 'demo-1', role: 'user', content: `Launch a 10-minute marketing and operational sprint for ${demoDomain}.` }]);
+        try {
+          const res = await fetch('/api/guest/demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain: demoDomain }),
+          });
+
+          if (!res.body) return;
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+          let text = '';
+
+          while (!done) {
+            const { value, done: doneReading } = await reader.read();
+            done = doneReading;
+            const chunk = decoder.decode(value, { stream: !done });
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('0:')) {
+                try {
+                  text += JSON.parse(line.substring(2));
+                } catch {
+                  text += line.substring(2).replace(/^"/, '').replace(/"$/, '');
+                }
+              }
+            }
+            
+            // Parse agent logs
+            const parts = text.split(/\[AGENT:\s*([^\]]+)\]/i);
+            const msgs: Array<{ id: string; role: 'user' | 'assistant'; content: string; agent?: string }> = [
+              { id: 'demo-1', role: 'user', content: `Launch a 10-minute marketing and operational sprint for ${demoDomain}.` }
+            ];
+
+            for (let i = 1; i < parts.length; i += 2) {
+              const agent = parts[i].trim();
+              const content = (parts[i + 1] || '').trim();
+              if (content) {
+                msgs.push({
+                  id: `demo-${i}`,
+                  role: 'assistant',
+                  agent,
+                  content
+                });
+              }
+            }
+            setDemoMessages(msgs);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setDemoStreaming(false);
+        }
+      };
+
+      startDemoStream();
+    }
+  }, [isDemo]);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -248,6 +321,10 @@ function ChatContent() {
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (isDemo) {
+      setShowRegisterModal(true);
+      return;
+    }
     if (isChatLoading) return;
 
     let messageText = (input || '').trim();
@@ -354,10 +431,39 @@ function ChatContent() {
           className={`flex-1 flex flex-col items-center relative overflow-y-auto no-scrollbar w-full pt-8 pb-[20rem] transition-all duration-500 justify-center`}
         >
           <DashboardHeader floating={true} activeDirectives={activeDirectives} />
-          <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
-            <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase animate-in fade-in zoom-in duration-700">{greeting} {userName}.</h1>
-            <p className="text-[10px] font-mono text-on-surface/20 uppercase tracking-[0.4em] mt-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">Type an instruction or mention an executive (@cmo, /cto, etc.) to begin operation</p>
-          </div>
+          {isDemo && demoMessages.length > 0 ? (
+            <div className="w-full max-w-4xl px-4 py-8 space-y-6 animate-in fade-in duration-500">
+              {demoMessages.map((m) => (
+                <div key={m.id} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  {m.role === 'assistant' && (
+                    <div className="flex items-center gap-2 mb-1.5 px-2">
+                      <span className="text-xs">🤖</span>
+                      <span className="text-[10px] font-bold text-green uppercase tracking-wider">{m.agent || 'ORCA Executive'}</span>
+                    </div>
+                  )}
+                  <div className={`p-4 rounded-2xl max-w-[85%] text-[13px] leading-relaxed font-dm-mono ${
+                    m.role === 'user' 
+                      ? 'bg-white/10 text-white rounded-br-none border border-white/10' 
+                      : 'bg-surface-container-low text-on-surface border border-outline-variant/10 rounded-bl-none shadow-md'
+                  }`}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {demoStreaming && (
+                <div className="flex items-center gap-3 p-4 bg-surface-container-low rounded-2xl border border-outline-variant/10 w-fit animate-pulse">
+                  <div className="w-2 h-2 rounded-full bg-green animate-ping" />
+                  <span className="text-[11px] font-mono text-on-surface/60 uppercase tracking-wider">Executive Agents Collaborating...</span>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center -mt-16 pointer-events-none">
+              <h1 className="text-4xl font-black font-headline tracking-tighter text-on-surface uppercase animate-in fade-in zoom-in duration-700">{greeting} {userName}.</h1>
+              <p className="text-[10px] font-mono text-on-surface/20 uppercase tracking-[0.4em] mt-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">Type an instruction or mention an executive (@cmo, /cto, etc.) to begin operation</p>
+            </div>
+          )}
         </div>
 
         <div 
@@ -415,6 +521,36 @@ function ChatContent() {
         </div>
       </main>
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => !isLocked && setShowPricingModal(false)} isLocked={isLocked} currentPlan={org?.plan} />}
+      
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#121412] border border-[#262a26] rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl relative">
+            <div className="w-12 h-12 rounded-2xl bg-green/10 border border-green/20 text-green flex items-center justify-center text-2xl mx-auto">
+              🚀
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold font-syne text-white uppercase tracking-tight">Deploy Your Autonomous Board</h3>
+              <p className="text-xs text-white/60 font-dm-mono leading-relaxed">
+                Sign up now to unlock full access to your C-Suite AI executive team and run unlimited autonomous tasks.
+              </p>
+            </div>
+            <div className="space-y-3 pt-2">
+              <button
+                onClick={() => router.push(`/auth/signup?domain=${encodeURIComponent(demoDomain)}`)}
+                className="w-full btn-primary py-3.5 rounded-xl font-syne font-bold text-xs uppercase tracking-widest shadow-lg"
+              >
+                Create Account & Run Plan →
+              </button>
+              <button
+                onClick={() => setShowRegisterModal(false)}
+                className="w-full py-2.5 text-[10px] font-mono text-white/40 uppercase tracking-widest hover:text-white transition-colors"
+              >
+                Continue Watching Demo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

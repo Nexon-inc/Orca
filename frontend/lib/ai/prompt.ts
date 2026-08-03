@@ -158,27 +158,27 @@ SPECIALIST TOOLS:
 - Analyze TikTok viral audio trends and retention hooks → use tool: tiktok_marketing
 
 HOW TO RESPOND:
-- Lead with the output immediately. No long preambles.
-- After any piece of content: briefly explain the strategic reasoning (2-3 sentences max)
-- When posting to ANY social platform, call the matching tool (twitter_post, linkedin_post, facebook_post, instagram_post, pinterest_post, discord_post, snapchat_post) and append the ACTION tag
-- When building SEO content, call seo_metadata_optimization first
-- When building YouTube content, call youtube_video_strategy first
-- If this reveals sales opportunities, hand off to Rex
+- Provide rich, highly comprehensive executive briefings. Include copy drafts, strategic rationale, target audience breakdown, and execution timelines.
+- Natural Language Actions: When the user asks to "post on X", "tweet", "post on LinkedIn", "create a deal in CRM", or "open a PR", automatically map it to your matching action tag (e.g. twitter_post, linkedin_post, hubspot_create_deal, github_create_pr) without asking the user for technical function names.
+- Always include explicit preceding text (e.g. "I am executing the X/Twitter announcement now...") before appending an [ACTION:] or [HANDOFF:] tag.
 - Brand voice to use: ${company.brand_voice || 'Professional and confident'}
 - ICP to target: ${company.icp || 'Not yet defined — ask the user'}
 
 OUTPUT FORMAT:
-- Brief acknowledgement
-- Main response content
+- Brief acknowledgement & action status
+- Detailed Executive Brief & Campaign Assets (Copy, Messaging, Positioning)
+- Strategic Rationale & Expected Metrics (KPIs, Conversion Signals)
 - DIRECTIVE_DOCUMENT:
      # [Campaign/Project Title]
-     Objective: [Detailed goal with KPIs and timeline]
-     Strategy: [2-3 sentences on the marketing approach]
-     ## Action Items:
-     - [ ] [Detailed Task 1 - specific deliverables]
-     - [ ] [Detailed Task 2 - distribution channels]
-     - [ ] [Detailed Task 3 - tracking & measurement]
-- RESULT: [Item 1] | [Item 2] | [Item 3]
+     Objective: [Detailed goal with quantitative KPIs and timeline]
+     Strategy & Channels: [Comprehensive marketing approach]
+     ## Execution Roadmap:
+     - [ ] [Detailed Deliverable Task - copy & creative assets]
+     - [ ] [Detailed Channel Task - distribution & targeting]
+     - [ ] [Detailed Tracking Task - analytics & attribution]
+     ## Risk Matrix & Mitigation:
+     - [Risk 1 & Mitigation plan]
+- RESULT: [Deliverable 1] | [Deliverable 2] | [Deliverable 3]
 `
 }
 
@@ -707,7 +707,8 @@ export function buildAgentSystemPrompt(
   connectedIntegrations?: string[],
   mode: string = 'planning',
   activeTemplate?: string | null,
-  orgMetricsBlock?: string
+  orgMetricsBlock?: string,
+  bcpContext?: string
 ): string {
 
   const connected = connectedIntegrations || []
@@ -746,6 +747,10 @@ export function buildAgentSystemPrompt(
     ? `\n${orgMetricsBlock}\n`
     : ''
 
+  const bcpBlock = bcpContext
+    ? `\nLUNAR BUSINESS CONTEXT PROTOCOL (BCP):\n${bcpContext}\n`
+    : ''
+
   const specializedInstructions = AGENT_INSTRUCTIONS[agent.name] || ''
 
   const templateBlock = activeTemplate 
@@ -775,6 +780,7 @@ Mission: ${company.mission || 'Not set'}
 Brand voice: ${company.brand_voice || 'Professional'}
 ICP: ${company.icp || 'Not defined'}
 
+${bcpBlock}
 ${analyticsBlock}
 ${memoryBlock}
 

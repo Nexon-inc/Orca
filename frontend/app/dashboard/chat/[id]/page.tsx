@@ -710,7 +710,7 @@ function ChatContent() {
         }
       );
       if (pastedDocRef.current) setPastedDocument(null);
-    }, 900);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [searchParams, conversationId, append, activeModel, chatMode]);
