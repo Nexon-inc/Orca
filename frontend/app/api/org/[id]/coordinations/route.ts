@@ -8,7 +8,7 @@ export async function GET(
   const { id: orgId } = await params
   const supabase = createServiceSupabaseClient()
 
-  const { data: coordinations, error } = await supabase
+  let { data: coordinations, error } = await supabase
     .from('coordination_events')
     .select(`
       *,
@@ -20,9 +20,16 @@ export async function GET(
     .limit(15)
 
   if (error) {
-    console.error('[COORDINATION_API_ERR]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    // Fallback if foreign key join fails
+    const fallback = await supabase
+      .from('coordination_events')
+      .select('*')
+      .eq('org_id', orgId)
+      .order('created_at', { ascending: false })
+      .limit(15)
+
+    coordinations = fallback.data || []
   }
 
-  return NextResponse.json({ coordinations: coordinations || [] })
+  return NextResponse.json({ coordinations: coordinations || [] }, { status: 200 })
 }

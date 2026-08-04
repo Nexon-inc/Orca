@@ -80,8 +80,8 @@ async function saveAgentMessage(
   const resultItems = resultMatch ? resultMatch[1].split('|').map((s: string) => s.trim()) : []
   const directiveMatch = rawText.match(
     /(?:DIRECTIVE_DOCUMENT|DIRECTIVE|MASTER_DIRECTIVE):\s*([\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i
-  )
-  const directiveRaw = directiveMatch ? directiveMatch[1].trim() : null
+  ) || rawText.match(/(#\s+[\s\S]+?)(?:\n(?:RESULT|RESULTS|COORDINATION_NEEDED):|$)/i)
+  const directiveRaw = directiveMatch ? directiveMatch[1].trim() : (rawText.length > 150 ? rawText.trim() : null)
 
   const { cleanResponse } = await parseAndExecuteActions(rawText, orgId, agent.id, userId)
   const finalContent =

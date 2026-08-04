@@ -13,26 +13,25 @@ export async function GET(
 
   const supabase = createServiceSupabaseClient()
 
-  // 1. Find the agent ID
-  const { data: agent } = await supabase
+  // 1. Find the agent ID using flexible name/acronym match
+  const { data: agents } = await supabase
     .from('agents')
     .select('id')
-    .or(`name.eq.${agentNameOrAcronym},acronym.eq.${agentNameOrAcronym}`)
-    .single()
+    .or(`name.ilike.%${agentNameOrAcronym}%,acronym.ilike.${agentNameOrAcronym}`)
+    .limit(1)
 
-  if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
+  const agent = agents?.[0]
+  if (!agent) return NextResponse.json({ conversationId: null }, { status: 200 })
 
   // 2. Find the latest conversation for this agent in this org
-  const { data: conversation, error } = await supabase
+  const { data: conversations } = await supabase
     .from('conversations')
     .select('id')
     .eq('org_id', orgId)
     .eq('agent_id', agent.id)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
 
-  if (error || !conversation) return NextResponse.json({ conversationId: null })
-
-  return NextResponse.json({ conversationId: conversation.id })
+  const conversation = conversations?.[0]
+  return NextResponse.json({ conversationId: conversation?.id || null }, { status: 200 })
 }

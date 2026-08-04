@@ -50,8 +50,14 @@ export async function parseAndExecuteActions(
       }
     } catch (error: any) {
       console.error(`Failed to execute action ${tool}:`, error)
+      let errMsg = error.message || String(error)
+      if (errMsg.includes('client-not-enrolled') || errMsg.includes('Client Forbidden') || errMsg.includes('developer App')) {
+        errMsg = 'X (Twitter) API v2 requires an App enrolled in a Developer Project on X. Please connect your X App credentials in Composio settings.'
+      } else if (errMsg.includes('Not Found') && tool.includes('github')) {
+        errMsg = 'GitHub repository or branch not found. Check repository permissions in Composio settings.'
+      }
       cleanResponse = cleanResponse.replace(fullTag,
-        `\n> ⚠️ **Action failed:** ${tool} — ${error.message || 'check your integrations'}\n`
+        `\n> ⚠️ **Action failed:** ${tool} — ${errMsg}\n`
       )
     }
   }
