@@ -9,10 +9,18 @@ import { createClientSupabaseClient } from '@/lib/supabase/client';
 export default function SettingsPage() {
   const [aiCeoMode, setAiCeoMode] = useState(false);
   const [org, setOrg] = useState<any>(null);
+  const [bcpScore, setBcpScore] = useState(10);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const supabase = createClientSupabaseClient();
   
   useEffect(() => {
+    fetch('/api/lunar')
+      .then(res => res.json())
+      .then(data => {
+        if (data.score) setBcpScore(data.score);
+      })
+      .catch(() => {});
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         supabase
@@ -86,6 +94,26 @@ export default function SettingsPage() {
             {/* SETUP & ENV */}
             <div id="setup" className="text-[9px] font-black font-mono text-on-surface/30 uppercase tracking-[0.2em] mb-4 mt-10 scroll-mt-24">
               COMPANY_CONTEXT
+            </div>
+
+            <div className="flex items-center justify-between py-4 border-b border-outline-variant/10">
+              <div>
+                <div className="text-[13px] font-black font-label text-on-surface uppercase tracking-wide flex items-center gap-2">
+                  <span>🌙 LUNAR_BCP_PROTOCOL</span>
+                  <span className="text-[10px] text-primary-container bg-primary-container/10 px-2 py-0.5 rounded-full border border-primary-container/20 font-mono">
+                    {bcpScore}% Complete
+                  </span>
+                </div>
+                <div className="text-[11px] font-body text-on-surface/40 mt-0.5">
+                  Single source of truth for Atlas, Aria, Rex, Purity, Roman & Ghost
+                </div>
+              </div>
+              <a
+                href="/dashboard/lunar"
+                className="px-4 py-1.5 border border-primary-container/40 text-[9px] font-black text-primary-container uppercase tracking-widest rounded-sm hover:bg-primary-container/10 transition-colors"
+              >
+                MANAGE_BCP →
+              </a>
             </div>
             
             <div className="flex items-center justify-between py-4 border-b border-outline-variant/10">
