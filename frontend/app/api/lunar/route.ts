@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { createServiceSupabaseClient } from '@/lib/supabase/service';
+import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server';
 import { loadBCP, applyBCPUpdates, renderBCPasMarkdown } from '@/lib/lunar/bcpManager';
 import { buildLunarSystemPrompt } from '@/lib/lunar/prompt';
 import Groq from 'groq-sdk';

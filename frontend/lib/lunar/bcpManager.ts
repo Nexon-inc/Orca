@@ -1,4 +1,4 @@
-import { createServiceSupabaseClient } from '@/lib/supabase/service';
+import { createServiceSupabaseClient } from '@/lib/supabase/server';
 
 export interface BCP {
   id?: string;
