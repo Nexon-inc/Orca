@@ -13,47 +13,44 @@ export async function DELETE(
 
   const supabase = await createServerSupabaseClient()
 
-  // Get the integration to confirm org ownership
-  const { data: integration } = await supabase
-    .from('integrations')
-    .select('org_id, service_name, department_key')
-    .eq('id', id)
-    .single()
-
-  if (!integration) {
-    return NextResponse.json({ error: 'Integration not found' }, { status: 404 })
-  }
-
-  // Verify the user belongs to this org
   const { data: member } = await supabase
     .from('org_members')
     .select('org_id, role')
     .eq('user_id', user.id)
-    .eq('org_id', integration.org_id)
     .single()
 
   if (!member) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Only owners, cofounders, and heads (of that dept) can disconnect
-  const canDisconnect = ['owner', 'cofounder'].includes(member.role)
+  // Only owners, cofounders, and heads can disconnect
+  const canDisconnect = ['owner', 'cofounder', 'head'].includes(member.role)
   if (!canDisconnect) {
     return NextResponse.json(
-      { error: 'Only Owners and Co-founders can disconnect integrations.' },
+      { error: 'Only Owners, Co-founders, and Department Heads can disconnect integrations.' },
       { status: 403 }
     )
   }
 
-  // Delete the integration record (tokens are deleted with it)
-  await supabase.from('integrations').delete().eq('id', id)
+  // Delete the integration record by UUID id or service_name
+  const { data: deleted, error: deleteErr } = await supabase
+    .from('integrations')
+    .delete()
+    .eq('org_id', member.org_id)
+    .or(`id.eq.${id},service_name.eq.${id}`)
+    .select('id, service_name, department_key')
+
+  if (deleteErr) {
+    console.error('[DELETE_INTEGRATION_ERR]', deleteErr)
+    return NextResponse.json({ error: deleteErr.message }, { status: 500 })
+  }
 
   await writeAuditLog({
-    orgId: integration.org_id,
+    orgId: member.org_id,
     actorUserId: user.id,
     action: 'integration_disconnected',
     resourceType: 'integration',
-    metadata: { service: integration.service_name, dept: integration.department_key }
+    metadata: { targetId: id, deletedCount: deleted?.length || 0 }
   })
 
   return NextResponse.json({ disconnected: true })
