@@ -207,8 +207,9 @@ function ChatContent() {
   const [isExportingToDrive, setIsExportingToDrive] = useState(false);
   const [driveDocUrl, setDriveDocUrl] = useState<string | null>(null);
   const [activeHighlightColor, setActiveHighlightColor] = useState<'green' | 'yellow' | 'red'>('green');
-  const [selectionTooltip, setSelectionTooltip] = useState<{ x: number, y: number, text: string } | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showTaskControlModal, setShowTaskControlModal] = useState(false);
+  const [selectedTaskFilter, setSelectedTaskFilter] = useState<'ALL' | 'RUNNING' | 'PAUSED' | 'COMPLETED'>('ALL');
   const [isTasksPaused, setIsTasksPaused] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const tasks = activeCoordinations.map(c => {
@@ -866,8 +867,8 @@ function ChatContent() {
         blocks.push({ type: 'h3', content: trimmed.slice(4) });
       } else if (trimmed.startsWith('- [ ] ') || trimmed.startsWith('- [x] ') || trimmed.startsWith('* [ ] ') || trimmed.startsWith('* [x] ')) {
         blocks.push({ type: 'checklist', content: trimmed });
-      } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        blocks.push({ type: 'list', content: trimmed.slice(2) });
+      } else if (trimmed.startsWith('> ')) {
+        blocks.push({ type: 'quote', content: trimmed.slice(2) });
       } else if (trimmed === '---') {
         blocks.push({ type: 'hr', content: '' });
       } else if (trimmed === '') {
@@ -1820,6 +1821,150 @@ function ChatContent() {
         </div>
       </main>
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => !isLocked && setShowPricingModal(false)} isLocked={isLocked} currentPlan={org?.plan} />}
+
+      {showTaskControlModal && (
+        <div className="fixed inset-0 bg-bg/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+          <div className="w-full max-w-3xl bg-[#0c0e0c] border border-outline-variant/20 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200 text-on-surface">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-6 border-b border-outline-variant/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary-container/10 border border-primary-container/30 flex items-center justify-center text-primary-container">
+                  <span className="material-symbols-outlined">tune</span>
+                </div>
+                <div>
+                  <h2 className="font-headline text-lg font-black uppercase tracking-tight text-white">Task Coordination & Control Center</h2>
+                  <p className="font-body text-[11px] text-on-surface/40">Manage active board tasks, cross-executive handoffs, logs & cron schedules</p>
+                </div>
+              </div>
+              <button onClick={() => setShowTaskControlModal(false)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-on-surface/60 hover:text-white flex items-center justify-center transition-colors">
+                ✕
+              </button>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-2 my-6">
+              {(['ALL', 'RUNNING', 'PAUSED', 'COMPLETED'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setSelectedTaskFilter(tab)}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all ${
+                    selectedTaskFilter === tab
+                      ? 'bg-primary-container/15 text-primary-container border border-primary-container/30'
+                      : 'bg-surface-container border border-outline-variant/10 text-on-surface/40 hover:text-on-surface'
+                  }`}
+                >
+                  {tab} ({tab === 'ALL' ? tasks.length : tab === 'RUNNING' ? tasks.filter(t => !isTasksPaused && t.status === 'RUNNING').length : tab === 'PAUSED' ? (isTasksPaused ? tasks.filter(t => t.status === 'RUNNING').length : 0) : tasks.filter(t => t.status === 'COMPLETE' || t.status === 'FAILED').length})
+                </button>
+              ))}
+            </div>
+
+            {/* Task List */}
+            <div className="space-y-4 max-h-[420px] overflow-y-auto no-scrollbar pr-1">
+              {tasks.length === 0 ? (
+                <div className="p-12 text-center border border-dashed border-outline-variant/20 rounded-2xl text-on-surface/30 font-mono text-xs">
+                  No active task coordinations recorded for this organization yet.
+                </div>
+              ) : (
+                tasks
+                  .filter(t => {
+                    if (selectedTaskFilter === 'RUNNING') return !isTasksPaused && t.status === 'RUNNING';
+                    if (selectedTaskFilter === 'PAUSED') return isTasksPaused && t.status === 'RUNNING';
+                    if (selectedTaskFilter === 'COMPLETED') return t.status === 'COMPLETE' || t.status === 'FAILED';
+                    return true;
+                  })
+                  .map(task => {
+                    const isExpanded = expandedTaskId === task.id;
+                    const isTaskPaused = isTasksPaused && task.status === 'RUNNING';
+
+                    return (
+                      <div key={task.id} className="p-4 bg-[#141714] border border-outline-variant/15 rounded-2xl hover:border-outline-variant/30 transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{task.icon}</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-headline text-xs font-black uppercase text-white">{task.title}</span>
+                                <span className="text-[9px] font-mono bg-white/5 px-2 py-0.5 rounded text-on-surface/50 border border-white/10 uppercase">{task.dept}</span>
+                              </div>
+                              <p className="text-[11px] text-on-surface/50 font-body mt-0.5">{task.description}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-mono font-bold uppercase tracking-widest border ${
+                              isTaskPaused
+                                ? 'bg-amber-500/10 text-amber-300 border-amber-400/30'
+                                : task.status === 'RUNNING'
+                                ? 'bg-primary-container/10 text-primary-container border-primary-container/30 animate-pulse'
+                                : task.status === 'FAILED'
+                                ? 'bg-error/10 text-error border-error/30'
+                                : 'bg-white/5 text-on-surface/40 border-white/10'
+                            }`}>
+                              {isTaskPaused ? 'PAUSED' : task.status}
+                            </span>
+
+                            {task.status === 'RUNNING' && (
+                              <button
+                                onClick={() => setIsTasksPaused(!isTasksPaused)}
+                                className={`px-3 py-1 rounded-lg text-[9px] font-mono font-bold uppercase tracking-wider border transition-all ${
+                                  isTasksPaused
+                                    ? 'bg-primary-container/20 text-primary-container border-primary-container/40'
+                                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+                                }`}
+                              >
+                                {isTasksPaused ? '▶ Resume' : '⏸ Pause'}
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                              className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-on-surface/70 text-[9px] font-mono font-bold uppercase tracking-wider border border-white/10 transition-colors"
+                            >
+                              {isExpanded ? 'Hide Details' : 'Logs & Payload'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-3 bg-surface-container h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 ${isTaskPaused ? 'bg-amber-400' : 'bg-primary-container'}`}
+                            style={{ width: `${task.progress}%` }}
+                          />
+                        </div>
+
+                        {/* Expanded Payload & Logs */}
+                        {isExpanded && (
+                          <div className="mt-4 pt-4 border-t border-outline-variant/10 space-y-3 font-mono text-[11px] animate-in fade-in duration-150">
+                            <div>
+                              <span className="text-[9px] text-on-surface/40 uppercase tracking-widest block mb-1">Payload Context</span>
+                              <pre className="p-3 bg-[#090b09] rounded-xl text-[#a9b1d6] overflow-x-auto text-[10px]">{task.input}</pre>
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-on-surface/40 uppercase tracking-widest block mb-1">Execution Summary & Log</span>
+                              <div className="p-3 bg-[#090b09] rounded-xl text-primary-container/90 text-[10px]">{task.output}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+            {/* Footer Control */}
+            <div className="mt-6 pt-4 border-t border-outline-variant/10 flex items-center justify-between text-[11px] font-mono text-on-surface/40">
+              <span>Auto-Syncing with Inngest Engine</span>
+              <button
+                onClick={() => setIsTasksPaused(!isTasksPaused)}
+                className="text-primary-container hover:underline font-bold uppercase text-[10px]"
+              >
+                {isTasksPaused ? 'Resume All Tasks' : 'Pause All Board Tasks'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -103,7 +103,12 @@ export default function SignupPage() {
       },
     });
     if (error) {
-      toast.error(error.message);
+      if (error.message?.includes('provider is not enabled') || error.message?.includes('validation_failed')) {
+        toast.error("Google provider is not enabled in Supabase Auth settings. Please sign up with email and password below.");
+        setError("Google login is currently disabled in Supabase. Please sign up using your email and password.");
+      } else {
+        toast.error(error.message);
+      }
     }
   };
 
@@ -117,57 +122,20 @@ export default function SignupPage() {
       <main className="min-h-screen bg-bg text-white font-dm-mono flex flex-col">
         <Navigation />
         <section className="flex-1 flex flex-col items-center justify-center px-4 pt-32 pb-24">
-          <div className="max-w-lg w-full text-center space-y-8">
-
-            {/* Icon */}
-            <div className="auth-anim opacity-0 w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mx-auto">
+          <div className="max-w-md w-full text-center space-y-6 p-8 rounded-2xl border border-white/10 bg-surface/80 backdrop-blur-xl shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-green/10 border border-green/30 flex items-center justify-center mx-auto">
               <span className="text-3xl">✉️</span>
             </div>
-
-            {/* Heading */}
-            <div className="auth-anim opacity-0">
-              <p className="font-dm-mono text-[10px] text-green tracking-[0.3em] uppercase mb-3">Verification sent</p>
-              <h1 className="font-syne text-2xl font-bold text-white">Check your inbox</h1>
+            <div>
+              <p className="font-dm-mono text-[10px] text-green tracking-[0.3em] uppercase mb-2">Verification Sent</p>
+              <h1 className="font-syne text-lg font-bold text-white">We've sent a verification email to your email address.</h1>
             </div>
-
-            {/* Desc */}
-            <p className="auth-anim opacity-0 font-dm-mono text-[13px] text-text-muted leading-relaxed max-w-sm mx-auto">
-              We've sent two emails to <span className="text-white">{submittedEmail}</span>.
-              One to verify your address, one to welcome you to ORCA.
+            <p className="font-dm-mono text-[12px] text-text-muted">
+              Please check <span className="text-white font-bold">{submittedEmail}</span> and click the link to activate your account.
             </p>
-
-            {/* Cards */}
-            <div className="auth-anim opacity-0 text-left space-y-3">
-              <div className="group p-5 rounded-2xl border border-white/5 bg-surface/50 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-dm-mono text-[10px] text-green tracking-widest uppercase opacity-60">Step 01</span>
-                  <span className="text-lg text-green/40 group-hover:text-green transition-colors">🔐</span>
-                </div>
-                <h3 className="font-syne text-[15px] font-bold text-white mb-1">Verify your email</h3>
-                <p className="font-dm-mono text-[12px] text-text-muted leading-relaxed">
-                  Click the button in the first email. You'll be taken straight to onboarding to build your AI workforce.
-                </p>
-              </div>
-
-              <div className="group p-5 rounded-2xl border border-white/5 bg-surface/50 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-dm-mono text-[10px] text-white/30 tracking-widest uppercase opacity-60">Step 02</span>
-                  <span className="text-lg text-white/20 group-hover:text-white/50 transition-colors">👋</span>
-                </div>
-                <h3 className="font-syne text-[15px] font-bold text-white mb-1">Welcome to ORCA</h3>
-                <p className="font-dm-mono text-[12px] text-text-muted leading-relaxed">
-                  Your second email is from the ORCA team — everything you need to get your AI company OS running.
-                </p>
-              </div>
-            </div>
-
-            <p className="auth-anim opacity-0 font-dm-mono text-[11px] text-white/20 uppercase tracking-[0.2em]">
-              Didn't receive it? Check your spam folder.
-            </p>
-
             <button
               onClick={() => { setEmailSent(false); setError(''); }}
-              className="auth-anim opacity-0 font-dm-mono text-[11px] text-white/30 hover:text-white/60 transition-colors uppercase tracking-widest underline underline-offset-4"
+              className="font-dm-mono text-[11px] text-white/40 hover:text-white transition-colors uppercase tracking-widest underline underline-offset-4 pt-2 block mx-auto"
             >
               ← Use a different email
             </button>
