@@ -184,6 +184,11 @@ export async function parseAndExecuteActions(
       cleanResponse = cleanResponse.replace(fullTag,
         `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`
       )
+    } catch (err) {
+      console.error(`Failed to trigger handoff to ${toAgent}:`, err)
+    }
+  }
+
   cleanResponse = cleanResponse
     .replace(/(?:\[|<)ACTION:[\s\S]*?(?:\]|>(?:<\/ACTION>)?)/gi, '')
     .replace(/<\/ACTION>/gi, '')
