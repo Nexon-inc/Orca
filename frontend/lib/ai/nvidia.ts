@@ -4,7 +4,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 export const createNvidiaClient = (apiKey?: string) => {
   return createOpenAI({
     baseURL: 'https://integrate.api.nvidia.com/v1',
-    apiKey: apiKey || process.env.NVIDIA_NIM_API_KEY || '',
+    apiKey: apiKey || process.env.NVIDIA_NIM_API_KEY || process.env.NVIDIA_API_KEY || '',
   })
 }
 
