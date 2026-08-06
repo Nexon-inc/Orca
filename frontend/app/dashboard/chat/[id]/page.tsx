@@ -207,6 +207,7 @@ function ChatContent() {
   const [isExportingToDrive, setIsExportingToDrive] = useState(false);
   const [driveDocUrl, setDriveDocUrl] = useState<string | null>(null);
   const [activeHighlightColor, setActiveHighlightColor] = useState<'green' | 'yellow' | 'red'>('green');
+  const [selectionTooltip, setSelectionTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showTaskControlModal, setShowTaskControlModal] = useState(false);
   const [selectedTaskFilter, setSelectedTaskFilter] = useState<'ALL' | 'RUNNING' | 'PAUSED' | 'COMPLETED'>('ALL');
