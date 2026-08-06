@@ -22,6 +22,7 @@ import {
   LONG_PASTE_CHAR_THRESHOLD,
 } from '@/lib/chat/pasteConfig';
 import { parseExecutiveFromPrompt, AGENT_MAPPING } from '@/lib/chat/agentMapping';
+import { formatUserFriendlyBadge } from '@/lib/agents/parseActions';
 
 
 const DEPT_MAP: Record<string, { emoji: string; color: string; label: string; name: string }> = {
