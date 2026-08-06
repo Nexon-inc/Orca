@@ -143,6 +143,23 @@ export async function parseAndExecuteActions(
       const targetDeptKey = (targetAgent?.departments as any)?.key || nameToDept[actualName] || 'ops'
       const targetAgentId = targetAgent?.id || null
 
+      // Record coordination event in Supabase DB so GET /api/org/[id]/coordinations populates active tasks
+      try {
+        const { error: insertErr } = await supabase.from('coordination_events').insert({
+          org_id: orgId,
+          from_agent_id: fromAgentId || null,
+          to_agent_id: targetAgentId || null,
+          type: 'handoff',
+          status: 'running',
+          description: `Handed off to ${actualName}: ${reason}`,
+          context: { reason, context, toAgent: actualName },
+          created_at: new Date().toISOString()
+        });
+        if (insertErr) console.warn('[COORDINATION_DB_WARN] DB insert note:', insertErr);
+      } catch (dbErr) {
+        console.warn('[COORDINATION_DB_WARN] Could not record coordination event:', dbErr);
+      }
+
       try {
         await inngest.send({
           name: 'agent/coordination.requested',

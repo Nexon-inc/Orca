@@ -436,7 +436,7 @@ function ChatContent() {
       } catch (err) {}
     };
     fetchCoordinations();
-    const interval = setInterval(fetchCoordinations, 10000);
+    const interval = setInterval(fetchCoordinations, 4000);
     return () => clearInterval(interval);
   }, [org?.id]);
 
@@ -1041,6 +1041,30 @@ function ChatContent() {
           <div key={blockIdx} className="flex items-start gap-2 my-1 text-xs text-on-surface/80 pl-3">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-container/40 mt-1.5 flex-shrink-0" />
             <span>{applyHighlights(block.content)}</span>
+          </div>
+        );
+      }
+
+      if (block.type === 'quote') {
+        const isHandoff = block.content.includes('Coordinating with');
+        return (
+          <div
+            key={blockIdx}
+            onClick={() => setShowTaskControlModal(true)}
+            className={`my-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+              isHandoff
+                ? 'bg-primary-container/10 border-primary-container/30 hover:border-primary-container/60 hover:scale-[1.01] shadow-lg shadow-primary-container/5'
+                : 'bg-white/5 border-white/10 hover:border-white/20'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs text-on-surface/90 font-mono">
+              <div className="flex items-center gap-2">
+                {applyHighlights(block.content)}
+              </div>
+              <span className="text-[10px] uppercase font-bold text-primary-container bg-primary-container/20 px-2 py-0.5 rounded border border-primary-container/30">
+                View Task Control →
+              </span>
+            </div>
           </div>
         );
       }
