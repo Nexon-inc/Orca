@@ -397,8 +397,10 @@ function ChatContent() {
             if (newMessages[i].role === 'assistant') {
               const rawContent = lastData.assistant_content || newMessages[i].content || '';
               const cleanContent = String(rawContent)
-                .replace(/\[ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})\]/gi, (_m: string, tool: string) => `\n> ✓ **Action executed:** ${tool.replace(/_/g, ' ')}\n`)
-                .replace(/\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi, (_m: string, toAgent: string, reason: string) => `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`);
+                .replace(/(?:\[|<)ACTION:\s*tool=["']([^"']+)["']\s*params=({[\s\S]+?})(?:\]|>(?:<\/ACTION>)?)/gi, (_m: string, tool: string) => `\n> ✓ **${formatUserFriendlyBadge(tool)}**\n`)
+                .replace(/\[HANDOFF:\s*to=["']([^"']+)["']\s*reason=["']([^"']+)["']\s*context=["']([^"']+)["']\]/gi, (_m: string, toAgent: string, reason: string) => `\n> 🔄 **Coordinating with ${toAgent}:** ${reason}\n`)
+                .replace(/(?:\[|<)ACTION:[\s\S]*?(?:\]|>(?:<\/ACTION>)?)/gi, '')
+                .replace(/<\/ACTION>/gi, '');
 
               newMessages[i].content = cleanContent;
 
