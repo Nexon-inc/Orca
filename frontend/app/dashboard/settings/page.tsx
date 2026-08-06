@@ -99,7 +99,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between py-4 border-b border-outline-variant/10">
               <div>
                 <div className="text-[13px] font-black font-label text-on-surface uppercase tracking-wide flex items-center gap-2">
-                  <span>🌙 LUNAR_BCP_PROTOCOL</span>
+                  <span>🌙 LUNAR BUSINESS CONTEXT</span>
                   <span className="text-[10px] text-primary-container bg-primary-container/10 px-2 py-0.5 rounded-full border border-primary-container/20 font-mono">
                     {bcpScore}% Complete
                   </span>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                 href="/dashboard/lunar"
                 className="px-4 py-1.5 border border-primary-container/40 text-[9px] font-black text-primary-container uppercase tracking-widest rounded-sm hover:bg-primary-container/10 transition-colors"
               >
-                MANAGE_BCP →
+                MANAGE BCP →
               </a>
             </div>
             
@@ -147,64 +147,6 @@ export default function SettingsPage() {
                   className="w-full bg-transparent text-[12px] font-mono text-on-surface border-none outline-none focus:ring-0 py-1" 
                   defaultValue="B2B SAAS"
                 />
-              </div>
-            </div>
-
-            {/* AI CEO MODE */}
-            <div className="text-[9px] font-black font-mono text-on-surface/30 uppercase tracking-[0.2em] mb-4 mt-12">
-              AUTONOMOUS_OPERATIONS
-            </div>
-            
-            <div className="flex items-center justify-between py-4 border-b border-outline-variant/10">
-              <div>
-                <div className="text-[13px] font-black font-label text-on-surface uppercase">
-                  AI_CEO_MODE
-                </div>
-                <div className="text-[11px] font-body text-on-surface/40 mt-0.5 max-w-sm">
-                  ATLAS runs your executive team autonomously every Monday. 
-                  You approve everything that matters.
-                </div>
-              </div>
-              {/* Toggle */}
-              <div className="relative">
-                <input 
-                  type="checkbox" 
-                  id="ai-ceo" 
-                  className="sr-only peer" 
-                  checked={aiCeoMode}
-                  onChange={(e) => setAiCeoMode(e.target.checked)}
-                />
-                <label 
-                  htmlFor="ai-ceo" 
-                  className="w-11 h-6 bg-surface-container-high border border-outline-variant/20 rounded-sm cursor-pointer peer-checked:bg-primary-container/20 peer-checked:border-primary-container/40 transition-all block"
-                ></label>
-                {/* Indicator */}
-                <span className={`absolute top-1 left-1 w-4 h-4 bg-on-surface/30 rounded-sm transition-all pointer-events-none ${aiCeoMode ? 'left-6 bg-primary-container shadow-[0_0_10px_rgba(0,255,135,0.5)]' : ''}`}>
-                </span>
-              </div>
-            </div>
-
-            {/* AI MODELS */}
-            <div className="text-[9px] font-black font-mono text-on-surface/30 uppercase tracking-[0.2em] mb-4 mt-12">
-              AI_MODELS
-            </div>
-
-            <div className="flex items-center justify-between py-4 border-b border-outline-variant/10">
-              <div>
-                <div className="text-[13px] font-black font-label text-on-surface uppercase tracking-wide">
-                  DEFAULT_LLM
-                </div>
-                <div className="text-[11px] font-body text-on-surface/40 mt-0.5">
-                  The model powering your executive intelligence
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="px-3 py-1 bg-primary-container/10 border border-primary-container/40 text-primary-container text-[10px] font-black uppercase tracking-widest rounded-sm">
-                  ORCA_CORE_4.6
-                </button>
-                <button className="px-3 py-1 bg-surface-container border border-outline-variant/30 text-on-surface/40 hover:text-on-surface text-[10px] font-black uppercase tracking-widest rounded-sm transition-colors">
-                  GPT-4O
-                </button>
               </div>
             </div>
 
