@@ -1,8 +1,5 @@
 export function formatUserFriendlyBadge(tool: string): string {
   const lower = tool.toLowerCase();
-  if (lower.includes('twitter') || lower.includes('tweet') || lower.includes('x_post')) {
-    return 'Posted announcement on X';
-  }
   if (lower.includes('hubspot') && lower.includes('deal')) {
     return 'Created deal in HubSpot';
   }

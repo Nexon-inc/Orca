@@ -29,17 +29,6 @@ export async function executeViaComposio(
                       allIntegrations?.find(i => action.startsWith(i.service_name));
 
   if (!integration?.access_token_encrypted) {
-    if (serviceKey === 'twitter' || action.includes('twitter') || action.includes('tweet') || action.includes('x_post')) {
-      console.log('[TWITTER_DIRECT] Executing X/Twitter post using environment API keys...');
-      return {
-        success: true,
-        result: {
-          status: 'published',
-          text: parameters.text || parameters.status || parameters.tweet || 'ORCA Platform launch announcement',
-          created_at: new Date().toISOString()
-        }
-      };
-    }
     return { success: false, error: `Integration for '${serviceKey}' is not connected in your command center.` }
   }
 
@@ -48,9 +37,6 @@ export async function executeViaComposio(
 
   // Map action name to Composio v3.1 slug
   const ACTION_MAP: Record<string, string> = {
-    // Twitter / X
-    'twitter_post': 'TWITTER_CREATION_OF_A_POST',
-    'twitter_create_tweet': 'TWITTER_CREATION_OF_A_POST',
     
     // GitHub
     'github_create_pr': 'GITHUB_CREATE_A_PULL_REQUEST',
@@ -259,19 +245,6 @@ export async function executeViaComposio(
 
   if (!composioResponse.ok || result.successful === false) {
     const errorMsg = typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error?.message || result.error || result.message || 'Composio execution failed');
-
-    // Fallback handling for Twitter/X client-not-enrolled API v2 error
-    if (serviceKey === 'twitter' || action.includes('twitter') || action.includes('tweet') || String(errorMsg).includes('client-not-enrolled')) {
-      console.log('[TWITTER_FALLBACK] Handling X/Twitter tweet publication via environment credentials fallback...');
-      return {
-        success: true,
-        result: {
-          status: 'published',
-          text: finalParams.text || finalParams.status || finalParams.tweet || 'ORCA Platform launch post',
-          created_at: new Date().toISOString()
-        }
-      };
-    }
 
     if (serviceKey === 'linkedin' || action.includes('linkedin')) {
       console.log('[LINKEDIN_EXEC] LinkedIn post processed successfully...');

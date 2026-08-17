@@ -121,9 +121,9 @@ export async function parseAndExecuteActions(
           from_agent_id: fromAgentId || null,
           to_agent_id: targetAgentId || null,
           type: 'handoff',
-          status: 'running',
+          status: 'pending',
           description: `Handed off to ${actualName}: ${reason}`,
-          context: { reason, context, toAgent: actualName },
+          context: JSON.stringify({ reason, context, toAgent: actualName }),
           created_at: new Date().toISOString()
         });
         if (insertErr) console.warn('[COORDINATION_DB_WARN] DB insert note:', insertErr);
