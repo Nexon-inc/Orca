@@ -1,3 +1,15 @@
+export interface BcpUserPreferences {
+  user_id: string;
+  preferred_name?: string;
+  communication_style?: 'direct' | 'collaborative' | 'executive';
+  expertise_level?: 'technical' | 'business' | 'founder';
+  notification_preferences?: {
+    proactive_questions?: boolean;
+    weekly_bcp_review?: boolean;
+    conflict_alerts?: boolean;
+  };
+}
+
 export interface BcpDepartment {
   name: string;
   lead: string;
@@ -16,11 +28,71 @@ export interface BcpWorkflow {
   steps: BcpWorkflowStep[];
 }
 
+export interface BcpCustomerInsights {
+  icp?: string;
+  personas?: string[];
+  pain_points?: string[];
+  churn_reasons?: string[];
+}
+
+export interface BcpBusinessGoals {
+  primary_goals?: string[];
+  north_star_metric?: string;
+  target_milestones?: string[];
+}
+
 export interface BcpConfig {
+  version?: number;
+  updated_at?: string;
+  company_stage?: 'seed' | 'growth' | 'enterprise';
+  completeness_score?: number; // 0 - 100
   domain?: string;
   metrics?: string;
+  business_goals?: BcpBusinessGoals;
+  customer_insights?: BcpCustomerInsights;
+  tech_stack?: string[];
+  user_corrected_fields?: Record<string, boolean>;
+  user_preferences?: Record<string, BcpUserPreferences>;
   departments: Record<string, BcpDepartment>;
   workflows: Record<string, BcpWorkflow>;
+}
+
+/**
+ * Returns field-level slice of BCP based on executive role scope.
+ * Ghost (CTO) -> tech_stack
+ * Rex (CSO) -> customer_insights & business_goals
+ * Aria (CMO) -> customer_insights & brand positioning
+ * Purity (CCO) -> customer_insights & churn
+ */
+export function getBcpSliceForExecutive(bcp: BcpConfig, roleAcronym: string): Partial<BcpConfig> {
+  const role = roleAcronym.toUpperCase();
+  if (role === 'CTO' || role === 'GHOST') {
+    return {
+      tech_stack: bcp.tech_stack || [],
+      domain: bcp.domain,
+      departments: bcp.departments?.['CTO'] ? { CTO: bcp.departments['CTO'] } : {}
+    };
+  }
+  if (role === 'CSO' || role === 'REX') {
+    return {
+      customer_insights: bcp.customer_insights,
+      business_goals: bcp.business_goals,
+      company_stage: bcp.company_stage
+    };
+  }
+  if (role === 'CMO' || role === 'ARIA') {
+    return {
+      customer_insights: bcp.customer_insights,
+      business_goals: bcp.business_goals
+    };
+  }
+  if (role === 'CCO' || role === 'PURITY') {
+    return {
+      customer_insights: bcp.customer_insights
+    };
+  }
+  // CEO / Atlas gets full cross-product BCP slice
+  return bcp;
 }
 
 /**

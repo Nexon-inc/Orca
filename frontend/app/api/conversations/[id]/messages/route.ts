@@ -411,10 +411,24 @@ export async function POST(
 
     let bcpBlock = ''
     if (bcpConfig) {
-      bcpBlock = `\n\nBUSINESS_CONTEXT_PROTOCOL (BCP):\n---\n`
+      const { getBcpSliceForExecutive } = await import('@/lib/agents/bcpParser')
+      const slicedBcp = getBcpSliceForExecutive(bcpConfig, agent.acronym)
+
+      bcpBlock = `\n\nLUNAR_BUSINESS_CONTEXT_PROTOCOL (BCP):\n---\n`
+      if (bcpConfig.company_stage) bcpBlock += `Company Stage: ${bcpConfig.company_stage}\n`
       if (bcpConfig.domain) bcpBlock += `Organization Domain: ${bcpConfig.domain}\n`
       if (bcpConfig.metrics) bcpBlock += `Metrics Endpoint: ${bcpConfig.metrics}\n`
       
+      if (slicedBcp.customer_insights?.icp) {
+        bcpBlock += `Ideal Customer Profile (ICP): ${slicedBcp.customer_insights.icp}\n`
+      }
+      if (slicedBcp.business_goals?.primary_goals?.length) {
+        bcpBlock += `Primary Business Goals: ${slicedBcp.business_goals.primary_goals.join(', ')}\n`
+      }
+      if (slicedBcp.tech_stack?.length) {
+        bcpBlock += `Technical Stack: ${slicedBcp.tech_stack.join(', ')}\n`
+      }
+
       const currentAgentAcronym = agent.acronym
       const deptKey = Object.keys(bcpConfig.departments).find(k => 
         k.toLowerCase().includes(currentAgentAcronym.toLowerCase()) || 
@@ -430,18 +444,12 @@ export async function POST(
           bcpBlock += `- Bound Tools: ${dept.tools.join(', ')}\n`
         }
       }
-      
-      if (bcpConfig.workflows && Object.keys(bcpConfig.workflows).length > 0) {
-        bcpBlock += `Active Workflows:\n`
-        for (const [wfName, wf] of Object.entries(bcpConfig.workflows)) {
-          bcpBlock += `Workflow "${wfName}":\n`
-          if (wf.steps) {
-            wf.steps.forEach((s: any) => {
-              bcpBlock += `  Step ${s.step}. [${s.department}] ${s.action}\n`
-            })
-          }
-        }
-      }
+
+      bcpBlock += `\nLUNAR BCP EXECUTION GUIDELINES:\n`
+      bcpBlock += `- Build context progressively through work. Never block work with questionnaires or forms.\n`
+      bcpBlock += `- Ask at most 1 or 2 targeted questions only when critical info (e.g. ICP or North Star) is missing for the task.\n`
+      bcpBlock += `- Detect & surface cross-product conflicts (e.g. retention vs pure acquisition).\n`
+      bcpBlock += `- User corrections permanently override inferred data.\n`
       bcpBlock += `---\n`
     }
 
