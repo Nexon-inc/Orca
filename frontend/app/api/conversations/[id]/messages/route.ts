@@ -550,8 +550,8 @@ export async function POST(
             result_items: saved.resultItems,
             agent_name: agent.name,
             assistant_content: saved.finalContent,
-            provider: selectedProvider,
-            model: selectedModel,
+            provider: 'Lunar AI',
+            model: 'Lunar 0.1',
           })
         } catch (finishErr: unknown) {
           console.error('[ORCA] onFinish error:', finishErr)

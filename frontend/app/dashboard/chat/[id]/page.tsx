@@ -160,16 +160,11 @@ function ChatContent() {
 
   // Chat Modes & Models
   const [chatMode, setChatMode] = useState('Automate');
-  const [activeModel, setActiveModel] = useState({ name: 'ORCA', id: 'orca-intel' });
+  const [activeModel, setActiveModel] = useState({ name: '🌙 LUNAR 0.1', id: 'lunar-0.1' });
 
   const MODES = ['Planning', 'Automate'];
   const MODELS = [
-    { name: 'ORCA', id: 'orca-intel' },
-    { name: 'Claude', id: 'anthropic/claude-3.5-sonnet' },
-    { name: 'GPT', id: 'openai/gpt-4o' },
-    { name: 'Llama', id: 'meta-llama/llama-3.1-405b-instruct' },
-    { name: 'Gemini', id: 'google/gemini-1.5-pro' },
-    { name: 'DeepSeek', id: 'deepseek/deepseek-chat' }
+    { name: '🌙 LUNAR 0.1', id: 'lunar-0.1' }
   ];
 
   const EXECUTIVE_PILLS = [
