@@ -6,22 +6,27 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 const departments = [
-  { icon: "??", name: "Marketing", agents: "Aria (CMO)", pills: "CONTENT · SOCIAL · SEO · ADS", desc: "Content, social, SEO, ads, and brand voice — all running without a marketing hire." },
-  { icon: "??", name: "Sales & Revenue", agents: "Rex (CSO)", pills: "OUTREACH · CRM · LEADS · DEALS", desc: "Lead prospecting, outreach, CRM management, follow-ups, and deal intelligence." },
-  { icon: "??", name: "Customer Success", agents: "Purity (CCO)", pills: "SUPPORT · ONBOARDING · RETENTION", desc: "Support tickets, onboarding, retention, and NPS — handled before customers churn." },
-  { icon: "???", name: "Tech & Security", agents: "Ghost (CTO)", pills: "CODE · PRs · DEPLOYS · DOCS", desc: "Code generation, PR reviews, deployments, docs — with CyberGuard built in." },
-  { icon: "??", name: "Intelligence", agents: "Roman (CIO)", pills: "RESEARCH · SIGNALS · BRIEFS", desc: "Competitor research, market signals, weekly briefs, and forecasting." }
+  { icon: "📣", name: "Marketing", agents: "Aria (CMO)", pills: "CONTENT · SOCIAL · SEO · ADS", desc: "Content, social, SEO, ads, and brand voice — all running without a marketing hire." },
+  { icon: "💰", name: "Sales & Revenue", agents: "Rex (CSO)", pills: "OUTREACH · CRM · LEADS · DEALS", desc: "Lead prospecting, outreach, CRM management, follow-ups, and deal intelligence." },
+  { icon: "🤝", name: "Customer Success", agents: "Purity (CCO)", pills: "SUPPORT · ONBOARDING · RETENTION", desc: "Support tickets, onboarding, retention, and NPS — handled before customers churn." },
+  { icon: "🛡️", name: "Tech & Security", agents: "Ghost (CTO)", pills: "CODE · PRs · DEPLOYS · DOCS", desc: "Code generation, PR reviews, deployments, docs — with CyberGuard built in." },
+  { icon: "🔍", name: "Intelligence", agents: "Roman (CIO)", pills: "RESEARCH · SIGNALS · BRIEFS", desc: "Competitor research, market signals, weekly briefs, and forecasting." }
 ];
 
 export default function DepartmentsPage() {
   useEffect(() => {
-    animate('.dept-card', {
-      opacity: [0, 1],
-      y: [30, 0],
-      delay: stagger(100),
-      duration: 1000,
-      ease: 'outExpo'
+    const frame = requestAnimationFrame(() => {
+      if (document.querySelectorAll('.dept-card').length > 0) {
+        animate('.dept-card', {
+          opacity: [0, 1],
+          y: [30, 0],
+          delay: stagger(100),
+          duration: 1000,
+          ease: 'outExpo'
+        });
+      }
     });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (
@@ -54,7 +59,7 @@ export default function DepartmentsPage() {
                 <h3 className="font-syne text-2xl font-[800] text-white uppercase tracking-tight mb-3 group-hover:text-green transition-colors">{dept.name}</h3>
                 
                 <div className="flex gap-2 mb-6">
-                  {dept.pills.split(' Â· ').map(pill => (
+                  {dept.pills.split(' · ').map(pill => (
                     <span key={pill} className="text-[9px] font-black text-white/20 uppercase tracking-tighter px-2 py-0.5 border border-white/10 rounded-md group-hover:text-white/40 transition-colors">{pill}</span>
                   ))}
                 </div>
@@ -83,5 +88,4 @@ export default function DepartmentsPage() {
       <Footer />
     </main>
   );
-}
-
+   }
