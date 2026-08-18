@@ -363,7 +363,7 @@ export default function SignupPage() {
 
           {/* Footer note */}
           <p className="auth-anim opacity-0 mt-8 text-center font-dm-mono text-[10px] text-white/15 uppercase tracking-[0.4em]">
-            ORCA Â· AI Company OS Â· Nexonic Industries
+            ORCA · AI Company OS · Nexonic Industries
           </p>
         </div>
       </section>
