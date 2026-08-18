@@ -7,23 +7,27 @@ import Footer from '@/components/Footer';
 
 export default function AboutPage() {
   useEffect(() => {
-    // Hero Animation
-    animate('.about-hero-text', {
-      opacity: [0, 1],
-      y: [30, 0],
-      delay: stagger(100),
-      duration: 1000,
-      ease: 'outExpo'
+    const frame = requestAnimationFrame(() => {
+      if (document.querySelectorAll('.about-hero-text').length > 0) {
+        animate('.about-hero-text', {
+          opacity: [0, 1],
+          y: [30, 0],
+          delay: stagger(100),
+          duration: 1000,
+          ease: 'outExpo'
+        });
+      }
+      if (document.querySelectorAll('.about-block-anim').length > 0) {
+        animate('.about-block-anim', {
+          opacity: [0, 1],
+          y: [20, 0],
+          delay: stagger(150, { start: 500 }),
+          duration: 800,
+          ease: 'outQuad'
+        });
+      }
     });
-
-    // Content Block Animation
-    animate('.about-block-anim', {
-      opacity: [0, 1],
-      y: [20, 0],
-      delay: stagger(150, { start: 500 }),
-      duration: 800,
-      ease: 'outQuad'
-    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (
@@ -85,4 +89,4 @@ export default function AboutPage() {
       <Footer />
     </main>
   );
-}
+      }
