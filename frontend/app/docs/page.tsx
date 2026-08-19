@@ -59,17 +59,17 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-8">
             <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">Introduction</h1>
             <p className="text-lg text-white/60 leading-relaxed font-dm-mono uppercase tracking-tighter font-black">
-              ORCA is an AI Company OS built by Nexonic Industries. It gives any company â€” from a solo founder to a 15-person team â€” a full AI workforce across 5 departments and 6 executive agents, all coordinated in one dashboard.
+              ORCA is an AI Company OS built by Nexonic Industries. It gives any company from a solo founder to a 15-person team a full AI workforce across 5 departments and 6 executive agents, all coordinated in one dashboard.
             </p>
             <div className="prose prose-invert max-w-none text-white/40 font-dm-mono uppercase tracking-tighter font-black space-y-6">
-              <p>ORCA is not a chatbot. It is not a prompt tool. It is not another automation layer on top of your existing tools. ORCA is an operating system for your company. Agents have roles, memory, and the ability to coordinate with each other across departments â€” just like a real team would.</p>
+              <p>ORCA is not a chatbot. It is not a prompt tool. It is not another automation layer on top of your existing tools. ORCA is an operating system for your company. Agents have roles, memory, and the ability to coordinate with each other across departments just like a real team would.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 text-white">
                 <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.02]">
                   <h3 className="text-white font-syne text-xl mb-4 italic uppercase">What ORCA replaces</h3>
                   <ul className="list-none space-y-2 text-sm italic text-white/40">
                     <li>- The need to hire a full Marketing, Sales, Ops, Finance, Tech, and Hiring team</li>
-                    <li>- The 8â€“12 disconnected tools you're currently using and manually bridging</li>
+                    <li>- The 12 disconnected tools you're currently using and manually bridging</li>
                     <li>- The hours you spend being the bottleneck between departments</li>
                   </ul>
                 </div>
@@ -86,7 +86,7 @@ export default function DocsPage() {
 
               <div className="pt-8">
                 <h3 className="text-white font-syne text-xl mb-4 italic uppercase">Who ORCA is for</h3>
-                <p>Solo founders, co-founders, indie hackers, and early-stage startups with 1â€“15 people who need to operate like a scaled company without the payroll to match.</p>
+                <p>Solo founders, co-founders, indie hackers, and early-stage startups with 15 people who need to operate like a scaled company without the payroll to match.</p>
               </div>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function DocsPage() {
                    <h3 className="text-white font-syne text-xl font-black uppercase tracking-tight">Complete onboarding (5 minutes)</h3>
                 </div>
                 <p className="text-sm text-white/40 font-dm-mono uppercase tracking-tighter font-black leading-relaxed pl-12 mb-6">
-                   The onboarding flow collects your company context. This is what your agents use to understand who they're working for. Do not skip it â€” the more context you provide, the better your agents perform.
+                   The onboarding flow collects your company context. This is what your agents use to understand who they're working for. Do not skip it the more context you provide, the better your agents perform.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-12 text-[10px] font-dm-mono font-black uppercase tracking-widest text-white/20">
                    <div className="p-4 rounded-xl border border-white/5">- Brief your workforce (Mission, Voice, ICP)</div>
@@ -205,22 +205,22 @@ export default function DocsPage() {
           <div className="docs-content-anim space-y-8">
              <h1 className="font-syne text-5xl font-black text-white uppercase tracking-tighter">The Org Chart</h1>
              <p className="text-lg text-white/60 leading-relaxed font-dm-mono uppercase tracking-tighter font-black">
-                ORCA is built around a company org chart â€” not a flat list of AI tools. Every element of ORCA maps to how a real company is structured.
+                ORCA is built around a company org chart not a flat list of AI tools. Every element of ORCA maps to how a real company is structured.
              </p>
              <div className="p-8 rounded-[3rem] bg-surface/30 border border-white/5 font-dm-mono text-xs text-green/60">
                 <pre className="whitespace-pre-wrap">
 {`Owner / CEO
-  â””â”€â”€ Co-founder (optional, same access level)
-      â””â”€â”€ Department Heads (one per department)
-          â””â”€â”€ Department Members
-              â””â”€â”€ Executive AI Agent (1 per department)`}
+  Co-founder (optional, same access level)
+      Department Heads (one per department)
+          Department Members
+              Executive AI Agent (1 per department)`}
                 </pre>
              </div>
              <div className="space-y-6 text-white/40 font-dm-mono uppercase tracking-tighter font-black">
                 <div className="space-y-4">
                   <h3 className="text-white text-lg italic uppercase">HOW IT WORKS IN PRACTICE</h3>
                   <ul className="list-none space-y-3">
-                    <li>- The Owner sees everything â€” all departments, all agent activity, all approval queues, all team reports</li>
+                    <li>- The Owner sees everything  all departments, all agent activity, all approval queues, all team reports</li>
                     <li>- Department Heads manage their department, approve agent actions within it, and approve or reject incoming requests</li>
                     <li>- Members brief agents in their assigned department only</li>
                     <li>- AI Agents execute tasks, coordinate with each other, and escalate to humans when required</li>
@@ -250,15 +250,15 @@ export default function DocsPage() {
                    </thead>
                    <tbody className="text-white/60">
                       {[
-                        { dept: 'ðŸ“£ Marketing', covers: 'Content, social, SEO, ads, brand voice', agents: 'Aria, Jackie, Eric, Lucy, Joe' },
-                        { dept: 'ðŸ’¼ Sales & Revenue', covers: 'Lead prospecting, outreach, CRM, follow-up, intel', agents: 'Rex, Clara, Chase, Mark, Teo' },
-                        { dept: 'ðŸ¤ CS', covers: 'Support, onboarding, retention, NPS, health', agents: 'Purity, Bruce, Nadia, John, Beatrice' },
-                        { dept: 'ðŸ›¡ï¸ Tech & Security', covers: 'Security, code review, DevOps, docs, incidents', agents: 'Ghost, Cipher, Wren, Hex, Volt' },
-                        { dept: 'ðŸ§  Hiring', covers: 'Talent sourcing, screening, verification, offers', agents: 'Marcus, Vera, Zara, Eli, Nina' },
-                        { dept: 'ðŸ“‹ Operations', covers: 'Project mgmt, calendar, notes, inbox, coordination', agents: 'Atlas, Cal, Dean, Iris, Owen' },
-                        { dept: 'ðŸ“Š Finance & Legal', covers: 'Invoicing, expenses, contracts, budget, audit', agents: 'Bill, Felix, Lena, Reid, Cora' },
-                        { dept: 'ðŸ” Intelligence', covers: 'Research, market signals, summaries, forecasting', agents: 'Roman, Sage, Nate, Ada, Dex' },
-                        { dept: 'ðŸŒ Community', covers: 'Growth experiments, partnerships, influencers', agents: 'Spike, Milo, Rio, Zoe, Kai' },
+                        { dept: 'Marketing', covers: 'Content, social, SEO, ads, brand voice', agents: 'Aria, Jackie, Eric, Lucy, Joe' },
+                        { dept: 'Sales & Revenue', covers: 'Lead prospecting, outreach, CRM, follow-up, intel', agents: 'Rex, Clara, Chase, Mark, Teo' },
+                        { dept: 'CS', covers: 'Support, onboarding, retention, NPS, health', agents: 'Purity, Bruce, Nadia, John, Beatrice' },
+                        { dept: 'Tech & Security', covers: 'Security, code review, DevOps, docs, incidents', agents: 'Ghost, Cipher, Wren, Hex, Volt' },
+                        { dept: 'Hiring', covers: 'Talent sourcing, screening, verification, offers', agents: 'Marcus, Vera, Zara, Eli, Nina' },
+                        { dept: 'Operations', covers: 'Project mgmt, calendar, notes, inbox, coordination', agents: 'Atlas, Cal, Dean, Iris, Owen' },
+                        { dept: 'Finance & Legal', covers: 'Invoicing, expenses, contracts, budget, audit', agents: 'Bill, Felix, Lena, Reid, Cora' },
+                        { dept: 'Intelligence', covers: 'Research, market signals, summaries, forecasting', agents: 'Roman, Sage, Nate, Ada, Dex' },
+                        { dept: 'Community', covers: 'Growth experiments, partnerships, influencers', agents: 'Spike, Milo, Rio, Zoe, Kai' },
                       ].map((row, i) => (
                         <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                            <td className="py-4 text-white font-black">{row.dept}</td>
