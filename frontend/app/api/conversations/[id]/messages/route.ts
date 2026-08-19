@@ -499,7 +499,7 @@ export async function POST(
     let selectedProvider = 'nvidia'
     let selectedModel = ''
 
-    const isOrcaIntel = !modelOverride || modelOverride === 'orca-intel'
+  const isOrcaIntel = !modelOverride || modelOverride === 'orca-intel' || modelOverride === 'lunar-0.1'
     const geminiKey = process.env.GEMINI_API_KEY
     const groqKey = process.env.GROQ_API_KEY
 
