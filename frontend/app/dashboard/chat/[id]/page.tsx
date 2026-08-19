@@ -1773,7 +1773,7 @@ function ChatContent() {
 
         <div
           style={{ right: activeDirectives ? `${sidebarWidth}px` : 0 }}
-          className={`fixed bottom-0 left-64 transition-all duration-500 p-8 pt-0 flex flex-col items-center pointer-events-none z-30`}
+          className={`fixed bottom-0 left-0 md:left-64 transition-all duration-500 p-3 sm:p-6 md:p-8 pt-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col items-center pointer-events-none z-30`}
         >
           <div className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto">
             {pastedDocContent && (
